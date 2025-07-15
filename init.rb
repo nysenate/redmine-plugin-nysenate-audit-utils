@@ -7,4 +7,17 @@ Redmine::Plugin.register :bachelp_packet_creation do
   author_url 'https://github.com/nysenate'
 
   requires_redmine version_or_higher: '5.0.0'
+  
+  # Define permission for packet creation
+  permission :create_packet, { packet_creation: [:create] }, public: false
+  
+  # Add to project module for per-project configuration
+  project_module :bachelp_packet_creation do
+    permission :create_packet, { packet_creation: [:create] }
+  end
+end
+
+# Load the view listener after plugin initialization
+Rails.application.config.after_initialize do
+  require File.expand_path('lib/packet_creation_view_listener', __dir__)
 end

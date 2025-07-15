@@ -1,0 +1,6 @@
+en:
+  button_create_packet: "Create Packet"
+  button_create_packet_title: "Download ticket packet (PDF + attachments)"
+  error_packet_creation_failed: "Failed to create packet. Please try again or contact your administrator."
+  project_module_bachelp_packet_creation: "BACHelp Packet Creation"
+  permission_create_packet: "Create ticket packets"
