@@ -5,6 +5,10 @@ class PacketCreationController < ApplicationController
   include ApplicationHelper
   include ActionView::Helpers::TextHelper
   include ActionView::Helpers::NumberHelper
+  include ActionView::Helpers::UrlHelper
+  include ActionView::Helpers::TagHelper
+  include ActionView::Helpers::OutputSafetyHelper
+  include Rails.application.routes.url_helpers
   
   before_action :find_issue
   before_action :authorize_packet_creation
@@ -50,8 +54,37 @@ class PacketCreationController < ApplicationController
   end
   
   def authorize_packet_creation
-    deny_access unless User.current.allowed_to?(:create_packet, @project)
-    deny_access unless @issue.visible?(User.current)
+    unless User.current.allowed_to?(:create_packet, @project)
+      flash[:error] = l(:notice_not_authorized)
+      redirect_to issue_path(@issue)
+      return
+    end
+    unless @issue.visible?(User.current)
+      render_404
+      return
+    end
+  end
+  
+  # Provide the h method alias for HTML escaping (used by view helpers)
+  def h(text)
+    ERB::Util.html_escape(text)
+  end
+  
+  # Provide url_for method for PDF generation (links in PDFs don't work anyway)
+  def url_for(options = {})
+    # Since PDF links aren't clickable, return a placeholder or the raw URL
+    case options
+    when String
+      options
+    when Hash
+      if options[:controller] && options[:action]
+        "##{options[:controller]}/#{options[:action]}"
+      else
+        "#"
+      end
+    else
+      "#"
+    end
   end
   
 end

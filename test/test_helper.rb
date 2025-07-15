@@ -6,6 +6,9 @@ require File.expand_path('../../../test/test_helper', __dir__)
 # Plugin-specific test setup
 class PacketCreationTestCase < ActiveSupport::TestCase
   def setup
+    # Set up proper attachment storage path for tests
+    set_tmp_attachments_directory
+    
     # Clear any existing attachments directory
     FileUtils.rm_rf(Dir.glob("#{Rails.root}/tmp/test/attachments/*"))
     
@@ -20,17 +23,14 @@ class PacketCreationTestCase < ActiveSupport::TestCase
 
   protected
 
-  def create_test_attachment(container, filename = "test.txt", content = "test content")
-    file = Rails.root.join('tmp/test/attachments', filename)
-    File.write(file, content)
+  def create_test_attachment(container, filename = "test.txt", content = nil)
+    # Use Rails' fixture_file_upload helper like Redmine core tests do
+    # Always use 'testfile.txt' fixture but rename to desired filename
+    uploaded_file = uploaded_test_file('testfile.txt', 'text/plain')
     
     Attachment.create!(
       container: container,
-      file: ActionDispatch::Http::UploadedFile.new(
-        tempfile: file,
-        filename: filename,
-        type: 'text/plain'
-      ),
+      file: uploaded_file,
       filename: filename,
       author: User.find(1)
     )

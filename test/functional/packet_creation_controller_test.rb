@@ -8,6 +8,7 @@ class PacketCreationControllerTest < Redmine::ControllerTest
            :custom_values, :journals, :journal_details
 
   def setup
+    set_tmp_attachments_directory
     @request.session[:user_id] = 1 # admin user
     @project = Project.find(1)
     @issue = Issue.find(1)
@@ -48,6 +49,9 @@ class PacketCreationControllerTest < Redmine::ControllerTest
   end
 
   def test_create_packet_without_permission
+    # Use a non-admin user without the create_packet permission
+    @request.session[:user_id] = 2 # non-admin user (jsmith)
+    
     post :create, params: { id: @issue.id }
     # The controller redirects instead of returning 403 for better UX
     assert_redirected_to issue_path(@issue)
@@ -113,14 +117,14 @@ class PacketCreationControllerTest < Redmine::ControllerTest
     # Create two attachments with the same filename
     attachment1 = Attachment.create!(
       container: @issue,
-      file: uploaded_test_file("duplicate.txt", "text/plain"),
+      file: uploaded_test_file("testfile.txt", "text/plain"),
       filename: "duplicate.txt",
       author: User.find(1)
     )
     
     attachment2 = Attachment.create!(
       container: @issue,
-      file: uploaded_test_file("duplicate.txt", "text/plain"),
+      file: uploaded_test_file("testfile.txt", "text/plain"),
       filename: "duplicate.txt",
       author: User.find(1)
     )
@@ -208,10 +212,7 @@ class PacketCreationControllerTest < Redmine::ControllerTest
   private
 
   def uploaded_test_file(name, mime_type)
-    ActionDispatch::Http::UploadedFile.new(
-      tempfile: Rails.root.join('test/fixtures/files/testfile.txt'),
-      filename: name,
-      type: mime_type
-    )
+    # Use Rails' fixture_file_upload helper like Redmine core does
+    fixture_file_upload('testfile.txt', mime_type, true)
   end
 end

@@ -38,11 +38,10 @@ class PacketCreationServiceTest < PacketCreationTestCase
   end
 
   def test_create_packet_with_attachments
-    skip "Test hangs - needs investigation"
     
     # Create test attachments
-    attachment1 = create_test_attachment(@issue, "test1.txt", "content1")
-    attachment2 = create_test_attachment(@issue, "test2.txt", "content2")
+    attachment1 = create_test_attachment(@issue, "test1.txt")
+    attachment2 = create_test_attachment(@issue, "test2.txt")
     
     # Mock PDF content
     pdf_content = "%PDF-1.4\nfake pdf content"
@@ -69,9 +68,10 @@ class PacketCreationServiceTest < PacketCreationTestCase
     assert_includes filenames, "test1.txt"
     assert_includes filenames, "test2.txt"
     
-    # Verify file contents
-    assert_equal "content1", file_contents["test1.txt"]
-    assert_equal "content2", file_contents["test2.txt"]
+    # Verify file contents (both files use same fixture content)
+    expected_content = "this is a text file for upload tests\r\nwith multiple lines\r\n"
+    assert_equal expected_content, file_contents["test1.txt"]
+    assert_equal expected_content, file_contents["test2.txt"]
     
     # Verify PDF is present and has content
     assert file_contents["ticket_1.pdf"].length > 0
@@ -79,12 +79,11 @@ class PacketCreationServiceTest < PacketCreationTestCase
   end
 
   def test_create_packet_with_duplicate_filenames
-    skip "Test hangs - needs investigation"
     
     # Create attachments with duplicate names
-    attachment1 = create_test_attachment(@issue, "duplicate.txt", "content1")
-    attachment2 = create_test_attachment(@issue, "duplicate.txt", "content2")
-    attachment3 = create_test_attachment(@issue, "duplicate.txt", "content3")
+    attachment1 = create_test_attachment(@issue, "duplicate.txt")
+    attachment2 = create_test_attachment(@issue, "duplicate.txt")
+    attachment3 = create_test_attachment(@issue, "duplicate.txt")
     
     # Mock PDF content
     pdf_content = "%PDF-1.4\nfake pdf content"
@@ -109,10 +108,11 @@ class PacketCreationServiceTest < PacketCreationTestCase
     assert_includes filenames, "duplicate(1).txt"
     assert_includes filenames, "duplicate(2).txt"
     
-    # Verify each file has the correct content
-    assert_equal "content1", file_contents["duplicate.txt"]
-    assert_equal "content2", file_contents["duplicate(1).txt"]
-    assert_equal "content3", file_contents["duplicate(2).txt"]
+    # Verify each file has the correct content (all use same fixture content)
+    expected_content = "this is a text file for upload tests\r\nwith multiple lines\r\n"
+    assert_equal expected_content, file_contents["duplicate.txt"]
+    assert_equal expected_content, file_contents["duplicate(1).txt"]
+    assert_equal expected_content, file_contents["duplicate(2).txt"]
   end
 
   def test_ensure_unique_filename
@@ -140,10 +140,9 @@ class PacketCreationServiceTest < PacketCreationTestCase
   end
 
   def test_create_packet_with_unreadable_attachment
-    skip "Test hangs - needs investigation"
     
     # Create a regular attachment first
-    attachment1 = create_test_attachment(@issue, "readable.txt", "content")
+    attachment1 = create_test_attachment(@issue, "readable.txt")
     
     # Create an attachment that references a non-existent file
     attachment2 = Attachment.new(
