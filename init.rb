@@ -12,4 +12,6 @@ end
 # Load patches and components after plugin initialization
 Rails.application.config.after_initialize do
   require File.expand_path('lib/attachments_helper_patch', __dir__)
+  require File.expand_path('lib/issue_context_menu_hook', __dir__)
+  require File.expand_path('lib/multi_packet_creation_service', __dir__)
 end

@@ -54,143 +54,123 @@ end
 
 ## Zip File Creation
 
-### Analysis of redmine_issue_attachments Plugin
+### Zip Creation Implementation - FINAL APPROACH USED
 
-The existing `redmine_issue_attachments` plugin demonstrates one approach to zip creation, but has several limitations:
+**Decision Made During Development:**
+Instead of using Redmine's `Attachment.archive_attachments`, we implemented a custom solution that combines PDF and attachments in a single zip file.
 
-**Current Plugin Approach (Not Recommended):**
+**Implemented Approach:**
 ```ruby
-# Uses temporary files - resource management issues
-zip_file = Tempfile.new(["attachments", ".zip"], binmode: true)
-Zip::File.open(zip_file.path, Zip::File::CREATE) do |zip|
-  attachments.each do |attachment|
-    zip.add(attachment.filename.to_s, attachment.diskfile)
+class PacketCreationService
+  def create_packet_with_pdf(pdf_content)
+    create_combined_zip(pdf_content, @issue.attachments)
   end
-end
-send_file zip_file.path, filename: "attachments.zip", type: "application/zip"
-```
 
-**Issues with this approach:**
-- Manual temporary file management
-- No explicit cleanup of temp files
-- No handling of duplicate filenames
-- Limited error handling
-- Uses file system instead of memory
+  private
 
-### Recommended Approach: Redmine Core Infrastructure
-
-Redmine core provides a superior zip creation method in the `Attachment` model:
-
-#### Key Method: `Attachment.archive_attachments`
-
-```ruby
-def self.archive_attachments(attachments)
-  attachments = attachments.select(&:readable?)
-  return nil if attachments.blank?
-
-  Zip.unicode_names = true
-  archived_file_names = []
-  buffer = Zip::OutputStream.write_buffer do |zos|
-    attachments.each do |attachment|
-      filename = attachment.filename
-      # Handle duplicate filenames automatically
-      dup_count = 0
-      while archived_file_names.include?(filename)
-        dup_count += 1
-        extname = File.extname(attachment.filename)
-        basename = File.basename(attachment.filename, extname)
-        filename = "#{basename}(#{dup_count})#{extname}"
+  def create_combined_zip(pdf_content, attachments)
+    Zip::OutputStream.write_buffer do |zos|
+      # Add PDF as first entry
+      zos.put_next_entry("ticket_#{@issue.id}.pdf")
+      zos.write(pdf_content)
+      
+      # Add attachments with duplicate name handling
+      archived_filenames = ["ticket_#{@issue.id}.pdf"]
+      
+      attachments.each do |attachment|
+        next unless attachment.readable?
+        
+        begin
+          filename = ensure_unique_filename(attachment.filename, archived_filenames)
+          archived_filenames << filename
+          
+          zos.put_next_entry(filename)
+          zos.write(IO.binread(attachment.diskfile))
+        rescue => e
+          Rails.logger.warn "Failed to add attachment: #{e.message}"
+          # Continue with other attachments
+        end
       end
-      zos.put_next_entry(filename)
-      zos << IO.binread(attachment.diskfile)
-      archived_file_names << filename
-    end
+    end.string
   end
-  buffer.string
-ensure
-  buffer&.close
 end
 ```
 
-#### Advantages of Core Approach
+**Key Benefits of Final Implementation:**
+1. **Combined PDF + Attachments**: Creates unified packet with both PDF and attachments
+2. **Memory Efficient**: Uses in-memory buffer, no temporary files
+3. **Robust Error Handling**: Individual attachment failures don't break entire packet
+4. **Duplicate Handling**: Automatic filename conflict resolution
+5. **Service Pattern**: Clean separation of concerns
 
-1. **Memory Efficient**: Uses in-memory buffer instead of temporary files
-2. **Automatic Cleanup**: Proper resource management with ensure block
-3. **Duplicate Handling**: Automatically handles duplicate filenames
-4. **Security**: Built-in checks for readable attachments
-5. **Unicode Support**: Proper handling of international filenames
-6. **Error Handling**: Robust error handling and cleanup
-7. **No File System Dependencies**: Works entirely in memory
-
-## Combined Implementation Strategy
+## Final Implementation Strategy - AS IMPLEMENTED
 
 ### Packet Creation Workflow
 
-1. **Generate PDF**: Use `issue_to_pdf` to create issue PDF
-2. **Archive Attachments**: Use `Attachment.archive_attachments` for attachment zip
-3. **Combine**: Create final packet zip containing both PDF and attachments
-4. **Deliver**: Use `send_data` for efficient download
+1. **Generate PDF**: Use `issue_to_pdf` to create issue PDF in controller context ✓
+2. ~~**Archive Attachments**: Use `Attachment.archive_attachments` for attachment zip~~ **CHANGED**: Custom zip creation for combined PDF+attachments
+3. **Combine**: Create final packet zip containing both PDF and attachments ✓
+4. **Deliver**: Use `send_data` for efficient download ✓
 
-### Proposed Controller Implementation
+### UI Integration Changes
+
+**Original Plan**: Add button to issue view page near other actions
+
+**Final Implementation**: 
+- Button integrated into attachment contextual menu
+- Uses AttachmentsHelper patch to modify existing attachment display
+- Server-side HTML modification with Nokogiri
+- Consistent styling with existing contextual menu buttons
+
+### Actual Controller Implementation - UPDATED DURING DEVELOPMENT
+
+**Key Changes from Original Plan:**
+- Added extensive ActionView helper includes for PDF generation context
+- Moved PDF generation logic to controller for proper helper access
+- Delegated zip creation to separate service class
+- Enhanced error handling and logging
+- Simplified permission system to use attachment visibility checks
 
 ```ruby
 class PacketCreationController < ApplicationController
   include Redmine::Export::PDF::IssuesPdfHelper
+  include CustomFieldsHelper
+  include IssuesHelper
+  include ApplicationHelper
+  # ... additional helper includes for PDF generation context
+  
   before_action :find_issue
-  before_action :authorize
+  before_action :authorize_packet_creation  # CHANGED: different authorization method
   
   def create
     begin
-      # Generate PDF using Redmine infrastructure
-      pdf_content = issue_to_pdf(@issue, {journals: @issue.journals})
+      # Generate PDF directly in controller with proper helper context
+      @journals = @issue.journals.visible.preload(:user, :details)
+      pdf_content = issue_to_pdf(@issue, journals: @journals)
       
-      # Create packet zip combining PDF and attachments
-      packet_zip = create_packet_zip(pdf_content, @issue.attachments)
+      # Use service for zip creation
+      service = PacketCreationService.new(@issue)
+      packet_zip = service.create_packet_with_pdf(pdf_content)
       
       send_data packet_zip,
                 filename: "packet_#{@issue.id}.zip",
                 type: 'application/zip',
                 disposition: 'attachment'
     rescue => e
-      logger.error "Packet creation failed for issue #{@issue.id}: #{e.message}"
-      flash[:error] = "Error creating packet: #{e.message}"
+      # Enhanced error handling with proper logging
+      Rails.logger.error "Packet creation failed for issue #{@issue.id}: #{e.message}"
+      flash[:error] = l(:error_packet_creation_failed)  # Internationalized error
       redirect_to issue_path(@issue)
     end
   end
   
   private
   
-  def create_packet_zip(pdf_content, attachments)
-    Zip::OutputStream.write_buffer do |zos|
-      # Add PDF as first entry
-      zos.put_next_entry("ticket_#{@issue.id}.pdf")
-      zos << pdf_content
-      
-      # Add attachments with duplicate name handling
-      archived_filenames = ["ticket_#{@issue.id}.pdf"]
-      attachments.each do |attachment|
-        next unless attachment.readable?
-        
-        filename = ensure_unique_filename(attachment.filename, archived_filenames)
-        archived_filenames << filename
-        
-        zos.put_next_entry(filename)
-        zos << IO.binread(attachment.diskfile)
-      end
-    end.string
-  end
-  
-  def ensure_unique_filename(filename, existing_names)
-    return filename unless existing_names.include?(filename)
-    
-    dup_count = 1
-    extname = File.extname(filename)
-    basename = File.basename(filename, extname)
-    
-    loop do
-      new_filename = "#{basename}(#{dup_count})#{extname}"
-      return new_filename unless existing_names.include?(new_filename)
-      dup_count += 1
+  def authorize_packet_creation
+    # SIMPLIFIED: Use attachment visibility instead of custom permissions
+    unless @issue.attachments_visible?(User.current)
+      flash[:error] = l(:notice_not_authorized)
+      redirect_to issue_path(@issue)
     end
   end
 end
@@ -232,19 +212,171 @@ end
 - **Version**: 5.0.0+ (as specified in plugin requirements)
 - **Modules**: Core attachment and PDF export functionality
 
-## Security Considerations
+## Security Considerations - IMPLEMENTED
 
-1. **Permission Checks**: Ensure user can view issue and attachments
-2. **File Access**: Use Redmine's attachment security model
-3. **Resource Limits**: Consider implementing size limits for large packets
-4. **Error Disclosure**: Avoid exposing system paths in error messages
+1. **Permission Checks**: Ensure user can view issue and attachments ✓
+   - **IMPLEMENTED**: Uses `attachments_visible?` check
+   - **SIMPLIFIED**: Removed custom permission system
+2. **File Access**: Use Redmine's attachment security model ✓
+   - **IMPLEMENTED**: Leverages attachment `readable?` method
+3. **Resource Limits**: Consider implementing size limits for large packets ⚠️
+   - **NOT IMPLEMENTED**: No size limits in current version
+4. **Error Disclosure**: Avoid exposing system paths in error messages ✓
+   - **IMPLEMENTED**: Internationalized error messages, safe logging
 
-## Future Enhancements
+## Multi-issue Packet Creation Implementation
 
-1. **Batch Processing**: Could extend to create packets for multiple issues
-2. **Custom Templates**: Could allow customization of PDF content
-3. **Compression Options**: Could provide different compression levels
-4. **Progress Feedback**: For large packets, could provide progress updates
+### Context Menu Integration
+
+Based on research into the existing issue context menu (`app/views/context_menus/issues.html.erb`) and the current AttachmentsHelper patch implementation, we can extend the plugin to support multi-issue packet creation.
+
+#### Issue Context Menu Integration Approach
+
+For multi-issue packet creation, we'll use a hook-based approach since the issue context menu is a separate view template. The pattern from the existing context menu shows:
+
+1. **Hook-based Integration**: Use `call_hook(:view_issues_context_menu_end, ...)` pattern
+2. **Conditional Display**: Show only when multiple issues are selected
+3. **Permission Checks**: Verify user can view all selected issues and attachments
+4. **Consistent Styling**: Use same patterns as existing context menu items
+
+#### Implementation Strategy
+
+**Primary Approach: Hook-based Integration**
+```ruby
+# lib/issue_context_menu_hook.rb
+class IssueContextMenuHook < Redmine::Hook::ViewListener
+  def view_issues_context_menu_end(context = {})
+    issues = context[:issues] || []
+    can = context[:can] || {}
+    
+    # Only show for multiple issues
+    return '' if issues.length <= 1
+    
+    # Check permissions for all issues
+    return '' unless issues.all? { |issue| 
+      issue.visible?(User.current) && issue.attachments_visible?(User.current)
+    }
+    
+    content_tag :li do
+      context_menu_link(
+        sprite_icon('package', l(:button_create_multi_packet)),
+        create_multi_packet_issues_path(:ids => issues.map(&:id)),
+        method: :post,
+        class: 'icon icon-package',
+        title: l(:button_create_multi_packet_title)
+      )
+    end
+  end
+end
+```
+
+**Alternative: View Template Patch**
+If the hook approach proves insufficient, we could monkey patch the context menu template directly using a similar Nokogiri-based approach as used for the attachments menu.
+
+### Technical Implementation Requirements
+
+#### Controller Extension
+```ruby
+class PacketCreationController < ApplicationController
+  def create_multi_packet
+    issue_ids = params[:ids].map(&:to_i)
+    @issues = Issue.where(id: issue_ids).visible(User.current)
+    
+    # Fail-fast: ensure all issues are accessible
+    unless @issues.count == issue_ids.count
+      flash[:error] = l(:error_unauthorized_issues)
+      redirect_back_or_default(home_path)
+      return
+    end
+    
+    # Verify attachment permissions for all issues
+    unless @issues.all? { |issue| issue.attachments_visible?(User.current) }
+      flash[:error] = l(:error_unauthorized_attachments)
+      redirect_back_or_default(home_path)
+      return
+    end
+    
+    begin
+      service = MultiPacketCreationService.new(@issues)
+      packet_zip = service.create_multi_packet
+      
+      send_data packet_zip,
+                filename: "multi_packet_#{Time.current.strftime('%Y%m%d_%H%M%S')}.zip",
+                type: 'application/zip',
+                disposition: 'attachment'
+    rescue => e
+      Rails.logger.error "Multi-packet creation failed: #{e.message}"
+      flash[:error] = l(:error_multi_packet_creation_failed)
+      redirect_back_or_default(home_path)
+    end
+  end
+end
+```
+
+#### Service Class for Multi-issue Processing
+```ruby
+class MultiPacketCreationService
+  def initialize(issues)
+    @issues = issues
+  end
+  
+  def create_multi_packet
+    Zip::OutputStream.write_buffer do |zos|
+      @issues.each do |issue|
+        # Create individual packet directory
+        packet_dir = "packet_#{issue.id}"
+        
+        # Generate PDF for this issue
+        pdf_content = generate_issue_pdf(issue)
+        zos.put_next_entry("#{packet_dir}/ticket_#{issue.id}.pdf")
+        zos.write(pdf_content)
+        
+        # Add attachments for this issue
+        issue.attachments.each do |attachment|
+          next unless attachment.readable?
+          
+          begin
+            filename = "#{packet_dir}/#{attachment.filename}"
+            zos.put_next_entry(filename)
+            zos.write(IO.binread(attachment.diskfile))
+          rescue => e
+            Rails.logger.warn "Failed to add attachment #{attachment.filename}: #{e.message}"
+            # Fail entire operation as per requirements
+            raise e
+          end
+        end
+      end
+    end.string
+  end
+  
+  private
+  
+  def generate_issue_pdf(issue)
+    # Need to instantiate controller context for PDF generation
+    # This requires careful handling of helper context
+  end
+end
+```
+
+#### Routing
+```ruby
+# config/routes.rb
+post 'issues/create_multi_packet', to: 'packet_creation#create_multi_packet'
+```
+
+### Key Implementation Challenges
+
+1. **PDF Generation Context**: Multi-issue PDF generation requires proper controller/helper context for each issue
+2. **Memory Management**: Large multi-issue packets could consume significant memory
+3. **Error Handling**: Fail-fast approach requires careful error propagation
+4. **Permission Validation**: Must verify permissions for each issue individually
+
+### Future Enhancements
+
+1. **Custom Templates**: Could allow customization of PDF content
+2. **Compression Options**: Could provide different compression levels
+3. **Progress Feedback**: For large packets, could provide progress updates
+4. **Scheduling**: Could support background processing for very large multi-issue packets
 
 ## Conclusion
 
