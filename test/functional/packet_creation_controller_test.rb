@@ -15,13 +15,9 @@ class PacketCreationControllerTest < Redmine::ControllerTest
   end
 
   def test_create_packet_with_permission
-    # Enable the plugin module for the project
-    @project.enabled_module_names += ['bachelp_packet_creation']
-    @project.save!
-    
-    # Grant permission to user
+    # Ensure user has view_issues permission (should be default for admin)
     role = Role.find(1)
-    role.add_permission! :create_packet
+    role.add_permission! :view_issues
     
     post :create, params: { id: @issue.id }
     
@@ -48,32 +44,39 @@ class PacketCreationControllerTest < Redmine::ControllerTest
     end
   end
 
-  def test_create_packet_without_permission
-    # Use a non-admin user without the create_packet permission
-    @request.session[:user_id] = 2 # non-admin user (jsmith)
+  def test_create_packet_without_project_access
+    # Create a new user with no project memberships
+    user_without_access = User.create!(
+      login: "noaccess",
+      firstname: "No",
+      lastname: "Access",
+      mail: "noaccess@example.com",
+      status: User::STATUS_ACTIVE,
+      admin: false
+    )
+    
+    # Ensure the project is not public (which would allow any user to view it)
+    @project.update!(is_public: false)
+    
+    # Use the user with no project access
+    @request.session[:user_id] = user_without_access.id
     
     post :create, params: { id: @issue.id }
-    # The controller redirects instead of returning 403 for better UX
-    assert_redirected_to issue_path(@issue)
+    # Should return 404 since user cannot view the issue
+    assert_response :not_found
   end
 
   def test_create_packet_nonexistent_issue
-    @project.enabled_module_names += ['bachelp_packet_creation']
-    @project.save!
-    
     role = Role.find(1)
-    role.add_permission! :create_packet
+    role.add_permission! :view_issues
     
     post :create, params: { id: 999999 }
     assert_response :not_found
   end
 
   def test_create_packet_with_attachments
-    @project.enabled_module_names += ['bachelp_packet_creation']
-    @project.save!
-    
     role = Role.find(1)
-    role.add_permission! :create_packet
+    role.add_permission! :view_issues
     
     # Create a test attachment
     attachment = Attachment.create!(
@@ -108,11 +111,8 @@ class PacketCreationControllerTest < Redmine::ControllerTest
   end
 
   def test_create_packet_with_duplicate_attachment_names
-    @project.enabled_module_names += ['bachelp_packet_creation']
-    @project.save!
-    
     role = Role.find(1)
-    role.add_permission! :create_packet
+    role.add_permission! :view_issues
     
     # Create two attachments with the same filename
     attachment1 = Attachment.create!(

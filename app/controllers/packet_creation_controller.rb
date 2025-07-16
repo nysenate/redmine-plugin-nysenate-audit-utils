@@ -54,13 +54,13 @@ class PacketCreationController < ApplicationController
   end
   
   def authorize_packet_creation
-    unless User.current.allowed_to?(:create_packet, @project)
-      flash[:error] = l(:notice_not_authorized)
-      redirect_to issue_path(@issue)
-      return
-    end
     unless @issue.visible?(User.current)
       render_404
+      return
+    end
+    unless @issue.attachments_visible?(User.current)
+      flash[:error] = l(:notice_not_authorized)
+      redirect_to issue_path(@issue)
       return
     end
   end
