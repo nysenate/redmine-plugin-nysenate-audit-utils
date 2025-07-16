@@ -19,6 +19,7 @@ class IssueContextMenuHookTest < ActiveSupport::TestCase
     result = @hook.view_issues_context_menu_end(context)
     
     assert_not_equal '', result
+    assert_match /<li>/, result
     assert_match /Create Multi Packet/, result
     assert_match /create_multi_packet/, result
     assert_match /icon-package/, result
@@ -30,7 +31,12 @@ class IssueContextMenuHookTest < ActiveSupport::TestCase
     
     result = @hook.view_issues_context_menu_end(context)
     
-    assert_equal '', result
+    assert_not_equal '', result
+    assert_match /<li>/, result
+    assert_match /Create Packet/, result
+    assert_match /create_packet/, result
+    assert_match /icon-package/, result
+    assert_no_match /confirm/, result
   end
 
   def test_view_issues_context_menu_end_with_no_issues

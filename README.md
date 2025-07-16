@@ -4,7 +4,9 @@ A Redmine plugin for creating ticket packets containing PDF views and attachment
 
 ## Features
 
-- Create packet button on ticket view
+- **Individual Packet Creation**: Create packet button on ticket view for single issues
+- **Bulk Packet Creation**: Context menu option for creating multi-packet from selected issues
+- **Context Menu Integration**: Right-click context menu options with proper Redmine sprite icons
 - Generate zip file containing ticket PDF and all attachments
 - Designed for audit workflow support
 
