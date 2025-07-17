@@ -149,8 +149,7 @@ class PacketCreationController < ApplicationController
       pdf_content = issue_to_pdf(@issue, journals: @journals)
       
       # Use service for zip creation
-      service = PacketCreationService.new(@issue)
-      packet_zip = service.create_packet_with_pdf(pdf_content)
+      packet_zip = PacketCreationService.create_packet(@issue, pdf_content)
       
       send_data packet_zip,
                 filename: "packet_#{@issue.id}.zip",
@@ -297,8 +296,7 @@ class PacketCreationController < ApplicationController
     end
     
     begin
-      service = MultiPacketCreationService.new(@issues)
-      packet_zip = service.create_multi_packet
+      packet_zip = PacketCreationService.create_multi_packet(@issues, pdf_contents_by_issue_id)
       
       send_data packet_zip,
                 filename: "multi_packet_#{Time.current.strftime('%Y%m%d_%H%M%S')}.zip",
@@ -315,45 +313,40 @@ end
 
 #### Service Class for Multi-issue Processing
 ```ruby
-class MultiPacketCreationService
-  def initialize(issues)
-    @issues = issues
+module PacketCreationService
+  # Create a packet for a single issue
+  def self.create_packet(issue, pdf_content)
+    create_zip_with_attachments(issue, pdf_content, issue.attachments)
   end
-  
-  def create_multi_packet
+
+  # Create a multi-packet ZIP with multiple issues
+  def self.create_multi_packet(issues, pdf_contents_by_issue_id)
+    validate_multi_packet_inputs(issues, pdf_contents_by_issue_id)
+    
     Zip::OutputStream.write_buffer do |zos|
-      @issues.each do |issue|
-        # Create individual packet directory
-        packet_dir = "packet_#{issue.id}"
+      issues.each do |issue|
+        pdf_content = pdf_contents_by_issue_id[issue.id]
+        raise "Missing PDF content for issue #{issue.id}" unless pdf_content
         
-        # Generate PDF for this issue
-        pdf_content = generate_issue_pdf(issue)
-        zos.put_next_entry("#{packet_dir}/ticket_#{issue.id}.pdf")
-        zos.write(pdf_content)
-        
-        # Add attachments for this issue
-        issue.attachments.each do |attachment|
-          next unless attachment.readable?
-          
-          begin
-            filename = "#{packet_dir}/#{attachment.filename}"
-            zos.put_next_entry(filename)
-            zos.write(IO.binread(attachment.diskfile))
-          rescue => e
-            Rails.logger.warn "Failed to add attachment #{attachment.filename}: #{e.message}"
-            # Fail entire operation as per requirements
-            raise e
-          end
-        end
+        add_issue_packet_to_zip(zos, issue, pdf_content)
       end
     end.string
   end
   
   private
   
-  def generate_issue_pdf(issue)
-    # Need to instantiate controller context for PDF generation
-    # This requires careful handling of helper context
+  def self.add_issue_packet_to_zip(zos, issue, pdf_content)
+    packet_dir = "packet_#{issue.id}"
+    archived_filenames = []
+    
+    # Add PDF as first entry in the packet directory
+    pdf_filename = "#{packet_dir}/ticket_#{issue.id}.pdf"
+    zos.put_next_entry(pdf_filename)
+    zos.write(pdf_content)
+    archived_filenames << "ticket_#{issue.id}.pdf"
+    
+    # Add attachments with duplicate name handling
+    add_attachments_to_zip(zos, issue.attachments, archived_filenames, packet_dir)
   end
 end
 ```

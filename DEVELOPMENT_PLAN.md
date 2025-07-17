@@ -249,10 +249,10 @@ end
 - [ ] Add consistent styling with existing context menu items
 
 #### 6.2 Multi-Issue Service Implementation
-- [ ] Create `MultiPacketCreationService` class
-- [ ] Implement nested zip structure (packet_X/ticket_X.pdf + attachments)
-- [ ] Add fail-fast error handling (fail entire operation if any issue fails)
-- [ ] Implement proper PDF generation context for multiple issues
+- [x] Create `MultiPacketCreationService` class (consolidated into `PacketCreationService` module)
+- [x] Implement nested zip structure (packet_X/ticket_X.pdf + attachments)
+- [x] Add fail-fast error handling (fail entire operation if any issue fails)
+- [x] Implement proper PDF generation context for multiple issues
 
 #### 6.3 Controller Extension
 - [ ] Add `create_multi_packet` action to `PacketCreationController`
@@ -261,7 +261,7 @@ end
 - [ ] Add route configuration for multi-packet creation
 
 #### 6.4 Multi-Issue Testing
-- [ ] Unit tests for `MultiPacketCreationService`
+- [x] Unit tests for `MultiPacketCreationService` (consolidated into `PacketCreationService` tests)
 - [ ] Functional tests for multi-issue controller action
 - [ ] Integration tests for context menu display
 - [ ] Permission tests for multi-issue scenarios
@@ -400,23 +400,19 @@ plugins/bachelp_packet_creation/
 
 #### 1. Leverage Existing Infrastructure
 - Use `Redmine::Export::PDF::IssuesPdfHelper.issue_to_pdf`
-- Use existing `PacketCreationService` pattern for multi-issue implementation
+- Use existing `PacketCreationService` module for multi-issue implementation
 - Follow Redmine's established patterns for controllers and permissions
 
 #### 2. Multi-Issue Implementation Strategy
 ```ruby
-# New multi-issue service extending existing patterns
-class MultiPacketCreationService
-  def initialize(issues)
-    @issues = issues
-  end
-  
-  def create_multi_packet
+# Multi-issue service implementation using module pattern
+module PacketCreationService
+  def self.create_multi_packet(issues, pdf_contents_by_issue_id)
     # Fail-fast: validate all issues first
-    validate_all_issues
+    validate_multi_packet_inputs(issues, pdf_contents_by_issue_id)
     
     # Create nested zip structure
-    create_nested_zip_structure
+    create_nested_zip_structure(issues, pdf_contents_by_issue_id)
   end
   
   private
@@ -575,7 +571,7 @@ end
 
 ### For Multi-Issue Packet Creation (NEW REQUIREMENTS)
 1. **Phase 6.1**: Implement context menu integration for multi-issue packet creation
-2. **Phase 6.2**: Create `MultiPacketCreationService` with nested zip structure
+2. **Phase 6.2**: Create `MultiPacketCreationService` with nested zip structure (consolidated into `PacketCreationService` module)
 3. **Phase 6.3**: Extend controller with `create_multi_packet` action
 4. **Phase 6.4**: Add comprehensive testing for multi-issue functionality
 5. **Phase 7**: Final QA including multi-issue workflow testing

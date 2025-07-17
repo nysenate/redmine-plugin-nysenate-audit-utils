@@ -177,7 +177,7 @@ Multi-issue packet creation functionality that allows users to create packets fo
 #### 3.2 Implementation Approach ✅ COMPLETED
 - ✅ Extended existing `PacketCreationController` with `create_multi_packet` action
 - ✅ Added new route `/issues/create_multi_packet` for multi-issue packet creation
-- ✅ Leverages existing packet creation logic via `MultiPacketCreationService`
+- ✅ Leverages existing packet creation logic via `PacketCreationService` module
 - ✅ Uses fail-fast pattern throughout the process in both service and controller layers
 
 ### 4. User Experience Requirements ✅ COMPLETED
