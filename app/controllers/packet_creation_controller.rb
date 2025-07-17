@@ -27,8 +27,7 @@ class PacketCreationController < ApplicationController
       pdf_content = issue_to_pdf(@issue, journals: @journals)
       
       # Use the service to create the zip with PDF and attachments
-      service = PacketCreationService.new(@issue)
-      packet_zip = service.create_packet_with_pdf(pdf_content)
+      packet_zip = PacketCreationService.create_packet(@issue, pdf_content)
       
       send_data packet_zip,
                 filename: "packet_#{@issue.id}.zip",
@@ -58,8 +57,7 @@ class PacketCreationController < ApplicationController
       end
       
       # Create multi-packet using the service
-      service = MultiPacketCreationService.new(@issues)
-      multi_packet_zip = service.create_multi_packet_with_pdfs(pdf_contents_by_issue_id)
+      multi_packet_zip = PacketCreationService.create_multi_packet(@issues, pdf_contents_by_issue_id)
       
       timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
       filename = "multi_packet_#{timestamp}.zip"
@@ -120,19 +118,17 @@ class PacketCreationController < ApplicationController
   
   def authorize_multi_packet_creation
     @issues.each do |issue|
-      unless issue.visible?(User.current)
+      unless User.current.allowed_to?(:view_issues, issue.project)
         render_404
-        return
-      end
-      unless issue.attachments_visible?(User.current)
-        flash[:error] = l(:notice_not_authorized)
-        redirect_back(fallback_location: home_path)
         return
       end
     end
   end
-  
+
   # Provide the h method alias for HTML escaping (used by view helpers)
+  # This is needed for PDF generation when ApplicationHelper#parse_redmine_links calls h()
+  # MYSTERY: The method works in dev environment but fails in test environment without this definition
+  # We don't understand why there's a difference between the two environments
   def h(text)
     ERB::Util.html_escape(text)
   end

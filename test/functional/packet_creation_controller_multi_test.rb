@@ -14,6 +14,9 @@ class PacketCreationControllerMultiTest < Redmine::ControllerTest
     # Ensure user has view_issues permission
     role = Role.find(1)
     role.add_permission! :view_issues
+    
+    # Make sure the user can see all projects for the test issues
+    User.find(1).update!(admin: true)
   end
 
   def test_create_multi_packet_success

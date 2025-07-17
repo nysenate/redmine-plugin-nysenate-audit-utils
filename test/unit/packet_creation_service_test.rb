@@ -8,7 +8,6 @@ class PacketCreationServiceTest < PacketCreationTestCase
   def setup
     super
     @issue = Issue.find(1)
-    @service = PacketCreationService.new(@issue)
   end
 
   def test_create_packet_with_no_attachments
@@ -18,7 +17,7 @@ class PacketCreationServiceTest < PacketCreationTestCase
     # Mock PDF content
     pdf_content = "%PDF-1.4\nfake pdf content"
     
-    packet_zip = @service.create_packet_with_pdf(pdf_content)
+    packet_zip = PacketCreationService.create_packet(@issue, pdf_content)
     
     assert_not_nil packet_zip
     assert packet_zip.length > 0
@@ -46,7 +45,7 @@ class PacketCreationServiceTest < PacketCreationTestCase
     # Mock PDF content
     pdf_content = "%PDF-1.4\nfake pdf content"
     
-    packet_zip = @service.create_packet_with_pdf(pdf_content)
+    packet_zip = PacketCreationService.create_packet(@issue, pdf_content)
     
     assert_not_nil packet_zip
     assert packet_zip.length > 0
@@ -88,7 +87,7 @@ class PacketCreationServiceTest < PacketCreationTestCase
     # Mock PDF content
     pdf_content = "%PDF-1.4\nfake pdf content"
     
-    packet_zip = @service.create_packet_with_pdf(pdf_content)
+    packet_zip = PacketCreationService.create_packet(@issue, pdf_content)
     
     # Parse the zip to verify contents
     zip_buffer = StringIO.new(packet_zip)
@@ -116,26 +115,24 @@ class PacketCreationServiceTest < PacketCreationTestCase
   end
 
   def test_ensure_unique_filename
-    service = PacketCreationService.new(@issue)
-    
     # Test with no duplicates
-    result = service.send(:ensure_unique_filename, "test.txt", [])
+    result = PacketCreationService.send(:ensure_unique_filename, "test.txt", [])
     assert_equal "test.txt", result
     
     # Test with one duplicate
-    result = service.send(:ensure_unique_filename, "test.txt", ["test.txt"])
+    result = PacketCreationService.send(:ensure_unique_filename, "test.txt", ["test.txt"])
     assert_equal "test(1).txt", result
     
     # Test with multiple duplicates
-    result = service.send(:ensure_unique_filename, "test.txt", ["test.txt", "test(1).txt", "test(2).txt"])
+    result = PacketCreationService.send(:ensure_unique_filename, "test.txt", ["test.txt", "test(1).txt", "test(2).txt"])
     assert_equal "test(3).txt", result
     
     # Test with files without extensions
-    result = service.send(:ensure_unique_filename, "README", ["README"])
+    result = PacketCreationService.send(:ensure_unique_filename, "README", ["README"])
     assert_equal "README(1)", result
     
     # Test with complex extensions
-    result = service.send(:ensure_unique_filename, "test.tar.gz", ["test.tar.gz"])
+    result = PacketCreationService.send(:ensure_unique_filename, "test.tar.gz", ["test.tar.gz"])
     assert_equal "test.tar(1).gz", result
   end
 
@@ -157,7 +154,7 @@ class PacketCreationServiceTest < PacketCreationTestCase
     # Mock PDF content
     pdf_content = "%PDF-1.4\nfake pdf content"
     
-    packet_zip = @service.create_packet_with_pdf(pdf_content)
+    packet_zip = PacketCreationService.create_packet(@issue, pdf_content)
     
     # Parse the zip to verify contents
     zip_buffer = StringIO.new(packet_zip)
@@ -176,19 +173,12 @@ class PacketCreationServiceTest < PacketCreationTestCase
     assert_not_includes filenames, "unreadable.txt"
   end
 
-  def test_create_packet_without_pdf_raises_error
-    # Test that the old method raises an error
-    assert_raises(NotImplementedError) do
-      @service.create_packet
-    end
-  end
-  
   def test_create_packet_with_pdf_handles_zip_errors
     # Mock the zip creation to raise an error
-    @service.expects(:create_combined_zip).raises(StandardError.new("Zip creation failed"))
+    PacketCreationService.expects(:create_zip_with_attachments).raises(StandardError.new("Zip creation failed"))
     
     assert_raises(StandardError) do
-      @service.create_packet_with_pdf("fake pdf content")
+      PacketCreationService.create_packet(@issue, "fake pdf content")
     end
   end
 end

@@ -8,7 +8,6 @@ class MultiPacketCreationServiceTest < ActiveSupport::TestCase
     @issue2 = Issue.find(2)
     @issue3 = Issue.find(3)
     @issues = [@issue1, @issue2, @issue3]
-    @service = MultiPacketCreationService.new(@issues)
     User.current = User.find(1)
   end
 
@@ -19,7 +18,7 @@ class MultiPacketCreationServiceTest < ActiveSupport::TestCase
       @issue3.id => "PDF content for issue 3"
     }
     
-    result = @service.create_multi_packet_with_pdfs(pdf_contents)
+    result = PacketCreationService.create_multi_packet(@issues, pdf_contents)
     
     assert_not_nil result
     assert result.is_a?(String)
@@ -48,19 +47,21 @@ class MultiPacketCreationServiceTest < ActiveSupport::TestCase
     }
     
     assert_raises(RuntimeError, "Missing PDF content for issue #{@issue3.id}") do
-      @service.create_multi_packet_with_pdfs(pdf_contents)
+      PacketCreationService.create_multi_packet(@issues, pdf_contents)
     end
   end
 
   def test_create_multi_packet_with_empty_issues
-    service = MultiPacketCreationService.new([])
-    
     assert_raises(ArgumentError, "No issues provided") do
-      service.create_multi_packet_with_pdfs({})
+      PacketCreationService.create_multi_packet([], {})
     end
   end
 
-  def test_create_multi_packet_with_permission_denied
+  def test_create_multi_packet_service_no_longer_checks_permissions
+    # The service no longer checks permissions - that's handled by the controller now
+    # This test just ensures the service can be called without permission errors
+    # when the controller has already authorized the action
+    
     # Create a user with no project memberships
     user_without_access = User.create!(
       login: "noaccess",
@@ -77,30 +78,27 @@ class MultiPacketCreationServiceTest < ActiveSupport::TestCase
     # Switch to a user without view permissions
     User.current = user_without_access
     
-    service = MultiPacketCreationService.new([@issue1])
+    # Service should work since it no longer checks permissions
+    # (permissions are checked by the controller)
+    result = PacketCreationService.create_multi_packet([@issue1], {@issue1.id => "PDF content"})
     
-    assert_raises(RuntimeError, /Permission denied for issue/) do
-      service.create_multi_packet_with_pdfs({@issue1.id => "PDF content"})
-    end
+    assert_not_nil result
+    assert result.is_a?(String)
+    assert result.length > 0
   end
 
-  def test_create_multi_packet_with_attachments
-    skip "Needs attachment fixtures setup"
-  end
 
   def test_ensure_unique_filename
-    service = MultiPacketCreationService.new([@issue1])
-    
     # Test no conflict
-    result = service.send(:ensure_unique_filename, "test.pdf", [])
+    result = PacketCreationService.send(:ensure_unique_filename, "test.pdf", [])
     assert_equal "test.pdf", result
     
     # Test conflict resolution
-    result = service.send(:ensure_unique_filename, "test.pdf", ["test.pdf"])
+    result = PacketCreationService.send(:ensure_unique_filename, "test.pdf", ["test.pdf"])
     assert_equal "test(1).pdf", result
     
     # Test multiple conflicts
-    result = service.send(:ensure_unique_filename, "test.pdf", ["test.pdf", "test(1).pdf"])
+    result = PacketCreationService.send(:ensure_unique_filename, "test.pdf", ["test.pdf", "test(1).pdf"])
     assert_equal "test(2).pdf", result
   end
 end
