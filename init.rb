@@ -3,7 +3,7 @@ Redmine::Plugin.register :bachelp_packet_creation do
   author 'New York State Senate'
   description 'Enables creation of ticket packets (PDF + attachments) for auditing purposes'
   version '0.1.0'
-  url 'https://github.com/nysenate/bachelp_packet_creation'
+  url 'https://github.com/nysenate/redmine-plugin-bachelp-packet-creation'
   author_url 'https://github.com/nysenate'
 
   requires_redmine version_or_higher: '5.0.0'
