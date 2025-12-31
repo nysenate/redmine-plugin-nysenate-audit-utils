@@ -1,9 +1,9 @@
-Redmine::Plugin.register :bachelp_packet_creation do
-  name 'BACHelp Packet Creation Plugin'
+Redmine::Plugin.register :nysenate_audit_utils do
+  name 'NYSenate Audit Utils Plugin'
   author 'New York State Senate'
-  description 'Enables creation of ticket packets (PDF + attachments) for auditing purposes'
+  description 'Audit utilities including packet creation (PDF + attachments) and other audit workflow tools'
   version '0.1.0'
-  url 'https://github.com/nysenate/redmine-plugin-bachelp-packet-creation'
+  url 'https://github.com/nysenate/redmine-plugin-nysenate-audit-utils'
   author_url 'https://github.com/nysenate'
 
   requires_redmine version_or_higher: '5.0.0'

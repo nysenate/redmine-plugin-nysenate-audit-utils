@@ -150,7 +150,7 @@ class PacketCreationControllerTest < Redmine::ControllerTest
   end
 
   def test_create_packet_with_unreadable_attachment
-    @project.enabled_module_names += ['bachelp_packet_creation']
+    @project.enabled_module_names += ['audit_utils']
     @project.save!
     
     role = Role.find(1)
@@ -187,7 +187,7 @@ class PacketCreationControllerTest < Redmine::ControllerTest
   end
 
   def test_create_packet_logs_activity
-    @project.enabled_module_names += ['bachelp_packet_creation']
+    @project.enabled_module_names += ['audit_utils']
     @project.save!
     
     role = Role.find(1)
