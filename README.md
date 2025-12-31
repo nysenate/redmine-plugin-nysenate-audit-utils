@@ -1,9 +1,10 @@
-# BACHelp Packet Creation Plugin
+# NY Senate Audit Utils Plugin
 
-A Redmine plugin for creating ticket packets containing PDF views and attachments for auditing purposes.
+A Redmine plugin providing audit utilities for the New York State Senate, including ticket packet creation and other audit workflow tools.
 
 ## Features
 
+### Packet Creation
 - **Individual Packet Creation**: Create packet button on ticket view for single issues
 - **Bulk Packet Creation**: Context menu option for creating multi-packet from selected issues
 - **Context Menu Integration**: Right-click context menu options with proper Redmine sprite icons
@@ -12,7 +13,7 @@ A Redmine plugin for creating ticket packets containing PDF views and attachment
 
 ## Installation
 
-1. Copy plugin to `plugins/bachelp_packet_creation` directory
+1. Copy plugin to `plugins/nysenate_audit_utils` directory
 2. Run `bundle exec rake redmine:plugins:migrate`
 3. Restart Redmine
 

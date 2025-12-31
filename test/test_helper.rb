@@ -37,7 +37,7 @@ class PacketCreationTestCase < ActiveSupport::TestCase
   end
 
   def enable_packet_creation_module(project)
-    project.enabled_module_names += ['bachelp_packet_creation']
+    project.enabled_module_names += ['audit_utils']
     project.save!
   end
 
