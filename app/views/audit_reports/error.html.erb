@@ -1,0 +1,24 @@
+<div class="contextual">
+  <%= link_to "Back to Reports", project_audit_reports_path(@project), class: "icon icon-cancel" %>
+</div>
+
+<h2>Report Generation Error</h2>
+
+<div class="flash error">
+  <p><strong>Unable to generate the report.</strong></p>
+  <% if @error_message.present? %>
+    <p><%= @error_message %></p>
+  <% else %>
+    <p>An unexpected error occurred. Please check the logs for details or contact your administrator.</p>
+  <% end %>
+</div>
+
+<div class="box">
+  <h3>Troubleshooting</h3>
+  <ul>
+    <li>Ensure the ESS Integration plugin is properly configured</li>
+    <li>Verify network connectivity to the ESS API</li>
+    <li>Check that the Employee ID custom field is configured correctly</li>
+    <li>Review application logs for detailed error information</li>
+  </ul>
+</div>

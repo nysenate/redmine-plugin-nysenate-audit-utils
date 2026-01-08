@@ -1,0 +1,150 @@
+.employee-search-widget {
+  margin: 0.5em 0;
+  padding: 12px;
+  padding-left: 180px;
+  border: 1px solid #d0d7de;
+  background-color: #f9fafb;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border-radius: 3px;
+}
+
+.employee-search-widget label {
+  display: inline;
+  width: 175px;
+  margin-left: -180px;
+  font-weight: bold;
+  text-align: right;
+  float: left;
+}
+
+.employee-search-content {
+  display: inline-block;
+  width: 500px;
+  max-width: 100%;
+}
+
+.search-input-container {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.employee-search-input {
+  width: 100%;
+  padding: 3px;
+  border: 1px solid #9EB1C2;
+  border-radius: 0;
+  font-size: 11px;
+  background-color: white;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.employee-search-input:focus {
+  border-color: #628DB6;
+  outline: none;
+  box-shadow: none;
+}
+
+.search-loading {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: #666;
+}
+
+.search-results {
+  border: 1px solid #9EB1C2;
+  border-radius: 0;
+  background-color: white;
+  max-height: 140px;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1000;
+  width: 100%;
+  margin-top: 2px;
+  box-sizing: border-box;
+}
+
+.results-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.results-list li {
+  padding: 4px 8px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.results-list li:hover {
+  background-color: #f0f0f0;
+}
+
+.results-list li:last-child {
+  border-bottom: none;
+}
+
+.results-list .employee-name {
+  font-weight: bold;
+}
+
+.results-list .employee-details {
+  font-size: 10px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.search-error {
+  color: #d00;
+  font-size: 10px;
+  margin-top: 5px;
+  padding: 3px;
+  background-color: #ffe6e6;
+  border: 1px solid #ffcccc;
+  border-radius: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.field-autofilled {
+  background-color: #e6ffe6 !important;
+  transition: background-color 0.3s ease;
+}
+
+.field-autofilled.fade-highlight {
+  background-color: inherit !important;
+}
+
+.employee-status-active {
+  color: #2d7a3e;
+  font-weight: 600;
+}
+
+.employee-status-inactive {
+  color: #c24642;
+  font-weight: 600;
+}
+
+.search-highlight {
+  background-color: #fef3c7;
+  font-weight: 600;
+  padding: 0 1px;
+}
+
+.loading-more-indicator {
+  text-align: center;
+  padding: 8px;
+  font-size: 10px;
+  color: #666;
+  font-style: italic;
+  border-bottom: none !important;
+  cursor: default !important;
+}
+
+.loading-more-indicator:hover {
+  background-color: white !important;
+}

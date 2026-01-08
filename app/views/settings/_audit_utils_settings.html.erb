@@ -1,0 +1,193 @@
+<div class="box tabular settings">
+  <h3>ESS API Configuration</h3>
+
+  <p>
+    <%= content_tag 'label', 'ESS Base URL' %>
+    <%= text_field_tag 'settings[ess_base_url]', @settings['ess_base_url'],
+                       :size => 60, :placeholder => 'https://api.example.com' %>
+    <em class="info">Base URL for the Employee Self Service API</em>
+  </p>
+
+  <p>
+    <%= content_tag 'label', 'ESS API Key' %>
+    <%= text_field_tag 'settings[ess_api_key]', @settings['ess_api_key'],
+                           :size => 60, :placeholder => 'API Key' %>
+    <em class="info">API key for authentication with ESS</em>
+  </p>
+
+  <% unless @settings['ess_base_url'].present? && @settings['ess_api_key'].present? %>
+  <div class="flash error">
+        <p><strong>Configuration Required:</strong> Please set both API URL and key</p>
+  </div>
+  <%  end %>
+</div>
+
+<div class="box tabular settings">
+  <h3>Custom Field Configuration</h3>
+
+  <%
+    # Get all field definitions in a single flat list
+    field_definitions = NysenateAuditUtils::CustomFieldConfiguration::FIELD_DEFINITIONS
+
+    # Get available custom fields for dropdowns
+    custom_field_options = [['-- Select Field --', '']] +
+                          CustomField.where(type: 'IssueCustomField').order(:name).pluck(:name, :id)
+
+    # Check configuration status
+    validation_errors = NysenateAuditUtils::CustomFieldConfiguration.validate
+    is_valid = validation_errors.empty?
+
+    # Count configured vs total fields
+    configured_count = field_definitions.count do |setting_key, _definition|
+      NysenateAuditUtils::CustomFieldConfiguration.get_field_id(setting_key).present?
+    end
+    total_count = field_definitions.size
+    unconfigured_count = total_count - configured_count
+  %>
+
+  <% unless is_valid %>
+    <div class="flash warning">
+      <p><strong>Configuration Required:</strong> <%= unconfigured_count %> field(s) are not configured. Please configure all fields below.</p>
+    </div>
+  <% end %>
+
+  <p style="margin: 1em 0 0.5em 0; padding: 0;">
+    Audit Utils requires custom fields to be configured for proper operation. Select fields manually or use auto-configure buttons to automatically detect fields by name. <strong><%= configured_count %> of <%= total_count %> fields configured.</strong>
+  </p>
+
+  <%= link_to 'Auto-Configure All Fields',
+      autoconfigure_all_audit_utils_settings_path,
+      method: :post,
+      class: 'button',
+      style: 'margin: 0 0 1em 0; display: inline-block;',
+      data: { confirm: 'This will automatically detect and configure all custom fields by their expected names. Continue?' } %>
+
+  <table class="list audit-fields-config">
+    <thead>
+      <tr>
+        <th class="field-col">Field</th>
+        <th class="select-col">Custom Field</th>
+        <th class="auto-col">Auto</th>
+        <th class="status-col">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% field_definitions.each do |setting_key, definition| %>
+        <%
+          current_value = @settings[setting_key]
+          field_status = NysenateAuditUtils::CustomFieldConfiguration.field_status(setting_key)
+          is_configured = field_status[:configured]
+        %>
+        <tr>
+          <td class="field-col">
+            <%= definition[:name] %>
+          </td>
+          <td class="select-col">
+            <%= select_tag "settings[#{setting_key}]",
+                options_for_select(custom_field_options, current_value),
+                class: 'field-select' %>
+          </td>
+          <td class="auto-col">
+            <%= link_to 'Auto',
+                autoconfigure_field_audit_utils_settings_path(setting_key: setting_key),
+                method: :post,
+                class: 'button-small',
+                title: "Auto-detect field '#{definition[:name]}'" %>
+          </td>
+          <td class="status-col">
+            <% if is_configured %>
+              <span class="status-configured" title="<%= field_status[:field_name] %>">
+                ✓ <%= field_status[:field_name] %>
+              </span>
+            <% else %>
+              <span class="status-missing">⚠ Not configured</span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<style>
+.button-small {
+  padding: 4px 10px;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.required {
+  color: #c00;
+  font-weight: bold;
+}
+
+.audit-fields-config {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  table-layout: fixed;
+}
+
+.audit-fields-config thead th {
+  background-color: #f5f5f5;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid #ddd;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
+.audit-fields-config tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e0e0e0;
+  vertical-align: middle;
+}
+
+.audit-fields-config tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* Column-specific styles - using exact pixel widths for better alignment */
+.audit-fields-config .field-col {
+  width: 180px;
+  text-align: left;
+}
+
+.audit-fields-config td.field-col {
+    font-weight: 500;
+}
+
+.audit-fields-config .select-col {
+  width: auto;
+  text-align: left;
+}
+
+.audit-fields-config .auto-col {
+  width: 80px;
+  text-align: center;
+}
+
+.audit-fields-config .status-col {
+  width: 180px;
+  text-align: left;
+}
+
+.audit-fields-config td.status-col {
+    font-size: 0.9em;
+}
+
+.audit-fields-config .field-select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.audit-fields-config .status-configured {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.audit-fields-config .status-missing {
+  color: #ff6600;
+  font-weight: 500;
+}
+</style>

@@ -1,0 +1,50 @@
+<% html_title(l(:label_audit_reports)) -%>
+
+<div class="contextual">
+</div>
+
+<h2>Audit Reports</h2>
+
+<div class="splitcontentleft">
+  <h3>Available Reports</h3>
+
+  <ul>
+    <li>
+      <%= link_to "Daily Report", daily_project_audit_reports_path(@project) %>
+      <span class="small">(<%= link_to "test mode", daily_project_audit_reports_path(@project, test_mode: true) %>)</span>
+      <p class="small">Shows tickets for employees with status changes in the past 24 hours.</p>
+    </li>
+    <li>
+      <%= link_to "Weekly Report", weekly_project_audit_reports_path(@project) %>
+      <p class="small">Lists all tickets active in the current week.</p>
+    </li>
+    <li>
+      <span class="disabled">Monthly Report (Coming Soon)</span>
+      <p class="small">Snapshot of current employee access status.</p>
+    </li>
+    <li>
+      <span class="disabled">Triennial Audit Report (Coming Soon)</span>
+      <p class="small">Comprehensive ticket data for auditor review.</p>
+    </li>
+  </ul>
+</div>
+
+<div class="splitcontentright">
+  <h3>About</h3>
+  <p>
+    Audit Reports provide security workflow auditing and monitoring based on ticket data
+    and employee status changes from the ESS system.
+  </p>
+</div>
+
+<style>
+  .small {
+    font-size: 0.9em;
+    color: #666;
+    margin: 0.2em 0 1em 0;
+  }
+
+  .disabled {
+    color: #999;
+  }
+</style>

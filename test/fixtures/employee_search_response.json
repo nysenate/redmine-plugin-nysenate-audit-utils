@@ -1,0 +1,731 @@
+{
+  "success": true,
+  "message": "",
+  "responseType": "bachelp employee list",
+  "total": 14379,
+  "offsetStart": 1,
+  "offsetEnd": 20,
+  "limit": 20,
+  "result": [
+    {
+      "employeeId": 2804,
+      "uid": null,
+      "firstName": "Sulo",
+      "lastName": "Aalto",
+      "fullName": "Sulo P. Aalto",
+      "email": null,
+      "workPhone": "(516) 739-1700",
+      "active": false,
+      "location": {
+        "locId": "D06001-W",
+        "code": "D06001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "65 Hilton Ave.,Ste. 230",
+          "addr2": "",
+          "city": "Garden City",
+          "county": "Nassau",
+          "country": "",
+          "state": "NY",
+          "zip5": "11530",
+          "zip4": "",
+          "formattedAddressWithCounty": "65 Hilton Ave.,Ste. 230, Garden City, NY 11530 (Nassau County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "BYNOE",
+          "shortName": "SEN BYNOE",
+          "name": "Senator Siela A. Bynoe",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "65 HILTON AVE.",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 11412,
+      "uid": "abad",
+      "firstName": "Tyler",
+      "lastName": "Abad",
+      "fullName": "Tyler M. Abad",
+      "email": "abad@nysenate.gov",
+      "workPhone": "(718) 984-4073",
+      "active": false,
+      "location": {
+        "locId": "D24001-W",
+        "code": "D24001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "3845 Richmond Ave. 2nd Floor",
+          "addr2": "",
+          "city": "Staten Island",
+          "county": "Richmond",
+          "country": "",
+          "state": "NY",
+          "zip5": "10312-3830",
+          "zip4": "",
+          "formattedAddressWithCounty": "3845 Richmond Ave. 2nd Floor, Staten Island, NY 10312-3830 (Richmond County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "LANZA",
+          "shortName": "SEN LANZA",
+          "name": "Senator Andrew J. Lanza",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "3845 RICHMOND",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 7544,
+      "uid": null,
+      "firstName": "Nicholas",
+      "lastName": "Abadjian",
+      "fullName": "Nicholas Abadjian",
+      "email": null,
+      "workPhone": "(518) 445-0004",
+      "active": false,
+      "location": {
+        "locId": "D16001-W",
+        "code": "D16001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "38-50 Bell Blvd., Ste. C",
+          "addr2": "",
+          "city": "Bayside",
+          "county": "Queens",
+          "country": "",
+          "state": "NY",
+          "zip5": "11361-2028",
+          "zip4": "",
+          "formattedAddressWithCounty": "38-50 Bell Blvd., Ste. C, Bayside, NY 11361-2028 (Queens County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "LIU",
+          "shortName": "SEN LIU",
+          "name": "Senator John C. Liu",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "38-50 BELL BLVD",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 13612,
+      "uid": "abanur",
+      "firstName": "Munye",
+      "lastName": "Abanur",
+      "fullName": "Munye J. Abanur",
+      "email": "abanur@nysenate.gov",
+      "workPhone": "(585) 225-3650",
+      "active": true,
+      "location": {
+        "locId": "D56001-W",
+        "code": "D56001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "280 East Broad ST., Ste. 110",
+          "addr2": "",
+          "city": "Rochester",
+          "county": "Monroe",
+          "country": "",
+          "state": "NY",
+          "zip5": "14604-1740",
+          "zip4": "",
+          "formattedAddressWithCounty": "280 East Broad ST., Ste. 110, Rochester, NY 14604-1740 (Monroe County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "COONEY",
+          "shortName": "SEN COONEY",
+          "name": "Senator Jeremy A. Cooney",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "280 EAST BROAD",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 4928,
+      "uid": null,
+      "firstName": "Catherine",
+      "lastName": "Abate",
+      "fullName": "Catherine M. Abate",
+      "email": null,
+      "workPhone": "(518) 455-2451",
+      "active": false,
+      "location": {
+        "locId": "L415-W",
+        "code": "L415",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "Rm. 415 LOB",
+          "addr2": "",
+          "city": "Albany",
+          "county": "Albany",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "Rm. 415 LOB, Albany, NY 12247 (Albany County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "CANZONERI",
+          "shortName": "SEN CANZONERI",
+          "name": "Sen. Patricia Canzoneri-Fitzpatrick",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "RM 415 LOB",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 9074,
+      "uid": "abatemar",
+      "firstName": "Cari-Angela",
+      "lastName": "Abatemarco",
+      "fullName": "Cari-Angela R. Abatemarco",
+      "email": "abatemar@nysenate.gov",
+      "workPhone": "(518) 455-2618",
+      "active": false,
+      "location": {
+        "locId": "L814A-W",
+        "code": "L814A",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "Rm. 814 Lob",
+          "addr2": "",
+          "city": "Albany",
+          "county": "Albany",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "Rm. 814 Lob, Albany, NY 12247 (Albany County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "MINADMINIS",
+          "shortName": "MIN ADMINIS",
+          "name": "Minority Administration",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "RM 814 LOB",
+        "active": false
+      }
+    },
+    {
+      "employeeId": 11609,
+      "uid": "abbady",
+      "firstName": "Amir",
+      "lastName": "Abbady",
+      "fullName": "Amir Abbady",
+      "email": "abbady@nysenate.gov",
+      "workPhone": "(718) 454-0162",
+      "active": false,
+      "location": {
+        "locId": "D14001-W",
+        "code": "D14001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "113-43 Farmers Blvd.",
+          "addr2": "",
+          "city": "Saint Albans",
+          "county": "Queens",
+          "country": "",
+          "state": "NY",
+          "zip5": "11412-2425",
+          "zip4": "",
+          "formattedAddressWithCounty": "113-43 Farmers Blvd., Saint Albans, NY 11412-2425 (Queens County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "COMRIE",
+          "shortName": "SEN COMRIE",
+          "name": "Senator Leroy Comrie",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "113-43 FARMERS",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 866,
+      "uid": null,
+      "firstName": "Joanne",
+      "lastName": "Abbey",
+      "fullName": "Joanne S. Abbey",
+      "email": null,
+      "workPhone": "(315) 428-7632",
+      "active": false,
+      "location": {
+        "locId": "D49001-W",
+        "code": "D49001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "317 Washington St., 4th Floor",
+          "addr2": "State Office Building",
+          "city": "Watertown",
+          "county": "Saratoga",
+          "country": "",
+          "state": "NY",
+          "zip5": "13601",
+          "zip4": "",
+          "formattedAddressWithCounty": "317 Washington St., 4th Floor State Office Building, Watertown, NY 13601 (Saratoga County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "WALCZYK",
+          "shortName": "SEN WALCZYK",
+          "name": "Senator Mark C. Walczyk",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "317 WASHINGTON",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 7638,
+      "uid": "abbondol",
+      "firstName": "Victoria",
+      "lastName": "Abbondola-Waldstein",
+      "fullName": "Victoria E. Abbondola-Waldstein",
+      "email": "abbondol@nysenate.gov",
+      "workPhone": "(631) 696-6900",
+      "active": false,
+      "location": {
+        "locId": "D01002-W",
+        "code": "D01002",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "400 W. Main Street Ste., 201",
+          "addr2": "",
+          "city": "Riverhead",
+          "county": "Suffolk",
+          "country": "",
+          "state": "NY",
+          "zip5": "11901",
+          "zip4": "",
+          "formattedAddressWithCounty": "400 W. Main Street Ste., 201, Riverhead, NY 11901 (Suffolk County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "MINCONF",
+          "shortName": "MIN CONF SERV",
+          "name": "Minority Conference Services",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "400 W. MAIN ST.",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 349,
+      "uid": "jabbot",
+      "firstName": "Judith",
+      "lastName": "Abbot",
+      "fullName": "Judith L. Abbot",
+      "email": "jabbot@nysenate.gov",
+      "workPhone": "(718) 445-0004",
+      "active": false,
+      "location": {
+        "locId": "D16001-W",
+        "code": "D16001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "38-50 Bell Blvd., Ste. C",
+          "addr2": "",
+          "city": "Bayside",
+          "county": "Queens",
+          "country": "",
+          "state": "NY",
+          "zip5": "11361-2028",
+          "zip4": "",
+          "formattedAddressWithCounty": "38-50 Bell Blvd., Ste. C, Bayside, NY 11361-2028 (Queens County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "LIU",
+          "shortName": "SEN LIU",
+          "name": "Senator John C. Liu",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "38-50 BELL BLVD",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 2474,
+      "uid": null,
+      "firstName": "Kristin",
+      "lastName": "Abbott",
+      "fullName": "Kristin M. Abbott",
+      "email": null,
+      "workPhone": "(518) 583-1001",
+      "active": false,
+      "location": {
+        "locId": "D43001-W",
+        "code": "D43001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "594 Columbia Tpke.",
+          "addr2": "",
+          "city": "East Greenbush",
+          "county": "Saratoga",
+          "country": "",
+          "state": "NY",
+          "zip5": "12061",
+          "zip4": "",
+          "formattedAddressWithCounty": "594 Columbia Tpke., East Greenbush, NY 12061 (Saratoga County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "ASHBY",
+          "shortName": "SEN ASHBY",
+          "name": "Senator Jacob C. Ashby",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "594 COLUMBIA",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 10816,
+      "uid": "wdabbott",
+      "firstName": "Wade",
+      "lastName": "Abbott",
+      "fullName": "Wade D. Abbott",
+      "email": "wdabbott@nysenate.gov",
+      "workPhone": "(518) 455-2631",
+      "active": false,
+      "location": {
+        "locId": "L846A-W",
+        "code": "L846A",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "Rm. 846A LOB",
+          "addr2": "",
+          "city": "Albany",
+          "county": "Albany",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "Rm. 846A LOB, Albany, NY 12247 (Albany County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "RURAL",
+          "shortName": "RURAL RESOURCES",
+          "name": "LC/Dev of Rural Resources",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "RM 846A LOB",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 12102,
+      "uid": "abdallah",
+      "firstName": "Jill",
+      "lastName": "Abdallah",
+      "fullName": "Jill A. Abdallah",
+      "email": "abdallah@nysenate.gov",
+      "workPhone": "(518) 561-2430",
+      "active": false,
+      "location": {
+        "locId": "D45002-W",
+        "code": "D45002",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "48 Court Street, Room B46",
+          "addr2": "St. Lawrence County Courthouse",
+          "city": "Canton",
+          "county": "Clinton",
+          "country": "",
+          "state": "NY",
+          "zip5": "13617",
+          "zip4": "",
+          "formattedAddressWithCounty": "48 Court Street, Room B46 St. Lawrence County Courthouse, Canton, NY 13617 (Clinton County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "STEC",
+          "shortName": "SEN STEC",
+          "name": "Senator Daniel G. Stec",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "48 COURT STREET",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 14068,
+      "uid": "abdallh",
+      "firstName": "Waael",
+      "lastName": "Abdallh",
+      "fullName": "Waael H. Abdallh",
+      "email": "abdallh@nysenate.gov",
+      "workPhone": "(718) 445-0004",
+      "active": true,
+      "location": {
+        "locId": "D11001-W",
+        "code": "D11001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "134-01 20th Ave. 2 Floor",
+          "addr2": "",
+          "city": "College Point",
+          "county": "Queens",
+          "country": "",
+          "state": "NY",
+          "zip5": "11356",
+          "zip4": "",
+          "formattedAddressWithCounty": "134-01 20th Ave. 2 Floor, College Point, NY 11356 (Queens County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "STAVISKYT",
+          "shortName": "SEN STAVISKY",
+          "name": "Senator Toby Ann Stavisky",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "134-01 20TH AVE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 3332,
+      "uid": null,
+      "firstName": "Ethel",
+      "lastName": "Abdelnour",
+      "fullName": "Ethel Abdelnour",
+      "email": null,
+      "workPhone": "(518) 455-2411",
+      "active": false,
+      "location": {
+        "locId": "L946-W",
+        "code": "L946",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "Rm. 946 LOB",
+          "addr2": "",
+          "city": "Albany",
+          "county": "Albany",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "Rm. 946 LOB, Albany, NY 12247 (Albany County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "RYANC",
+          "shortName": "SEN RYANC",
+          "name": "Senator Christopher J. Ryan",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "RM 946 LOB",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 3326,
+      "uid": "abdelnou",
+      "firstName": "Nadine",
+      "lastName": "Abdelnour",
+      "fullName": "Nadine A. Abdelnour",
+      "email": "abdelnou@nysenate.gov",
+      "workPhone": "(518) 455-3497",
+      "active": false,
+      "location": {
+        "locId": "L122-W",
+        "code": "L122",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "Rm. 122 LOB",
+          "addr2": "",
+          "city": "Albany",
+          "county": "Albany",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "Rm. 122 LOB, Albany, NY 12247 (Albany County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "MESSENGERS",
+          "shortName": "LEG MESSENGERS",
+          "name": "Legislative Messenger Service",
+          "affiliateCode": "JNT"
+        },
+        "locationDescription": "RM 122 LOB",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 10483,
+      "uid": "abdulwa",
+      "firstName": "Amira",
+      "lastName": "Abdul-Wahhab",
+      "fullName": "Amira G. Abdul-Wahhab",
+      "email": "abdulwa@nysenate.gov",
+      "workPhone": "(518) 455-2611",
+      "active": false,
+      "location": {
+        "locId": "S1426B-W",
+        "code": "S1426B",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "AESSOB, Suite 1426",
+          "addr2": "",
+          "city": "Albany",
+          "county": "Albany",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "AESSOB, Suite 1426, Albany, NY 12247 (Albany County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "STUDSEASST",
+          "shortName": "STUD PROG/SE AS",
+          "name": "Student Programs/Sess. Asst.",
+          "affiliateCode": "STU"
+        },
+        "locationDescription": "AESSOB STE 1426",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 11929,
+      "uid": "abdullah",
+      "firstName": "Vjollca",
+      "lastName": "Abdullahu",
+      "fullName": "Vjollca Abdullahu",
+      "email": "abdullah@nysenate.gov",
+      "workPhone": "(718) 822-2049",
+      "active": false,
+      "location": {
+        "locId": "D34001-W",
+        "code": "D34001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "3853 East Tremont Ave.",
+          "addr2": "",
+          "city": "Bronx",
+          "county": "Bronx",
+          "country": "",
+          "state": "NY",
+          "zip5": "10465",
+          "zip4": "",
+          "formattedAddressWithCounty": "3853 East Tremont Ave., Bronx, NY 10465 (Bronx County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "FERNANDEZ",
+          "shortName": "SEN FERNANDEZ",
+          "name": "Senator Nathalia Fernandez",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "3853 EAST",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 7075,
+      "uid": "kaberman",
+      "firstName": "Kathryn",
+      "lastName": "Aberman",
+      "fullName": "Kathryn S. Aberman",
+      "email": "kaberman@nysenate.gov",
+      "workPhone": "(516) 739-1700",
+      "active": false,
+      "location": {
+        "locId": "D06001-W",
+        "code": "D06001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "65 Hilton Ave.,Ste. 230",
+          "addr2": "",
+          "city": "Garden City",
+          "county": "Nassau",
+          "country": "",
+          "state": "NY",
+          "zip5": "11530",
+          "zip4": "",
+          "formattedAddressWithCounty": "65 Hilton Ave.,Ste. 230, Garden City, NY 11530 (Nassau County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "BYNOE",
+          "shortName": "SEN BYNOE",
+          "name": "Senator Siela A. Bynoe",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "65 HILTON AVE.",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 6252,
+      "uid": null,
+      "firstName": "Lindsey",
+      "lastName": "Abers",
+      "fullName": "Lindsey A. Abers",
+      "email": null,
+      "workPhone": "(716) 664-4603",
+      "active": false,
+      "location": {
+        "locId": "D56001-W",
+        "code": "D56001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "280 East Broad ST., Ste. 110",
+          "addr2": "",
+          "city": "Rochester",
+          "county": "Monroe",
+          "country": "",
+          "state": "NY",
+          "zip5": "14604-1740",
+          "zip4": "",
+          "formattedAddressWithCounty": "280 East Broad ST., Ste. 110, Rochester, NY 14604-1740 (Monroe County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "COONEY",
+          "shortName": "SEN COONEY",
+          "name": "Senator Jeremy A. Cooney",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "280 EAST BROAD",
+        "active": true
+      }
+    }
+  ]
+}

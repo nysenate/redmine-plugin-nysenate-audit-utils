@@ -1,0 +1,163 @@
+{
+  "success": true,
+  "message": "",
+  "responseType": "bachelp employee status change list",
+  "total": 12,
+  "offsetStart": 1,
+  "offsetEnd": 12,
+  "limit": 12,
+  "result": [
+    {
+      "employeeId": 14777,
+      "uid": null,
+      "firstName": "Raymond",
+      "lastName": "Ashkenazie",
+      "fullName": "Raymond J. Ashkenazie",
+      "email": null,
+      "workPhone": "(718) 253-2015",
+      "active": true,
+      "location": {
+        "locId": "D21001-W",
+        "code": "D21001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "3021 Tilden Ave. 1st Fl. & bas",
+          "addr2": "",
+          "city": "Brooklyn",
+          "county": "Kings",
+          "country": "",
+          "state": "NY",
+          "zip5": "11226-5106",
+          "zip4": "",
+          "formattedAddressWithCounty": "3021 Tilden Ave. 1st Fl. & bas, Brooklyn, NY 11226-5106 (Kings County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "PERSONNEL",
+          "shortName": "PERSONNEL",
+          "name": "Personnel Department",
+          "affiliateCode": "ADM"
+        },
+        "locationDescription": "3021 TILDEN AVE",
+        "active": true
+      },
+      "transactionCode": "APP",
+      "postDateTime": null
+    },
+    {
+      "employeeId": 14778,
+      "uid": null,
+      "firstName": "Alyssa",
+      "lastName": "Mendez",
+      "fullName": "Alyssa R. Mendez",
+      "email": null,
+      "workPhone": "(718) 253-2015",
+      "active": true,
+      "location": {
+        "locId": "L606-W",
+        "code": "L606",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "Rm. 606 LOB",
+          "addr2": "",
+          "city": "Albany",
+          "county": "Albany",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "Rm. 606 LOB, Albany, NY 12247 (Albany County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "AKSHAR",
+          "shortName": "SEN AKSHAR",
+          "name": "Senator Frederick J. Akshar II",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "RM 606 LOB",
+        "active": true
+      },
+      "transactionCode": "APP",
+      "postDateTime": null
+    },
+    {
+      "employeeId": 13244,
+      "uid": "daviss",
+      "firstName": "Stanley",
+      "lastName": "Davis",
+      "fullName": "Stanley W. Davis",
+      "email": "daviss@nysenate.gov",
+      "workPhone": "(212) 298-5565",
+      "active": false,
+      "location": {
+        "locId": "L806-W",
+        "code": "L806",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "Rm. 806 LOB",
+          "addr2": "",
+          "city": "Albany",
+          "county": "Albany",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "Rm. 806 LOB, Albany, NY 12247 (Albany County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "FINANCE",
+          "shortName": "FINANCE",
+          "name": "Finance Department",
+          "affiliateCode": "ADM"
+        },
+        "locationDescription": "RM 806 LOB",
+        "active": true
+      },
+      "transactionCode": "EMP",
+      "postDateTime": null
+    },
+    {
+      "employeeId": 13992,
+      "uid": "ennis",
+      "firstName": "Madison",
+      "lastName": "Ennis",
+      "fullName": "Madison T. Ennis",
+      "email": "ennis@nysenate.gov",
+      "workPhone": "(518) 455-2078",
+      "active": true,
+      "location": {
+        "locId": "SS203C-W",
+        "code": "SS203C",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "Rm. 203, 90 South Swan Street",
+          "addr2": "",
+          "city": "Albany",
+          "county": "",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "Rm. 203, 90 South Swan Street, Albany, NY 12247"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "ITSERVICES",
+          "shortName": "IT SERVICES",
+          "name": "Information Technology Services",
+          "affiliateCode": "ADM"
+        },
+        "locationDescription": "RM 203, 90 SOUT",
+        "active": true
+      },
+      "transactionCode": "LOC",
+      "postDateTime": null
+    }
+  ]
+}
