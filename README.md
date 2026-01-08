@@ -6,20 +6,39 @@ A comprehensive Redmine plugin providing audit utilities, employee data integrat
 
 ### Installation
 
+*Note: Prefix `rake` commands with `bundle exec` if using Bundler*
+
 1. Clone plugin to `plugins/nysenate_audit_utils` directory:
    ```bash
    cd /path/to/redmine/plugins
    git clone git@github.com:nysenate/redmine-plugin-nysenate-audit-utils.git nysenate_audit_utils
    ```
 
-2. Run plugin migrations:
+2. Run plugin migrations (from Redmine root):
    ```bash
-   bundle exec rake redmine:plugins:migrate NAME=nysenate_audit_utils RAILS_ENV=production
+   cd /path/to/redmine
+   rake redmine:plugins:migrate NAME=nysenate_audit_utils RAILS_ENV=production
    ```
 
-3. Restart Redmine
+3. (Optional) Run tests to verify installation (from Redmine root):
+   1. Install test dependencies:
+      ```bash
+      # If using bundler
+      bundle install
+      ```
+      or
+      ```bash
+      # If not using bundler
+      gem install webmock
+      ```
+   2. Run Tests:
+      ```bash
+      rake redmine:plugins:test NAME=nysenate_audit_utils
+      ```
 
-4. Configure the plugin in the UI:
+4. Restart Redmine
+
+5. Configure the plugin in the UI:
 
    **Administration → Plugins → NY Senate Audit Utils → Configure**
 
