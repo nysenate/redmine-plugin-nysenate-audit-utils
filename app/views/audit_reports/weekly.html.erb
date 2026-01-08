@@ -1,0 +1,64 @@
+<% html_title(l(:label_audit_weekly_report)) -%>
+
+<div class="contextual">
+  <%= link_to "Export CSV", weekly_project_audit_reports_path(@project, format: :csv), class: "icon icon-download" %>
+  <%= link_to "Back to Reports", project_audit_reports_path(@project), class: "icon icon-cancel" %>
+</div>
+
+<h2>Weekly Report</h2>
+
+<% if @report_data.nil? || @report_data.empty? %>
+  <p class="nodata">No tickets found for the current week.</p>
+<% else %>
+  <p class="report-info">
+    Showing <%= pluralize(@report_data.size, 'ticket') %> active in the current week.
+    <br>
+    Week period: <%= @from_date.strftime('%Y-%m-%d') %> (Monday) to <%= @to_date.strftime('%Y-%m-%d %H:%M') %>
+  </p>
+
+  <table class="list issues <%= sort_css_classes %>">
+    <thead>
+      <tr>
+        <%= sort_header_tag('issue_id', caption: 'Ticket #') %>
+        <%= sort_header_tag('subject', caption: 'Subject') %>
+        <%= sort_header_tag('status', caption: 'Status') %>
+        <%= sort_header_tag('employee_id', caption: 'Employee ID') %>
+        <%= sort_header_tag('employee_uid', caption: 'Employee UID') %>
+        <%= sort_header_tag('request_code', caption: 'Request Code') %>
+        <%= sort_header_tag('updated_on', caption: 'Updated On', default_order: 'desc') %>
+      </tr>
+    </thead>
+    <tbody>
+      <% @report_data.each do |row| %>
+        <tr>
+          <td>
+            <%= link_to "##{row[:issue_id]}", issue_path(row[:issue_id]), target: '_blank' %>
+          </td>
+          <td><%= row[:subject] %></td>
+          <td><%= row[:status] %></td>
+          <td><%= row[:employee_id] || '—' %></td>
+          <td><%= row[:employee_uid] || '—' %></td>
+          <td><%= row[:request_code] || '—' %></td>
+          <td><%= row[:updated_on]&.strftime('%Y-%m-%d %H:%M') || '—' %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<style>
+  .report-info {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    background-color: #f0f0f0;
+    border-left: 3px solid #169;
+  }
+
+  .nodata {
+    padding: 2em;
+    text-align: center;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    color: #666;
+  }
+</style>

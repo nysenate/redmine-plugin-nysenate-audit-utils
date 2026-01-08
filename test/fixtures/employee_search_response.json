@@ -1,0 +1,735 @@
+{
+  "success": true,
+  "message": "",
+  "responseType": "bachelp employee list",
+  "total": 14379,
+  "offsetStart": 1,
+  "offsetEnd": 20,
+  "limit": 20,
+  "result": [
+    {
+      "employeeId": 900001,
+      "uid": null,
+      "firstName": "Ada",
+      "lastName": "Testwell",
+      "initial": "A.",
+      "suffix": "",
+      "fullName": "Ada A. Testwell",
+      "email": null,
+      "workPhone": "(555) 100-1000",
+      "active": false,
+      "location": {
+        "locId": "D06001-W",
+        "code": "D06001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "100 Example St., Ste. 1",
+          "addr2": "",
+          "city": "Testburg",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "11530",
+          "zip4": "",
+          "formattedAddressWithCounty": "100 Example St., Ste. 1, Testburg, NY 11530 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "ALDERTON",
+          "shortName": "SEN ALDERTON",
+          "name": "Senator Alderton",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "100 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900002,
+      "uid": "bmockrid",
+      "firstName": "Boris",
+      "lastName": "Mockridge",
+      "initial": "B.",
+      "suffix": "Jr.",
+      "fullName": "Boris B. Mockridge Jr.",
+      "email": "bmockrid@nysenate.gov",
+      "workPhone": "(555) 101-1001",
+      "active": false,
+      "location": {
+        "locId": "D24001-W",
+        "code": "D24001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "101 Example St., Ste. 2",
+          "addr2": "",
+          "city": "Mockville",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "10312-3830",
+          "zip4": "",
+          "formattedAddressWithCounty": "101 Example St., Ste. 2, Mockville, NY 10312-3830 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "BRIGHTWATER",
+          "shortName": "SEN BRIGHTWATER",
+          "name": "Senator Brightwater",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "101 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900003,
+      "uid": null,
+      "firstName": "Cleo",
+      "lastName": "Sampleby",
+      "fullName": "Cleo Sampleby",
+      "email": null,
+      "workPhone": "(555) 102-1002",
+      "active": false,
+      "location": {
+        "locId": "D16001-W",
+        "code": "D16001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "102 Example St., Ste. 3",
+          "addr2": "",
+          "city": "Sampleton",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "11361-2028",
+          "zip4": "",
+          "formattedAddressWithCounty": "102 Example St., Ste. 3, Sampleton, NY 11361-2028 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "CAVENDISH",
+          "shortName": "SEN CAVENDISH",
+          "name": "Senator Cavendish",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "102 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900004,
+      "uid": "dfixton",
+      "firstName": "Dorian",
+      "lastName": "Fixton",
+      "fullName": "Dorian Fixton",
+      "email": "dfixton@nysenate.gov",
+      "workPhone": "(555) 103-1003",
+      "active": true,
+      "location": {
+        "locId": "D56001-W",
+        "code": "D56001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "103 Example St., Ste. 4",
+          "addr2": "",
+          "city": "Fixtown",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "14604-1740",
+          "zip4": "",
+          "formattedAddressWithCounty": "103 Example St., Ste. 4, Fixtown, NY 14604-1740 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "DUNMORE",
+          "shortName": "SEN DUNMORE",
+          "name": "Senator Dunmore",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "103 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900005,
+      "uid": null,
+      "firstName": "Elmira",
+      "lastName": "Dummelbrook",
+      "fullName": "Elmira Dummelbrook",
+      "email": null,
+      "workPhone": "(555) 104-1004",
+      "active": false,
+      "location": {
+        "locId": "L415-W",
+        "code": "L415",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "104 Example St., Ste. 5",
+          "addr2": "",
+          "city": "Placeholder City",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "104 Example St., Ste. 5, Placeholder City, NY 12247 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "ELLSWORTH",
+          "shortName": "SEN ELLSWORTH",
+          "name": "Senator Ellsworth",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "104 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900006,
+      "uid": "fplaceho",
+      "firstName": "Fenwick",
+      "lastName": "Placeholt",
+      "fullName": "Fenwick Placeholt",
+      "email": "fplaceho@nysenate.gov",
+      "workPhone": "(555) 105-1005",
+      "active": false,
+      "location": {
+        "locId": "L814A-W",
+        "code": "L814A",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "105 Example St., Ste. 6",
+          "addr2": "",
+          "city": "Testburg",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "105 Example St., Ste. 6, Testburg, NY 12247 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "MINADMINIS",
+          "shortName": "MIN ADMINIS",
+          "name": "Minority Administration",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "105 EXAMPLE ST., STE",
+        "active": false
+      }
+    },
+    {
+      "employeeId": 900007,
+      "uid": "gstubwic",
+      "firstName": "Greta",
+      "lastName": "Stubwick",
+      "fullName": "Greta Stubwick",
+      "email": "gstubwic@nysenate.gov",
+      "workPhone": "(555) 106-1006",
+      "active": false,
+      "location": {
+        "locId": "D14001-W",
+        "code": "D14001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "106 Example St., Ste. 7",
+          "addr2": "",
+          "city": "Mockville",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "11412-2425",
+          "zip4": "",
+          "formattedAddressWithCounty": "106 Example St., Ste. 7, Mockville, NY 11412-2425 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "GRIMSBY",
+          "shortName": "SEN GRIMSBY",
+          "name": "Senator Grimsby",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "106 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900008,
+      "uid": null,
+      "firstName": "Hobart",
+      "lastName": "Faketon",
+      "fullName": "Hobart Faketon",
+      "email": null,
+      "workPhone": "(555) 107-1007",
+      "active": false,
+      "location": {
+        "locId": "D49001-W",
+        "code": "D49001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "107 Example St., Ste. 8",
+          "addr2": "",
+          "city": "Sampleton",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "13601",
+          "zip4": "",
+          "formattedAddressWithCounty": "107 Example St., Ste. 8, Sampleton, NY 13601 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "HARROWGATE",
+          "shortName": "SEN HARROWGATE",
+          "name": "Senator Harrowgate",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "107 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900009,
+      "uid": "isynthfo",
+      "firstName": "Imelda",
+      "lastName": "Synthford",
+      "fullName": "Imelda Synthford",
+      "email": "isynthfo@nysenate.gov",
+      "workPhone": "(555) 108-1008",
+      "active": false,
+      "location": {
+        "locId": "D01002-W",
+        "code": "D01002",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "108 Example St., Ste. 9",
+          "addr2": "",
+          "city": "Fixtown",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "11901",
+          "zip4": "",
+          "formattedAddressWithCounty": "108 Example St., Ste. 9, Fixtown, NY 11901 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "MINCONF",
+          "shortName": "MIN CONF SERV",
+          "name": "Minority Conference Services",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "108 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900010,
+      "uid": "jproxton",
+      "firstName": "Jasper",
+      "lastName": "Proxton",
+      "fullName": "Jasper Proxton",
+      "email": "jproxton@nysenate.gov",
+      "workPhone": "(555) 109-1009",
+      "active": false,
+      "location": {
+        "locId": "D16001-W",
+        "code": "D16001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "109 Example St., Ste. 10",
+          "addr2": "",
+          "city": "Placeholder City",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "11361-2028",
+          "zip4": "",
+          "formattedAddressWithCounty": "109 Example St., Ste. 10, Placeholder City, NY 11361-2028 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "JESSUP",
+          "shortName": "SEN JESSUP",
+          "name": "Senator Jessup",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "109 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900011,
+      "uid": null,
+      "firstName": "Kesler",
+      "lastName": "Blankship",
+      "fullName": "Kesler Blankship",
+      "email": null,
+      "workPhone": "(555) 110-1010",
+      "active": false,
+      "location": {
+        "locId": "D43001-W",
+        "code": "D43001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "110 Example St., Ste. 11",
+          "addr2": "",
+          "city": "Testburg",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "12061",
+          "zip4": "",
+          "formattedAddressWithCounty": "110 Example St., Ste. 11, Testburg, NY 12061 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "KINGSLEY",
+          "shortName": "SEN KINGSLEY",
+          "name": "Senator Kingsley",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "110 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900012,
+      "uid": "lnullber",
+      "firstName": "Lorna",
+      "lastName": "Nullberg",
+      "fullName": "Lorna Nullberg",
+      "email": "lnullber@nysenate.gov",
+      "workPhone": "(555) 111-1011",
+      "active": false,
+      "location": {
+        "locId": "L846A-W",
+        "code": "L846A",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "111 Example St., Ste. 12",
+          "addr2": "",
+          "city": "Mockville",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "111 Example St., Ste. 12, Mockville, NY 12247 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "RURAL",
+          "shortName": "RURAL RESOURCES",
+          "name": "LC/Dev of Rural Resources",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "111 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900013,
+      "uid": "mvoidhol",
+      "firstName": "Mervin",
+      "lastName": "Voidholm",
+      "fullName": "Mervin Voidholm",
+      "email": "mvoidhol@nysenate.gov",
+      "workPhone": "(555) 112-1012",
+      "active": false,
+      "location": {
+        "locId": "D45002-W",
+        "code": "D45002",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "112 Example St., Ste. 13",
+          "addr2": "",
+          "city": "Sampleton",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "13617",
+          "zip4": "",
+          "formattedAddressWithCounty": "112 Example St., Ste. 13, Sampleton, NY 13617 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "MARROWBONE",
+          "shortName": "SEN MARROWBONE",
+          "name": "Senator Marrowbone",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "112 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900014,
+      "uid": "nfauxman",
+      "firstName": "Nadia",
+      "lastName": "Fauxman",
+      "fullName": "Nadia Fauxman",
+      "email": "nfauxman@nysenate.gov",
+      "workPhone": "(555) 113-1013",
+      "active": true,
+      "location": {
+        "locId": "D11001-W",
+        "code": "D11001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "113 Example St., Ste. 14",
+          "addr2": "",
+          "city": "Fixtown",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "11356",
+          "zip4": "",
+          "formattedAddressWithCounty": "113 Example St., Ste. 14, Fixtown, NY 11356 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "NORTHGATE",
+          "shortName": "SEN NORTHGATE",
+          "name": "Senator Northgate",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "113 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900015,
+      "uid": null,
+      "firstName": "Osric",
+      "lastName": "Sandborough",
+      "fullName": "Osric Sandborough",
+      "email": null,
+      "workPhone": "(555) 114-1014",
+      "active": false,
+      "location": {
+        "locId": "L946-W",
+        "code": "L946",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "114 Example St., Ste. 15",
+          "addr2": "",
+          "city": "Placeholder City",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "114 Example St., Ste. 15, Placeholder City, NY 12247 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "OAKHURST",
+          "shortName": "SEN OAKHURST",
+          "name": "Senator Oakhurst",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "114 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900016,
+      "uid": "pwidgets",
+      "firstName": "Petra",
+      "lastName": "Widgetson",
+      "fullName": "Petra Widgetson",
+      "email": "pwidgets@nysenate.gov",
+      "workPhone": "(555) 115-1015",
+      "active": false,
+      "location": {
+        "locId": "L122-W",
+        "code": "L122",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "115 Example St., Ste. 16",
+          "addr2": "",
+          "city": "Testburg",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "115 Example St., Ste. 16, Testburg, NY 12247 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "MESSENGERS",
+          "shortName": "LEG MESSENGERS",
+          "name": "Legislative Messenger Service",
+          "affiliateCode": "JNT"
+        },
+        "locationDescription": "115 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900017,
+      "uid": "qsprocke",
+      "firstName": "Quill",
+      "lastName": "Sprockett",
+      "fullName": "Quill Sprockett",
+      "email": "qsprocke@nysenate.gov",
+      "workPhone": "(555) 116-1016",
+      "active": false,
+      "location": {
+        "locId": "S1426B-W",
+        "code": "S1426B",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "116 Example St., Ste. 17",
+          "addr2": "",
+          "city": "Mockville",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "116 Example St., Ste. 17, Mockville, NY 12247 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "STUDSEASST",
+          "shortName": "STUD PROG/SE AS",
+          "name": "Student Programs/Sess. Asst.",
+          "affiliateCode": "STU"
+        },
+        "locationDescription": "116 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900018,
+      "uid": "rcogswel",
+      "firstName": "Rhoda",
+      "lastName": "Cogswell",
+      "fullName": "Rhoda Cogswell",
+      "email": "rcogswel@nysenate.gov",
+      "workPhone": "(555) 117-1017",
+      "active": false,
+      "location": {
+        "locId": "D34001-W",
+        "code": "D34001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "117 Example St., Ste. 18",
+          "addr2": "",
+          "city": "Sampleton",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "10465",
+          "zip4": "",
+          "formattedAddressWithCounty": "117 Example St., Ste. 18, Sampleton, NY 10465 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "BRIGHTWATER",
+          "shortName": "SEN BRIGHTWATER",
+          "name": "Senator Brightwater",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "117 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900019,
+      "uid": "sgadgeby",
+      "firstName": "Sable",
+      "lastName": "Gadgeby",
+      "fullName": "Sable Gadgeby",
+      "email": "sgadgeby@nysenate.gov",
+      "workPhone": "(555) 118-1018",
+      "active": false,
+      "location": {
+        "locId": "D06001-W",
+        "code": "D06001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "118 Example St., Ste. 19",
+          "addr2": "",
+          "city": "Fixtown",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "11530",
+          "zip4": "",
+          "formattedAddressWithCounty": "118 Example St., Ste. 19, Fixtown, NY 11530 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "CAVENDISH",
+          "shortName": "SEN CAVENDISH",
+          "name": "Senator Cavendish",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "118 EXAMPLE ST., STE",
+        "active": true
+      }
+    },
+    {
+      "employeeId": 900020,
+      "uid": null,
+      "firstName": "Torin",
+      "lastName": "Gizmore",
+      "fullName": "Torin Gizmore",
+      "email": null,
+      "workPhone": "(555) 119-1019",
+      "active": false,
+      "location": {
+        "locId": "D56001-W",
+        "code": "D56001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "119 Example St., Ste. 20",
+          "addr2": "",
+          "city": "Placeholder City",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "14604-1740",
+          "zip4": "",
+          "formattedAddressWithCounty": "119 Example St., Ste. 20, Placeholder City, NY 14604-1740 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "DUNMORE",
+          "shortName": "SEN DUNMORE",
+          "name": "Senator Dunmore",
+          "affiliateCode": "MAJ"
+        },
+        "locationDescription": "119 EXAMPLE ST., STE",
+        "active": true
+      }
+    }
+  ]
+}

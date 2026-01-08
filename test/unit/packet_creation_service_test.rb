@@ -2,7 +2,7 @@
 
 require_relative '../test_helper'
 
-class PacketCreationServiceTest < PacketCreationTestCase
+class PacketCreationServiceTest < NysenateAuditUtilsTestCase
   fixtures :projects, :users, :issues, :issue_statuses, :trackers, :attachments
 
   def setup

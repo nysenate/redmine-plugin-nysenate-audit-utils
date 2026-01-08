@@ -25,8 +25,7 @@ class PacketCreationControllerTest < Redmine::ControllerTest
     if @response.redirect?
       # Check if there's a flash error
       assert_not_nil flash[:error], "Expected error message in flash"
-      puts "Flash error: #{flash[:error]}"
-      
+
       # For now, let's just verify the redirect happened
       assert_redirected_to issue_path(@issue)
       

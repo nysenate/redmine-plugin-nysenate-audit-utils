@@ -1,0 +1,27 @@
+<div id="employee-search-widget" class="employee-search-widget">
+  <label for="employee-search-input">Employee Search & Autofill:</label>
+  <div class="employee-search-content">
+    <div class="search-input-container">
+      <input type="text"
+             id="employee-search-input"
+             class="employee-search-input"
+             placeholder="Search for employee by name"
+             autocomplete="off">
+      <div class="search-loading" id="employee-search-loading" style="display: none;">
+        <span>Searching...</span>
+      </div>
+    </div>
+
+    <div id="employee-search-results" class="search-results" style="display: none;">
+      <ul id="employee-results-list" class="results-list">
+        <!-- Search results will be populated here -->
+      </ul>
+    </div>
+
+    <div id="employee-search-error" class="search-error" style="display: none;">
+      <!-- Error messages will be displayed here -->
+    </div>
+  </div>
+</div>
+
+<!-- Assets loaded globally via view_layouts_base_html_head hook -->

@@ -1,0 +1,167 @@
+{
+  "success": true,
+  "message": "",
+  "responseType": "bachelp employee status change list",
+  "total": 12,
+  "offsetStart": 1,
+  "offsetEnd": 12,
+  "limit": 12,
+  "result": [
+    {
+      "employeeId": 900101,
+      "uid": null,
+      "firstName": "Ulric",
+      "lastName": "Doodlewick",
+      "initial": "F.",
+      "suffix": "",
+      "fullName": "Ulric F. Doodlewick",
+      "email": null,
+      "workPhone": "(555) 200-1100",
+      "active": true,
+      "location": {
+        "locId": "D21001-W",
+        "code": "D21001",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "200 Example St., Ste. 101",
+          "addr2": "",
+          "city": "Testburg",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "11226-5106",
+          "zip4": "",
+          "formattedAddressWithCounty": "200 Example St., Ste. 101, Testburg, NY 11226-5106 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "PERSONNEL",
+          "shortName": "PERSONNEL",
+          "name": "Personnel Department",
+          "affiliateCode": "ADM"
+        },
+        "locationDescription": "200 EXAMPLE ST., STE",
+        "active": true
+      },
+      "transactionCode": "APP",
+      "postDateTime": null
+    },
+    {
+      "employeeId": 900102,
+      "uid": null,
+      "firstName": "Verena",
+      "lastName": "Bafflegab",
+      "initial": "G.",
+      "suffix": "III",
+      "fullName": "Verena G. Bafflegab III",
+      "email": null,
+      "workPhone": "(555) 201-1101",
+      "active": true,
+      "location": {
+        "locId": "L606-W",
+        "code": "L606",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "201 Example St., Ste. 102",
+          "addr2": "",
+          "city": "Mockville",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "201 Example St., Ste. 102, Mockville, NY 12247 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "FAIRBANKS",
+          "shortName": "SEN FAIRBANKS",
+          "name": "Senator Fairbanks",
+          "affiliateCode": "MIN"
+        },
+        "locationDescription": "201 EXAMPLE ST., STE",
+        "active": true
+      },
+      "transactionCode": "APP",
+      "postDateTime": null
+    },
+    {
+      "employeeId": 900103,
+      "uid": "wquibble",
+      "firstName": "Wystan",
+      "lastName": "Quibbleton",
+      "fullName": "Wystan Quibbleton",
+      "email": "wquibble@nysenate.gov",
+      "workPhone": "(555) 202-1102",
+      "active": false,
+      "location": {
+        "locId": "L806-W",
+        "code": "L806",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "202 Example St., Ste. 103",
+          "addr2": "",
+          "city": "Sampleton",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "202 Example St., Ste. 103, Sampleton, NY 12247 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "FINANCE",
+          "shortName": "FINANCE",
+          "name": "Finance Department",
+          "affiliateCode": "ADM"
+        },
+        "locationDescription": "202 EXAMPLE ST., STE",
+        "active": true
+      },
+      "transactionCode": "EMP",
+      "postDateTime": null
+    },
+    {
+      "employeeId": 900104,
+      "uid": "xfrobsha",
+      "firstName": "Xandra",
+      "lastName": "Frobshaw",
+      "fullName": "Xandra Frobshaw",
+      "email": "xfrobsha@nysenate.gov",
+      "workPhone": "(555) 203-1103",
+      "active": true,
+      "location": {
+        "locId": "SS203C-W",
+        "code": "SS203C",
+        "locationType": "Work Location",
+        "locationTypeCode": "W",
+        "address": {
+          "addr1": "203 Example St., Ste. 104",
+          "addr2": "",
+          "city": "Fixtown",
+          "county": "Sample",
+          "country": "",
+          "state": "NY",
+          "zip5": "12247",
+          "zip4": "",
+          "formattedAddressWithCounty": "203 Example St., Ste. 104, Fixtown, NY 12247 (Sample County)"
+        },
+        "respCenterHead": {
+          "active": true,
+          "code": "ITSERVICES",
+          "shortName": "IT SERVICES",
+          "name": "Information Technology Services",
+          "affiliateCode": "ADM"
+        },
+        "locationDescription": "203 EXAMPLE ST., STE",
+        "active": true
+      },
+      "transactionCode": "LOC",
+      "postDateTime": null
+    }
+  ]
+}

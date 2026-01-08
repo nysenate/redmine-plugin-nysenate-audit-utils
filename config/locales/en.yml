@@ -1,9 +1,23 @@
 en:
+  # Reporting labels
+  label_audit_reports: "Reports"
+  label_audit_daily_report: "Daily Report"
+
+  # Packet creation labels
   button_create_packet: "Create Packet"
   button_create_packet_title: "Download ticket packet (PDF + attachments)"
   button_create_multi_packet: "Create Multi Packet"
   text_create_multi_packet_confirm: "Create packet for %{count} selected issues?"
   error_packet_creation_failed: "Failed to create packet. Please try again or contact your administrator."
   error_multi_packet_creation_failed: "Failed to create multi-packet. Please try again or contact your administrator."
-  project_module_audit_utils: "Audit Utils"
+
+  # Project modules
+  project_module_audit_utils_packet_creation: "Audit Utils Packet Creation"
+  project_module_audit_utils_reporting: "Audit Utils Reporting"
+  project_module_audit_utils_employee_autofill: "Audit Utils Employee Autofill"
+
+  # Permissions
   permission_create_packet: "Create ticket packets"
+  permission_view_audit_reports: "View audit reports"
+  permission_export_audit_reports: "Export audit reports"
+  permission_use_employee_autofill: "Use employee autofill"
