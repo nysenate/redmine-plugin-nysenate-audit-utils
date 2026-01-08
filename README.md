@@ -44,8 +44,8 @@ A comprehensive Redmine plugin providing audit utilities, employee data integrat
 
 ### Requirements
 
-- Redmine 5.0.0 or higher
-- Ruby 2.7 or higher
+- Redmine 6.0 or higher
+- Ruby 3.1 or higher
 - Access to ESS API (for employee integration features)
 
 ## Configuration
