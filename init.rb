@@ -43,7 +43,7 @@ Redmine::Plugin.register :nysenate_audit_utils do
        { controller: 'audit_reports', action: 'index' },
        caption: 'Reports',
        param: :project_id,
-       if: Proc.new { |p| p.module_enabled?(:audit_reporting) }
+       if: Proc.new { |p| p.module_enabled?(:audit_utils_reporting) }
 
   # Consolidated settings
   settings default: {
