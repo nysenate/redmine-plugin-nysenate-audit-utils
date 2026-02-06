@@ -28,13 +28,18 @@ module AuditTestHelpers
   # @param name [String] Field name
   # @param format [String] Field format (string, list, int, etc.)
   # @param possible_values [Array<String>] Possible values for list fields
+  # @param tracker [Tracker] Optional tracker to associate with the field
   # @return [CustomField] The created or found custom field
-  def create_or_find_field(name, format = 'string', possible_values = [])
+  def create_or_find_field(name, format = 'string', possible_values = [], tracker = nil)
     field = CustomField.find_by(name: name, type: 'IssueCustomField')
 
     # If field exists, ensure it's configured for all and update if needed
     if field
       field.update!(is_for_all: true) unless field.is_for_all
+      # Associate with tracker if provided and not already associated
+      if tracker && !tracker.custom_fields.include?(field)
+        tracker.custom_fields << field
+      end
       return field
     end
 
@@ -48,26 +53,34 @@ module AuditTestHelpers
 
     field_params[:possible_values] = possible_values if format == 'list' && possible_values.any?
 
-    IssueCustomField.create!(field_params)
+    field = IssueCustomField.create!(field_params)
+
+    # Associate with tracker if provided
+    if tracker
+      tracker.custom_fields << field
+    end
+
+    field
   end
 
   # Setup standard BACHelp custom fields with IDs configured
   # This is the most common setup pattern across tests
   #
+  # @param tracker [Tracker] Optional tracker to associate fields with
   # @return [Hash] Hash of field name symbols to CustomField objects
-  def setup_standard_bachelp_fields
+  def setup_standard_bachelp_fields(tracker = nil)
     fields = {
-      employee_id: create_or_find_field('Employee ID', 'string'),
-      employee_name: create_or_find_field('Employee Name', 'string'),
-      employee_email: create_or_find_field('Employee Email', 'string'),
-      employee_phone: create_or_find_field('Employee Phone', 'string'),
-      employee_office: create_or_find_field('Employee Office', 'string'),
-      employee_status: create_or_find_field('Employee Status', 'string'),
-      employee_uid: create_or_find_field('Employee UID', 'string'),
+      employee_id: create_or_find_field('Employee ID', 'string', [], tracker),
+      employee_name: create_or_find_field('Employee Name', 'string', [], tracker),
+      employee_email: create_or_find_field('Employee Email', 'string', [], tracker),
+      employee_phone: create_or_find_field('Employee Phone', 'string', [], tracker),
+      employee_office: create_or_find_field('Employee Office', 'string', [], tracker),
+      employee_status: create_or_find_field('Employee Status', 'string', [], tracker),
+      employee_uid: create_or_find_field('Employee UID', 'string', [], tracker),
       account_action: create_or_find_field('Account Action', 'list',
-        ['Add', 'Delete', 'Update Account & Privileges', 'Update Privileges Only', 'Update Account Only']),
+        ['Add', 'Delete', 'Update Account & Privileges', 'Update Privileges Only', 'Update Account Only'], tracker),
       target_system: create_or_find_field('Target System', 'list',
-        ['Oracle / SFMS', 'AIX', 'SFS', 'NYSDS', 'PayServ', 'OGS Swiper Access'])
+        ['Oracle / SFMS', 'AIX', 'SFS', 'NYSDS', 'PayServ', 'OGS Swiper Access'], tracker)
     }
 
     configure_audit_fields(

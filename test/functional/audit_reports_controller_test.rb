@@ -17,6 +17,9 @@ class AuditReportsControllerTest < ActionController::TestCase
     get :index, params: { project_id: 1 }
     assert_response :success
     assert_select 'h2', text: 'Audit Reports'
+    assert_select 'a', text: 'Daily Report'
+    assert_select 'a', text: 'Weekly Report'
+    assert_select 'a', text: 'Monthly Report'
   end
 
   test "should require admin access for index" do
@@ -153,6 +156,172 @@ class AuditReportsControllerTest < ActionController::TestCase
     NysenateAuditUtils::Reporting::DailyReportService.expects(:new).returns(service_mock)
 
     get :daily, params: { project_id: 1 }, format: :csv
+    assert_response :success
+    assert_equal '', response.body
+  end
+
+  test "should get monthly report with default system" do
+    mock_report_data = [
+      {
+        employee_id: '12345',
+        employee_name: 'John Doe',
+        account_type: 'Oracle / SFMS',
+        status: 'active',
+        account_action: 'Add',
+        closed_on: Date.today - 1.day,
+        request_code: 'RC1',
+        issue_id: 1
+      }
+    ]
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with(
+      target_system: 'Oracle / SFMS'
+    ).returns(service_mock)
+
+    get :monthly, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'h2', text: 'Monthly Report'
+    assert_select 'table.list.issues'
+    assert_select 'td', text: 'John Doe'
+    assert_select 'select#target_system option[selected]', text: 'Oracle / SFMS'
+  end
+
+  test "should get monthly report with specified system" do
+    mock_report_data = [
+      {
+        employee_id: '54321',
+        employee_name: 'Jane Smith',
+        account_type: 'AIX',
+        status: 'inactive',
+        account_action: 'Delete',
+        closed_on: Date.today - 2.days,
+        request_code: 'RC2',
+        issue_id: 2
+      }
+    ]
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with(
+      target_system: 'AIX'
+    ).returns(service_mock)
+
+    get :monthly, params: { project_id: 1, target_system: 'AIX' }
+    assert_response :success
+    assert_select 'select#target_system option[selected]', text: 'AIX'
+    assert_select 'td', text: 'Jane Smith'
+  end
+
+  test "should require admin access for monthly report" do
+    @request.session[:user_id] = 2 # Non-admin user
+    role = Role.find(1)
+    role.remove_permission!(:view_audit_reports) if role.permissions.include?(:view_audit_reports)
+    get :monthly, params: { project_id: 1 }
+    assert_response :forbidden
+  end
+
+  test "should handle empty monthly report data" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns([])
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
+
+    get :monthly, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'p.nodata', text: /No account data found/
+  end
+
+  test "should render error page on monthly service failure" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(nil)
+    service_mock.stubs(:success?).returns(false)
+    service_mock.stubs(:errors).returns(['Invalid target system'])
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
+
+    get :monthly, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'h2', text: 'Report Generation Error'
+    assert_select 'div.flash.error'
+  end
+
+  test "should export monthly report as CSV" do
+    mock_report_data = [
+      {
+        employee_id: '12345',
+        employee_name: 'John Doe',
+        status: 'active',
+        account_action: 'Add',
+        closed_on: Date.today - 1.day,
+        request_code: 'RC1',
+        issue_id: 1
+      }
+    ]
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
+
+    get :monthly, params: { project_id: 1, target_system: 'Oracle / SFMS' }, format: :csv
+    assert_response :success
+    assert_equal 'text/csv', response.content_type
+    assert_match /attachment/, response.headers['Content-Disposition']
+    assert_match /monthly_report_oracle-sfms_.*\.csv/, response.headers['Content-Disposition']
+
+    csv_content = response.body
+    assert_match /Employee ID/, csv_content
+    assert_match /Employee Name/, csv_content
+    assert_match /John Doe/, csv_content
+    assert_match /12345/, csv_content
+    assert_match /active/, csv_content
+  end
+
+  test "should sort monthly report by each column" do
+    mock_report_data = [
+      {
+        employee_id: '12345',
+        employee_name: 'John Doe',
+        status: 'active',
+        account_action: 'Add',
+        closed_on: Date.today - 1.day,
+        request_code: 'RC1',
+        issue_id: 1
+      },
+      {
+        employee_id: '54321',
+        employee_name: 'Jane Smith',
+        status: 'inactive',
+        account_action: 'Delete',
+        closed_on: Date.today - 2.days,
+        request_code: 'RC2',
+        issue_id: 2
+      }
+    ]
+
+    # Test sorting by employee_id
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
+
+    get :monthly, params: { project_id: 1, sort: 'employee_id' }
+    assert_response :success
+    assert_select 'table.list.issues tbody tr', count: 2
+    assert_select 'td', text: 'John Doe'
+    assert_select 'td', text: 'Jane Smith'
+  end
+
+  test "should export empty CSV for nil monthly report data" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(nil)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
+
+    get :monthly, params: { project_id: 1 }, format: :csv
     assert_response :success
     assert_equal '', response.body
   end

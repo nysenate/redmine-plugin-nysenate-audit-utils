@@ -1,0 +1,162 @@
+<% html_title(l(:label_audit_monthly_report)) -%>
+
+<div class="contextual">
+  <%= link_to "Export CSV", monthly_project_audit_reports_path(@project, target_system: @target_system, format: :csv), class: "icon icon-download" %>
+  <%= link_to "Back to Reports", project_audit_reports_path(@project), class: "icon icon-cancel" %>
+</div>
+
+<h2>Monthly Report</h2>
+
+<%= form_tag(monthly_project_audit_reports_path(@project), method: :get, id: "system-filter-form") do %>
+  <fieldset class="box tabular">
+    <legend>Target System</legend>
+    <p>
+      <%= label_tag :target_system, "Select System" %>
+      <%= select_tag :target_system,
+          options_for_select([
+            'Oracle / SFMS',
+            'SFS',
+            'AIX',
+            'NYSDS',
+            'PayServ',
+            'OGS Swiper Access'
+          ], @target_system),
+          class: "auto-submit" %>
+    </p>
+  </fieldset>
+<% end %>
+
+<% if @report_data.nil? || @report_data.empty? %>
+  <p class="nodata">No account data found for <%= @target_system %>.</p>
+<% else %>
+  <p class="report-info">
+    Showing <%= pluralize(@report_data.size, 'employee') %> with accounts on <%= @target_system %>.
+  </p>
+
+  <table class="list issues <%= sort_css_classes %>">
+    <thead>
+      <tr>
+        <%= sort_header_tag('employee_name', caption: 'Employee Name') %>
+        <%= sort_header_tag('employee_id', caption: 'Employee ID') %>
+        <%= sort_header_tag('employee_uid', caption: 'Employee UID') %>
+        <%= sort_header_tag('status', caption: 'Account Status') %>
+        <%= sort_header_tag('closed_on', caption: 'Last Updated', default_order: 'desc') %>
+        <%= sort_header_tag('issue_id', caption: 'Last Issue') %>
+        <%= sort_header_tag('account_action', caption: 'Last Action') %>
+      </tr>
+    </thead>
+    <tbody>
+      <% @report_data.each do |row| %>
+        <tr>
+          <td>
+            <%
+              employee_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.employee_id_field_id
+              filter_url = project_issues_path(@project,
+                set_filter: 1,
+                "f[]": ["cf_#{employee_id_field_id}", "status_id"],
+                "op[cf_#{employee_id_field_id}]": "=",
+                "v[cf_#{employee_id_field_id}][]": row[:employee_id],
+                "op[status_id]": "*"
+              )
+              # Fix the double array encoding in the URL
+              filter_url = filter_url.gsub('f%5B%5D%5B%5D=', 'f%5B%5D=')
+            %>
+            <%= link_to row[:employee_name] || '—', filter_url, target: '_blank', title: "View all issues for this employee" %>
+          </td>
+          <td><%= row[:employee_id] %></td>
+          <td><%= row[:employee_uid] || '—' %></td>
+          <td>
+            <span class="status-badge status-<%= row[:status] %>">
+              <%= row[:status]&.titleize %>
+            </span>
+          </td>
+          <td><%= row[:closed_on]&.strftime('%Y-%m-%d') || '—' %></td>
+          <td>
+            <%= link_to "##{row[:issue_id]}", issue_path(row[:issue_id]), target: '_blank' %>
+          </td>
+          <td><%= row[:account_action] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('system-filter-form');
+    const targetSystemSelect = document.getElementById('target_system');
+
+    // Auto-submit form when system selection changes
+    if (targetSystemSelect) {
+      targetSystemSelect.addEventListener('change', function() {
+        form.submit();
+      });
+    }
+  });
+</script>
+
+<style>
+  #system-filter-form {
+    margin-bottom: 2em;
+  }
+
+  #system-filter-form fieldset.box {
+    padding: 1em;
+  }
+
+  #system-filter-form p {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    margin: 0.5em 0;
+  }
+
+  #system-filter-form label {
+    min-width: 150px;
+    font-weight: bold;
+  }
+
+  #system-filter-form select {
+    padding: 0.4em;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 0.95em;
+    min-width: 200px;
+  }
+
+  .report-info {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    background-color: #f0f0f0;
+    border-left: 3px solid #169;
+  }
+
+  .nodata {
+    padding: 2em;
+    text-align: center;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    color: #666;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 0.25em 0.6em;
+    border-radius: 3px;
+    font-size: 0.85em;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .status-badge.status-active {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+
+  .status-badge.status-inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+</style>

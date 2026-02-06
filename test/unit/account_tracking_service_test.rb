@@ -12,8 +12,8 @@ module NysenateAuditUtils::AccountTracking
       @project = Project.find(1)
       @tracker = Tracker.find(1)
 
-      # Use helper to setup standard fields
-      @fields = setup_standard_bachelp_fields
+      # Use helper to setup standard fields and associate with tracker
+      @fields = setup_standard_bachelp_fields(@tracker)
       @employee_id_field = @fields[:employee_id]
       @account_action_field = @fields[:account_action]
       @target_system_field = @fields[:target_system]
@@ -292,27 +292,158 @@ module NysenateAuditUtils::AccountTracking
       assert_equal valid_issue.id, result[0][:issue_id]
     end
 
-    private
+    # Tests for get_account_statuses_by_system
 
-    def create_or_find_field(name, format, possible_values = nil)
-      field = CustomField.find_by(name: name, type: 'IssueCustomField')
-      return field if field
+    test 'get_account_statuses_by_system returns correct statuses' do
+      # Create closed issues for multiple employees on same system
+      issue1 = create_closed_issue('emp001', 'Oracle / SFMS', 'Add', 2.days.ago)
+      issue2 = create_closed_issue('emp002', 'Oracle / SFMS', 'Delete', 1.day.ago)
+      issue3 = create_closed_issue('emp003', 'Oracle / SFMS', 'Update Account & Privileges', 3.hours.ago)
 
-      field_attributes = {
-        name: name,
-        field_format: format,
-        is_required: false,
-        is_for_all: true,
-        trackers: [@tracker]
-      }
+      result = @service.get_account_statuses_by_system('Oracle / SFMS')
 
-      # Add possible values for list fields
-      if possible_values && format == 'list'
-        field_attributes[:possible_values] = possible_values
+      assert_equal 3, result.length
+
+      # Verify all required fields are present
+      result.each do |status|
+        assert status.key?(:employee_id)
+        assert status.key?(:account_type)
+        assert status.key?(:status)
+        assert status.key?(:issue_id)
+        assert status.key?(:closed_on)
+        assert status.key?(:account_action)
+        assert status.key?(:request_code)
       end
 
-      IssueCustomField.create!(field_attributes)
+      # Results should be sorted by employee_id
+      assert_equal 'emp001', result[0][:employee_id]
+      assert_equal 'active', result[0][:status]
+      assert_equal issue1.id, result[0][:issue_id]
+
+      assert_equal 'emp002', result[1][:employee_id]
+      assert_equal 'inactive', result[1][:status]
+      assert_equal issue2.id, result[1][:issue_id]
+
+      assert_equal 'emp003', result[2][:employee_id]
+      assert_equal 'active', result[2][:status]
+      assert_equal issue3.id, result[2][:issue_id]
     end
+
+    test 'get_account_statuses_by_system returns most recent only' do
+      # Create multiple closed issues for same employee and system
+      old_issue = create_closed_issue('emp001', 'AIX', 'Add', 5.days.ago)
+      middle_issue = create_closed_issue('emp001', 'AIX', 'Update Account & Privileges', 3.days.ago)
+      recent_issue = create_closed_issue('emp001', 'AIX', 'Delete', 1.hour.ago)
+
+      result = @service.get_account_statuses_by_system('AIX')
+
+      # Should only return one result per employee
+      assert_equal 1, result.length
+      assert_equal 'emp001', result[0][:employee_id]
+      # Should use the most recent issue
+      assert_equal recent_issue.id, result[0][:issue_id]
+      assert_equal 'Delete', result[0][:account_action]
+      assert_equal 'inactive', result[0][:status]
+    end
+
+    test 'get_account_statuses_by_system filters by system' do
+      # Create closed issues for multiple systems
+      oracle_issue = create_closed_issue('emp001', 'Oracle / SFMS', 'Add', 1.day.ago)
+      aix_issue = create_closed_issue('emp002', 'AIX', 'Add', 1.day.ago)
+      sfs_issue = create_closed_issue('emp003', 'SFS', 'Add', 1.day.ago)
+
+      # Query for specific system
+      result = @service.get_account_statuses_by_system('AIX')
+
+      # Should only return AIX issues
+      assert_equal 1, result.length
+      assert_equal 'emp002', result[0][:employee_id]
+      assert_equal 'AIX', result[0][:account_type]
+      assert_equal aix_issue.id, result[0][:issue_id]
+    end
+
+    test 'get_account_statuses_by_system handles empty results' do
+      # Create issues for other systems
+      create_closed_issue('emp001', 'Oracle / SFMS', 'Add', 1.day.ago)
+      create_closed_issue('emp002', 'AIX', 'Add', 1.day.ago)
+
+      # Query for system with no closed issues
+      result = @service.get_account_statuses_by_system('NYSDS')
+
+      assert_equal [], result
+    end
+
+    test 'get_account_statuses_by_system excludes open issues' do
+      # Create both open and closed issues for same system
+      open_issue = create_open_issue('emp001', 'SFS', 'Add')
+      closed_issue = create_closed_issue('emp002', 'SFS', 'Delete', 1.day.ago)
+
+      result = @service.get_account_statuses_by_system('SFS')
+
+      # Should only include closed issues
+      assert_equal 1, result.length
+      assert_equal 'emp002', result[0][:employee_id]
+      assert_equal closed_issue.id, result[0][:issue_id]
+    end
+
+    test 'get_account_statuses_by_system determines status correctly' do
+      # Create issues with "Add" action (active)
+      create_closed_issue('emp001', 'PayServ', 'Add', 1.day.ago)
+      # Create issues with "Delete" action (inactive)
+      create_closed_issue('emp002', 'PayServ', 'Delete', 1.day.ago)
+      # Create issues with update actions (active)
+      create_closed_issue('emp003', 'PayServ', 'Update Account & Privileges', 1.day.ago)
+
+      result = @service.get_account_statuses_by_system('PayServ')
+
+      assert_equal 3, result.length
+
+      # Check statuses
+      emp001 = result.find { |r| r[:employee_id] == 'emp001' }
+      assert_equal 'active', emp001[:status]
+
+      emp002 = result.find { |r| r[:employee_id] == 'emp002' }
+      assert_equal 'inactive', emp002[:status]
+
+      emp003 = result.find { |r| r[:employee_id] == 'emp003' }
+      assert_equal 'active', emp003[:status]
+    end
+
+    test 'get_account_statuses_by_system includes request code' do
+      # Create issues with various account_action/target_system combinations
+      create_closed_issue('emp001', 'Oracle / SFMS', 'Add', 1.day.ago)
+      create_closed_issue('emp002', 'AIX', 'Delete', 1.day.ago)
+      create_closed_issue('emp003', 'SFS', 'Update Account & Privileges', 1.day.ago)
+
+      # Test Oracle / SFMS
+      oracle_result = @service.get_account_statuses_by_system('Oracle / SFMS')
+      assert_equal 1, oracle_result.length
+      assert_equal 'USRA', oracle_result[0][:request_code]
+
+      # Test AIX
+      aix_result = @service.get_account_statuses_by_system('AIX')
+      assert_equal 1, aix_result.length
+      assert_equal 'AIXI', aix_result[0][:request_code]
+
+      # Test SFS
+      sfs_result = @service.get_account_statuses_by_system('SFS')
+      assert_equal 1, sfs_result.length
+      assert_equal 'SFSU', sfs_result[0][:request_code]
+    end
+
+    test 'get_account_statuses_by_system handles blank target system' do
+      # Create some test data
+      create_closed_issue('emp001', 'Oracle / SFMS', 'Add', 1.day.ago)
+
+      # Pass blank target_system
+      result_nil = @service.get_account_statuses_by_system(nil)
+      assert_equal [], result_nil
+
+      result_empty = @service.get_account_statuses_by_system('')
+      assert_equal [], result_empty
+    end
+
+    private
 
     def create_closed_issue(employee_id, target_system, account_action, closed_time)
       issue = Issue.create!(

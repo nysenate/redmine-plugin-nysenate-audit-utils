@@ -19,8 +19,8 @@
       <p class="small">Lists all tickets active in the current week.</p>
     </li>
     <li>
-      <span class="disabled">Monthly Report (Coming Soon)</span>
-      <p class="small">Snapshot of current employee access status.</p>
+      <%= link_to "Monthly Report", monthly_project_audit_reports_path(@project) %>
+      <p class="small">Snapshot of current employee access status by target system.</p>
     </li>
     <li>
       <span class="disabled">Triennial Audit Report (Coming Soon)</span>
