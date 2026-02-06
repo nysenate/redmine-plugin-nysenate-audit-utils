@@ -137,6 +137,59 @@ class AuditReportsController < ApplicationController
     render :error
   end
 
+  def monthly
+    # Parse target_system parameter
+    target_system = params[:target_system].presence || 'Oracle / SFMS'
+
+    # Generate report
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+      target_system: target_system
+    )
+    @report_data = service.generate
+    @target_system = target_system
+
+    # Handle errors
+    unless service.success?
+      @error_message = service.errors.join('; ')
+      render :error
+      return
+    end
+
+    # Set up sorting
+    sort_init 'employee_id', 'asc'
+    sort_update({
+      'employee_id' => 'employee_id',
+      'employee_name' => 'employee_name',
+      'employee_uid' => 'employee_uid',
+      'status' => 'status',
+      'account_action' => 'account_action',
+      'closed_on' => 'closed_on',
+      'issue_id' => 'issue_id'
+    })
+
+    # Apply sorting
+    if @report_data.present?
+      @report_data = sort_report_data(@report_data)
+    end
+
+    # Respond to formats
+    respond_to do |format|
+      format.html
+      format.csv do
+        csv_data = generate_monthly_csv(@report_data)
+        send_data csv_data,
+                  filename: "monthly_report_#{target_system.parameterize}_#{Date.current.strftime('%Y%m%d')}.csv",
+                  type: 'text/csv',
+                  disposition: 'attachment'
+      end
+    end
+  rescue => e
+    Rails.logger.error "Monthly report generation failed: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    @error_message = "Unable to generate report: #{e.message}"
+    render :error
+  end
+
   private
 
   def parse_date_param(date_string)
@@ -276,6 +329,36 @@ class AuditReportsController < ApplicationController
           row[:subject],
           row[:status],
           row[:updated_on]&.strftime('%Y-%m-%d %H:%M')
+        ]
+      end
+    end
+  end
+
+  def generate_monthly_csv(data)
+    return '' unless data
+
+    CSV.generate do |csv|
+      # Header row
+      csv << [
+        'Employee ID',
+        'Employee Name',
+        'Status',
+        'Account Action',
+        'Last Updated',
+        'Request Code',
+        'Issue ID'
+      ]
+
+      # Data rows
+      data.each do |row|
+        csv << [
+          row[:employee_id],
+          row[:employee_name],
+          row[:status],
+          row[:account_action],
+          row[:closed_on]&.strftime('%Y-%m-%d'),
+          row[:request_code],
+          row[:issue_id]
         ]
       end
     end

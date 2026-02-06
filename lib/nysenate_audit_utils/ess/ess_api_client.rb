@@ -15,6 +15,7 @@ module NysenateAuditUtils
         @base_url = base_url || NysenateAuditUtils::Ess::EssConfiguration.base_url
         @api_key = api_key || NysenateAuditUtils::Ess::EssConfiguration.api_key
         @timeout = 30
+        validate_configuration!
       end
 
       def get(path, params = {})
@@ -28,6 +29,25 @@ module NysenateAuditUtils
       end
 
       private
+
+      def validate_configuration!
+        if @base_url.blank?
+          raise ApiError, "ESS Base URL is not configured. Please configure it in Administration → Plugins → NY Senate Audit Utils → Configure"
+        end
+
+        if @api_key.blank?
+          raise ApiError, "ESS API Key is not configured. Please configure it in Administration → Plugins → NY Senate Audit Utils → Configure"
+        end
+
+        begin
+          uri = URI.parse(@base_url)
+          unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
+            raise ApiError, "ESS Base URL must be a valid HTTP or HTTPS URL"
+          end
+        rescue URI::InvalidURIError
+          raise ApiError, "ESS Base URL is not a valid URL: #{@base_url}"
+        end
+      end
 
       def build_uri(path, params)
         uri = URI.join(@base_url, path)

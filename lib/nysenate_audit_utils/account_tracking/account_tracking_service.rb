@@ -75,6 +75,43 @@ module NysenateAuditUtils
         build_open_requests(issues, target_system_field_id, account_action_field_id)
       end
 
+      # Get account statuses for all employees with accounts on a specific target system
+      # @param target_system [String] The target system to query (e.g., "Oracle / SFMS", "AIX")
+      # @return [Array<Hash>] Array of account status hashes, one per employee
+      # Each hash contains:
+      #   - employee_id: The employee ID
+      #   - account_type: The Target System value (same as target_system parameter)
+      #   - status: "active" or "inactive"
+      #   - issue_id: ID of the most recent closed issue for this employee/system
+      #   - closed_on: Date when the issue was closed
+      #   - account_action: The Account Action value from the latest issue
+      #   - request_code: The BACHelp request code (e.g., "USRA", "AIXI")
+      def get_account_statuses_by_system(target_system)
+        return [] if target_system.blank?
+
+        # Get custom field IDs
+        employee_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.employee_id_field_id
+        account_action_field_id = NysenateAuditUtils::CustomFieldConfiguration.account_action_field_id
+        target_system_field_id = NysenateAuditUtils::CustomFieldConfiguration.target_system_field_id
+
+        # Validate required fields exist
+        unless employee_id_field_id && account_action_field_id && target_system_field_id
+          raise 'Required custom fields not found. Ensure Employee ID, Account Action, and Target System fields are configured.'
+        end
+
+        # Single bulk query for all closed issues matching this target system
+        # Uses efficient joins to get all needed data in one query
+        results = find_closed_issues_by_target_system(
+          target_system,
+          employee_id_field_id,
+          account_action_field_id,
+          target_system_field_id
+        )
+
+        # Group by employee_id and build account status data
+        build_account_statuses_by_employee(results, target_system)
+      end
+
       private
 
       # Find all closed issues for an employee
@@ -223,6 +260,80 @@ module NysenateAuditUtils
           custom_mappings = Setting.plugin_nysenate_audit_utils['request_code_mappings'] || {}
           NysenateAuditUtils::RequestCodes::RequestCodeMapper.new(custom_mappings)
         end
+      end
+
+      # Find all closed issues for a specific target system using efficient bulk query
+      # @param target_system [String] The target system value
+      # @param employee_id_field_id [Integer] Employee ID custom field ID
+      # @param account_action_field_id [Integer] Account Action custom field ID
+      # @param target_system_field_id [Integer] Target System custom field ID
+      # @return [Array<Hash>] Array of hashes with employee_id, account_action, issue_id, closed_on
+      def find_closed_issues_by_target_system(target_system, employee_id_field_id, account_action_field_id, target_system_field_id)
+        # Query strategy: Single bulk query using joins to get all data at once
+        # This avoids N+1 queries by fetching everything in one database round trip
+
+        # Find all issue IDs that have the specified target system
+        issue_ids_with_target_system = CustomValue
+          .where(customized_type: 'Issue')
+          .where(custom_field_id: target_system_field_id)
+          .where(value: target_system)
+          .pluck(:customized_id)
+
+        return [] if issue_ids_with_target_system.empty?
+
+        # Get closed issues with all custom field values included
+        closed_issues = Issue
+          .where(id: issue_ids_with_target_system)
+          .joins(:status)
+          .where(issue_statuses: { is_closed: true })
+          .where.not(closed_on: nil)
+          .includes(:custom_values)
+          .order(closed_on: :desc)
+
+        # Extract data from issues and their custom values
+        closed_issues.map do |issue|
+          employee_id = get_custom_field_value(issue, employee_id_field_id)
+          account_action = get_custom_field_value(issue, account_action_field_id)
+
+          # Skip issues without required data
+          next if employee_id.blank? || account_action.blank?
+
+          {
+            employee_id: employee_id,
+            account_action: account_action,
+            issue_id: issue.id,
+            closed_on: issue.closed_on
+          }
+        end.compact
+      end
+
+      # Build account status data grouped by employee
+      # @param results [Array<Hash>] Array of issue data hashes from find_closed_issues_by_target_system
+      # @param target_system [String] The target system value
+      # @return [Array<Hash>] Array of account status hashes, one per employee
+      def build_account_statuses_by_employee(results, target_system)
+        mapper = request_code_mapper
+
+        # Group by employee_id
+        grouped = results.group_by { |r| r[:employee_id] }
+
+        # For each employee, take the most recent issue (first one due to DESC ordering)
+        statuses = grouped.map do |employee_id, employee_issues|
+          latest_issue = employee_issues.first
+
+          {
+            employee_id: employee_id,
+            account_type: target_system,
+            status: determine_status(latest_issue[:account_action]),
+            issue_id: latest_issue[:issue_id],
+            closed_on: latest_issue[:closed_on],
+            account_action: latest_issue[:account_action],
+            request_code: mapper.get_request_code(latest_issue[:account_action], target_system)
+          }
+        end
+
+        # Sort by employee_id for consistent output
+        statuses.sort_by { |s| s[:employee_id] }
       end
     end
   end

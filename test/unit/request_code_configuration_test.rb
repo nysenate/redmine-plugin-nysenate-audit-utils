@@ -6,7 +6,8 @@ class RequestCodeConfigurationTest < ActiveSupport::TestCase
   fixtures :custom_fields
 
   def setup
-    # No reset needed - no caches
+    # Clear settings to ensure clean state
+    Setting.plugin_nysenate_audit_utils = {}
   end
 
   def teardown
