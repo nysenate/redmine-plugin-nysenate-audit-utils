@@ -18,7 +18,24 @@ module NysenateAuditUtils
           return ''
         end
 
+        if issue.project.nil?
+          Rails.logger.debug "BachelpAutofill Hook: Issue has no project"
+          return ''
+        end
+
         Rails.logger.debug "BachelpAutofill Hook: Issue tracker: #{issue.tracker.name}"
+
+        # Check if module is enabled for this project
+        unless issue.project.module_enabled?(:audit_utils_employee_autofill)
+          Rails.logger.debug "BachelpAutofill Hook: Employee Autofill module not enabled for project"
+          return ''
+        end
+
+        # Check if user has permission for this project
+        unless User.current.allowed_to?(:use_employee_autofill, issue.project)
+          Rails.logger.debug "BachelpAutofill Hook: User lacks use_employee_autofill permission for project"
+          return ''
+        end
 
         if has_employee_fields?(issue.tracker)
           Rails.logger.debug "BachelpAutofill Hook: Tracker has employee fields, rendering widget"

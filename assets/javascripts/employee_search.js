@@ -1,10 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
+  const searchWidget = document.getElementById('employee-search-widget');
   const searchInput = document.getElementById('employee-search-input');
   const resultsContainer = document.getElementById('employee-search-results');
   const resultsList = document.getElementById('employee-results-list');
   const loadingIndicator = document.getElementById('employee-search-loading');
   const errorContainer = document.getElementById('employee-search-error');
-  
+
   let searchTimeout = null;
   let currentRequest = null;
   let fieldMappings = null;
@@ -13,7 +14,18 @@ document.addEventListener('DOMContentLoaded', function() {
   let hasMore = false;
   let isLoadingMore = false;
 
-  if (!searchInput) return; // Exit if widget not present
+  if (!searchInput || !searchWidget) {
+    console.log('Employee search widget not found - exiting');
+    return; // Exit if widget not present
+  }
+
+  // Get project_id from data attribute
+  const projectId = searchWidget.dataset.projectId;
+  console.log('Employee search widget initialized with project_id:', projectId);
+  if (!projectId) {
+    console.error('No project_id found on employee search widget - data-project-id attribute is missing');
+    return;
+  }
 
   // Load field mappings on initialization
   loadFieldMappings();
@@ -80,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
     hideError();
 
     currentRequest = new XMLHttpRequest();
-    currentRequest.open('GET', `/employee_search/search?q=${encodeURIComponent(query)}&limit=20&offset=0`);
+    currentRequest.open('GET', `/employee_search/search?q=${encodeURIComponent(query)}&limit=20&offset=0&project_id=${encodeURIComponent(projectId)}`);
     currentRequest.setRequestHeader('Accept', 'application/json');
     currentRequest.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
@@ -125,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
     showLoadingMore();
 
     const request = new XMLHttpRequest();
-    request.open('GET', `/employee_search/search?q=${encodeURIComponent(currentSearchQuery)}&limit=20&offset=${currentOffset}`);
+    request.open('GET', `/employee_search/search?q=${encodeURIComponent(currentSearchQuery)}&limit=20&offset=${currentOffset}&project_id=${encodeURIComponent(projectId)}`);
     request.setRequestHeader('Accept', 'application/json');
     request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
@@ -199,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function loadFieldMappings() {
     console.log('Starting field mappings load...');
     const request = new XMLHttpRequest();
-    request.open('GET', '/employee_search/field_mappings');
+    request.open('GET', `/employee_search/field_mappings?project_id=${encodeURIComponent(projectId)}`);
     request.setRequestHeader('Accept', 'application/json');
     request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     
@@ -227,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function loadFieldMappingsSync() {
-    return fetch('/employee_search/field_mappings', {
+    return fetch(`/employee_search/field_mappings?project_id=${encodeURIComponent(projectId)}`, {
       headers: {
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
