@@ -3,10 +3,11 @@
 module NysenateAuditUtils
   module Reporting
     class MonthlyReportService
-      attr_reader :target_system, :errors
+      attr_reader :target_system, :as_of_time, :errors
 
-      def initialize(target_system:)
+      def initialize(target_system:, as_of_time: Time.current)
         @target_system = target_system
+        @as_of_time = as_of_time
         @errors = []
       end
 
@@ -56,7 +57,7 @@ module NysenateAuditUtils
 
       def fetch_account_statuses
         account_tracking_service = NysenateAuditUtils::AccountTracking::AccountTrackingService.new
-        @account_statuses = account_tracking_service.get_account_statuses_by_system(@target_system)
+        @account_statuses = account_tracking_service.get_account_statuses_by_system(@target_system, as_of_time: @as_of_time)
       rescue StandardError => e
         @errors << "Failed to fetch account statuses: #{e.message}"
         Rails.logger.error("Account status fetch error: #{e.message}")

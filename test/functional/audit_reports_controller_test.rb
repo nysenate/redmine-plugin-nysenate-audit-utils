@@ -177,9 +177,10 @@ class AuditReportsControllerTest < ActionController::TestCase
     service_mock = mock('service')
     service_mock.expects(:generate).returns(mock_report_data)
     service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with(
-      target_system: 'Oracle / SFMS'
-    ).returns(service_mock)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with do |args|
+      args[:target_system] == 'Oracle / SFMS' &&
+        args[:as_of_time].present?
+    end.returns(service_mock)
 
     get :monthly, params: { project_id: 1 }
     assert_response :success
@@ -206,9 +207,10 @@ class AuditReportsControllerTest < ActionController::TestCase
     service_mock = mock('service')
     service_mock.expects(:generate).returns(mock_report_data)
     service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with(
-      target_system: 'AIX'
-    ).returns(service_mock)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with do |args|
+      args[:target_system] == 'AIX' &&
+        args[:as_of_time].present?
+    end.returns(service_mock)
 
     get :monthly, params: { project_id: 1, target_system: 'AIX' }
     assert_response :success
@@ -324,5 +326,133 @@ class AuditReportsControllerTest < ActionController::TestCase
     get :monthly, params: { project_id: 1 }, format: :csv
     assert_response :success
     assert_equal '', response.body
+  end
+
+  # Tests for mode and month parameters
+
+  test "should default to monthly mode with current month" do
+    mock_report_data = [
+      {
+        employee_id: '12345',
+        employee_name: 'John Doe',
+        account_type: 'Oracle / SFMS',
+        status: 'active',
+        account_action: 'Add',
+        closed_on: Date.today - 1.day,
+        request_code: 'RC1',
+        issue_id: 1
+      }
+    ]
+
+    # Expect service to be called with beginning of current month
+    expected_time = Date.current.beginning_of_month.in_time_zone
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with do |args|
+      args[:target_system] == 'Oracle / SFMS' &&
+        args[:as_of_time].to_date == expected_time.to_date
+    end.returns(service_mock)
+
+    get :monthly, params: { project_id: 1 }
+    assert_response :success
+  end
+
+  test "should handle monthly mode with specific month" do
+    mock_report_data = []
+    month_num = 1
+    year_num = 2026
+    expected_time = Date.new(year_num, month_num, 1).beginning_of_month.in_time_zone
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with do |args|
+      args[:target_system] == 'Oracle / SFMS' &&
+        args[:as_of_time].to_date == expected_time.to_date
+    end.returns(service_mock)
+
+    get :monthly, params: { project_id: 1, mode: 'monthly', month: month_num, year: year_num }
+    assert_response :success
+  end
+
+  test "should handle current mode showing latest state" do
+    mock_report_data = [
+      {
+        employee_id: '12345',
+        employee_name: 'John Doe',
+        status: 'active',
+        account_action: 'Add',
+        closed_on: Date.today - 1.day,
+        request_code: 'RC1',
+        issue_id: 1
+      }
+    ]
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with do |args|
+      args[:target_system] == 'Oracle / SFMS' &&
+        args[:as_of_time].present?
+    end.returns(service_mock)
+
+    get :monthly, params: { project_id: 1, mode: 'current' }
+    assert_response :success
+  end
+
+  test "should include month in CSV filename for monthly mode" do
+    mock_report_data = [
+      {
+        employee_id: '12345',
+        employee_name: 'John Doe',
+        status: 'active',
+        account_action: 'Add',
+        closed_on: Date.today - 1.day,
+        request_code: 'RC1',
+        issue_id: 1
+      }
+    ]
+
+    month_num = 1
+    year_num = 2026
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
+
+    get :monthly, params: { project_id: 1, target_system: 'AIX', mode: 'monthly', month: month_num, year: year_num }, format: :csv
+    assert_response :success
+    assert_equal 'text/csv', response.content_type
+    assert_match /monthly_report_aix_202601\.csv/, response.headers['Content-Disposition']
+  end
+
+  test "should include current in CSV filename for current mode" do
+    mock_report_data = [
+      {
+        employee_id: '12345',
+        employee_name: 'John Doe',
+        status: 'active',
+        account_action: 'Add',
+        closed_on: Date.today - 1.day,
+        request_code: 'RC1',
+        issue_id: 1
+      }
+    ]
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
+
+    get :monthly, params: { project_id: 1, target_system: 'SFS', mode: 'current' }, format: :csv
+    assert_response :success
+    assert_equal 'text/csv', response.content_type
+    assert_match /monthly_report_sfs_current\.csv/, response.headers['Content-Disposition']
   end
 end

@@ -197,6 +197,84 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     assert_match(/Invalid target system/, service.errors.first)
   end
 
+  # Tests for as_of_time parameter
+
+  test 'initializes with as_of_time parameter' do
+    cutoff_time = 3.days.ago
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+      target_system: 'Oracle / SFMS',
+      as_of_time: cutoff_time
+    )
+
+    assert_equal 'Oracle / SFMS', service.target_system
+    assert_equal cutoff_time, service.as_of_time
+  end
+
+  test 'defaults as_of_time to current time when not provided' do
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'Oracle / SFMS')
+    # Should default to Time.current (within a few seconds)
+    assert_not_nil service.as_of_time
+    assert_instance_of ActiveSupport::TimeWithZone, service.as_of_time
+    # Verify it's close to current time (within 5 seconds)
+    assert_in_delta Time.current.to_i, service.as_of_time.to_i, 5
+  end
+
+  test 'generate respects as_of_time parameter' do
+    cutoff_time = 3.days.ago
+
+    # Create issues before and after cutoff
+    old_issue = create_closed_test_issue('12345', 'Alice Before', 'AIX', 'Add', 5.days.ago)
+    recent_issue = create_closed_test_issue('67890', 'Bob After', 'AIX', 'Delete', 1.day.ago)
+
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+      target_system: 'AIX',
+      as_of_time: cutoff_time
+    )
+    result = service.generate
+
+    # Should only include the old issue (before cutoff)
+    assert_equal 1, result.size
+    assert_equal '12345', result.first[:employee_id]
+    assert_equal 'Alice Before', result.first[:employee_name]
+    assert_equal old_issue.id, result.first[:issue_id]
+  end
+
+  test 'generate includes all closed issues when as_of_time not provided' do
+    # Create issues at different times
+    old_issue = create_closed_test_issue('12345', 'Alice Old', 'SFS', 'Add', 10.days.ago)
+    recent_issue = create_closed_test_issue('67890', 'Bob Recent', 'SFS', 'Delete', 1.hour.ago)
+
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'SFS')
+    result = service.generate
+
+    # Should include both issues since as_of_time defaults to current
+    assert_equal 2, result.size
+    assert_includes result.map { |r| r[:employee_id] }, '12345'
+    assert_includes result.map { |r| r[:employee_id] }, '67890'
+  end
+
+  test 'generate selects most recent issue before cutoff time' do
+    cutoff_time = 2.days.ago
+
+    # Create multiple issues for same employee, before and after cutoff
+    oldest = create_closed_test_issue('12345', 'Alice', 'NYSDS', 'Add', 10.days.ago)
+    before_cutoff = create_closed_test_issue('12345', 'Alice', 'NYSDS', 'Update Account & Privileges', 3.days.ago)
+    after_cutoff = create_closed_test_issue('12345', 'Alice', 'NYSDS', 'Delete', 1.day.ago)
+
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+      target_system: 'NYSDS',
+      as_of_time: cutoff_time
+    )
+    result = service.generate
+
+    # Should return the most recent issue BEFORE cutoff (before_cutoff)
+    assert_equal 1, result.size
+    assert_equal '12345', result.first[:employee_id]
+    assert_equal before_cutoff.id, result.first[:issue_id]
+    assert_equal 'Update Account & Privileges', result.first[:account_action]
+    assert_equal 'active', result.first[:status]
+  end
+
   private
 
   def create_test_issue(employee_id, employee_name, target_system, account_action)
