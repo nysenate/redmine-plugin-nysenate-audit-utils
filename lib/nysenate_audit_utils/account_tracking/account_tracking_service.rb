@@ -77,6 +77,7 @@ module NysenateAuditUtils
 
       # Get account statuses for all employees with accounts on a specific target system
       # @param target_system [String] The target system to query (e.g., "Oracle / SFMS", "AIX")
+      # @param as_of_time [Time] The cutoff time for the report (default: current time)
       # @return [Array<Hash>] Array of account status hashes, one per employee
       # Each hash contains:
       #   - employee_id: The employee ID
@@ -86,7 +87,7 @@ module NysenateAuditUtils
       #   - closed_on: Date when the issue was closed
       #   - account_action: The Account Action value from the latest issue
       #   - request_code: The BACHelp request code (e.g., "USRA", "AIXI")
-      def get_account_statuses_by_system(target_system)
+      def get_account_statuses_by_system(target_system, as_of_time: Time.current)
         return [] if target_system.blank?
 
         # Get custom field IDs
@@ -105,7 +106,8 @@ module NysenateAuditUtils
           target_system,
           employee_id_field_id,
           account_action_field_id,
-          target_system_field_id
+          target_system_field_id,
+          as_of_time
         )
 
         # Group by employee_id and build account status data
@@ -267,8 +269,9 @@ module NysenateAuditUtils
       # @param employee_id_field_id [Integer] Employee ID custom field ID
       # @param account_action_field_id [Integer] Account Action custom field ID
       # @param target_system_field_id [Integer] Target System custom field ID
+      # @param as_of_time [Time] The cutoff time for the report
       # @return [Array<Hash>] Array of hashes with employee_id, account_action, issue_id, closed_on
-      def find_closed_issues_by_target_system(target_system, employee_id_field_id, account_action_field_id, target_system_field_id)
+      def find_closed_issues_by_target_system(target_system, employee_id_field_id, account_action_field_id, target_system_field_id, as_of_time)
         # Query strategy: Single bulk query using joins to get all data at once
         # This avoids N+1 queries by fetching everything in one database round trip
 
@@ -287,6 +290,7 @@ module NysenateAuditUtils
           .joins(:status)
           .where(issue_statuses: { is_closed: true })
           .where.not(closed_on: nil)
+          .where('issues.closed_on <= ?', as_of_time)
           .includes(:custom_values)
           .order(closed_on: :desc)
 

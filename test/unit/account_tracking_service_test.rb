@@ -443,6 +443,102 @@ module NysenateAuditUtils::AccountTracking
       assert_equal [], result_empty
     end
 
+    # Tests for as_of_time parameter
+
+    test 'get_account_statuses_by_system filters by as_of_time' do
+      # Create issues at different times
+      cutoff_time = 3.days.ago
+
+      # Issues before cutoff (should be included)
+      old_issue1 = create_closed_issue('emp001', 'Oracle / SFMS', 'Add', 5.days.ago)
+      old_issue2 = create_closed_issue('emp002', 'Oracle / SFMS', 'Delete', 4.days.ago)
+
+      # Issues after cutoff (should be excluded)
+      recent_issue1 = create_closed_issue('emp003', 'Oracle / SFMS', 'Add', 2.days.ago)
+      recent_issue2 = create_closed_issue('emp004', 'Oracle / SFMS', 'Update Account & Privileges', 1.day.ago)
+
+      result = @service.get_account_statuses_by_system('Oracle / SFMS', as_of_time: cutoff_time)
+
+      # Should only return issues closed before or at cutoff time
+      assert_equal 2, result.length
+
+      employee_ids = result.map { |r| r[:employee_id] }.sort
+      assert_equal ['emp001', 'emp002'], employee_ids
+
+      # Verify the correct issues are included
+      assert_includes result.map { |r| r[:issue_id] }, old_issue1.id
+      assert_includes result.map { |r| r[:issue_id] }, old_issue2.id
+
+      # Verify recent issues are excluded
+      refute_includes result.map { |r| r[:issue_id] }, recent_issue1.id
+      refute_includes result.map { |r| r[:issue_id] }, recent_issue2.id
+    end
+
+    test 'get_account_statuses_by_system includes issue closed exactly at cutoff time' do
+      # Create issue exactly at cutoff time
+      cutoff_time = 2.days.ago
+      issue_at_cutoff = create_closed_issue('emp001', 'AIX', 'Add', cutoff_time)
+
+      # Create issue after cutoff
+      recent_issue = create_closed_issue('emp002', 'AIX', 'Delete', 1.day.ago)
+
+      result = @service.get_account_statuses_by_system('AIX', as_of_time: cutoff_time)
+
+      # Should include the issue at exactly cutoff time (using <=)
+      assert_equal 1, result.length
+      assert_equal 'emp001', result[0][:employee_id]
+      assert_equal issue_at_cutoff.id, result[0][:issue_id]
+    end
+
+    test 'get_account_statuses_by_system defaults to current time when as_of_time not provided' do
+      # Create issues in the past
+      old_issue = create_closed_issue('emp001', 'SFS', 'Add', 5.days.ago)
+      recent_issue = create_closed_issue('emp002', 'SFS', 'Delete', 1.hour.ago)
+
+      # Call without as_of_time parameter
+      result = @service.get_account_statuses_by_system('SFS')
+
+      # Should include all closed issues (both old and recent)
+      assert_equal 2, result.length
+      assert_includes result.map { |r| r[:employee_id] }, 'emp001'
+      assert_includes result.map { |r| r[:employee_id] }, 'emp002'
+    end
+
+    test 'get_account_statuses_by_system selects most recent issue before cutoff' do
+      cutoff_time = 2.days.ago
+
+      # Create multiple issues for same employee/system, some before and some after cutoff
+      oldest_issue = create_closed_issue('emp001', 'NYSDS', 'Add', 10.days.ago)
+      middle_issue = create_closed_issue('emp001', 'NYSDS', 'Update Account & Privileges', 5.days.ago)
+      before_cutoff_issue = create_closed_issue('emp001', 'NYSDS', 'Delete', 3.days.ago)
+      after_cutoff_issue = create_closed_issue('emp001', 'NYSDS', 'Add', 1.day.ago)
+
+      result = @service.get_account_statuses_by_system('NYSDS', as_of_time: cutoff_time)
+
+      # Should return only one result for the employee
+      assert_equal 1, result.length
+
+      # Should use the most recent issue BEFORE the cutoff (before_cutoff_issue, not after_cutoff_issue)
+      assert_equal 'emp001', result[0][:employee_id]
+      assert_equal before_cutoff_issue.id, result[0][:issue_id]
+      assert_equal 'Delete', result[0][:account_action]
+      assert_equal 'inactive', result[0][:status]
+    end
+
+    test 'get_account_statuses_by_system returns empty when all issues after cutoff' do
+      cutoff_time = 5.days.ago
+
+      # Create issues all after the cutoff time
+      create_closed_issue('emp001', 'PayServ', 'Add', 3.days.ago)
+      create_closed_issue('emp002', 'PayServ', 'Delete', 2.days.ago)
+      create_closed_issue('emp003', 'PayServ', 'Update Account & Privileges', 1.day.ago)
+
+      result = @service.get_account_statuses_by_system('PayServ', as_of_time: cutoff_time)
+
+      # Should return empty array since all issues are after cutoff
+      assert_equal [], result
+    end
+
     private
 
     def create_closed_issue(employee_id, target_system, account_action, closed_time)

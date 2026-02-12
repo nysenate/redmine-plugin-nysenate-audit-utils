@@ -1,7 +1,7 @@
 <% html_title(l(:label_audit_monthly_report)) -%>
 
 <div class="contextual">
-  <%= link_to "Export CSV", monthly_project_audit_reports_path(@project, target_system: @target_system, format: :csv), class: "icon icon-download" %>
+  <%= link_to "Export CSV", monthly_project_audit_reports_path(@project, target_system: @target_system, mode: @mode, month: @selected_month_num, year: @selected_year, format: :csv), class: "icon icon-download" %>
   <%= link_to "Back to Reports", project_audit_reports_path(@project), class: "icon icon-cancel" %>
 </div>
 
@@ -9,9 +9,9 @@
 
 <%= form_tag(monthly_project_audit_reports_path(@project), method: :get, id: "system-filter-form") do %>
   <fieldset class="box tabular">
-    <legend>Target System</legend>
+    <legend>Report Filters</legend>
     <p>
-      <%= label_tag :target_system, "Select System" %>
+      <%= label_tag :target_system, "Target System" %>
       <%= select_tag :target_system,
           options_for_select([
             'Oracle / SFMS',
@@ -21,16 +21,59 @@
             'PayServ',
             'OGS Swiper Access'
           ], @target_system),
-          class: "auto-submit" %>
+          onchange: "this.form.submit();" %>
     </p>
+    <p>
+      <%= label_tag :mode, "Report Mode" %><br/>
+      <span class="radio-option" title="View account statuses as of the start of a specific month">
+        <%= radio_button_tag :mode, 'monthly', @mode == 'monthly', onchange: "this.form.submit();" %>
+        <%= label_tag :mode_monthly, "Monthly Snapshot", class: "inline" %>
+      </span>
+      <br/>
+      <span class="radio-option" title="View latest status for all accounts (no time filtering)">
+        <%= radio_button_tag :mode, 'current', @mode == 'current', onchange: "this.form.submit();" %>
+        <%= label_tag :mode_current, "Current State", class: "inline" %>
+      </span>
+    </p>
+    <% if @mode == 'monthly' %>
+      <p id="month-selector">
+        <%= label_tag :month, "Select Month/Year" %>
+        <span class="month-year-selectors">
+          <%= select_tag :month,
+              options_for_select(
+                Date::MONTHNAMES.compact.map.with_index(1) { |name, i| [name, i] },
+                @selected_month_num || Date.current.month
+              ),
+              onchange: "this.form.submit();" %>
+          <%= select_tag :year,
+              options_for_select(
+                (5.years.ago.year..Date.current.year).to_a.reverse,
+                @selected_year || Date.current.year
+              ),
+              onchange: "this.form.submit();" %>
+        </span>
+      </p>
+    <% end %>
   </fieldset>
 <% end %>
 
 <% if @report_data.nil? || @report_data.empty? %>
-  <p class="nodata">No account data found for <%= @target_system %>.</p>
+  <p class="nodata">
+    No account data found for <%= @target_system %>
+    <% if @mode == 'monthly' %>
+      as of <%= @as_of_time&.to_date&.strftime('%B %Y') || 'selected month' %>.
+    <% else %>
+      (current state).
+    <% end %>
+  </p>
 <% else %>
   <p class="report-info">
-    Showing <%= pluralize(@report_data.size, 'employee') %> with accounts on <%= @target_system %>.
+    Showing <%= pluralize(@report_data.size, 'employee') %> with accounts on <%= @target_system %>
+    <% if @mode == 'monthly' %>
+      as of <strong><%= @as_of_time&.to_date&.strftime('%B %Y') %></strong>.
+    <% else %>
+      <strong>(current state)</strong>.
+    <% end %>
   </p>
 
   <table class="list issues <%= sort_css_classes %>">
@@ -116,12 +159,46 @@
     font-weight: bold;
   }
 
+  #system-filter-form label.inline {
+    display: inline;
+    font-weight: normal;
+    min-width: auto;
+  }
+
   #system-filter-form select {
     padding: 0.4em;
     border: 1px solid #ccc;
     border-radius: 3px;
     font-size: 0.95em;
     min-width: 200px;
+  }
+
+  #system-filter-form .radio-option {
+    display: inline-block;
+    margin-right: 2em;
+    cursor: help;
+  }
+
+  #system-filter-form .month-year-selectors {
+    display: inline-flex;
+    gap: 0.5em;
+  }
+
+  #system-filter-form .month-year-selectors select {
+    padding: 0.4em;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 0.95em;
+    flex: 0 0 auto;
+    min-width: auto;
+  }
+
+  #system-filter-form .month-year-selectors select[name="month"] {
+    width: 130px;
+  }
+
+  #system-filter-form .month-year-selectors select[name="year"] {
+    width: 85px;
   }
 
   .report-info {

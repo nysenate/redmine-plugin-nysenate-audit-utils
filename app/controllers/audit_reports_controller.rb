@@ -141,12 +141,33 @@ class AuditReportsController < ApplicationController
     # Parse target_system parameter
     target_system = params[:target_system].presence || 'Oracle / SFMS'
 
+    # Parse mode parameter (default to 'monthly')
+    mode = params[:mode].presence || 'monthly'
+
+    # Parse month/year and determine as_of_time based on mode
+    if mode == 'current'
+      # Current mode: show latest state (no time filtering)
+      as_of_time = Time.current
+      selected_month_num = nil
+      selected_year = nil
+    else
+      # Monthly mode: show snapshot at beginning of selected month
+      selected_month_num = (params[:month].presence || Date.current.month).to_i
+      selected_year = (params[:year].presence || Date.current.year).to_i
+      as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.in_time_zone
+    end
+
     # Generate report
     service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
-      target_system: target_system
+      target_system: target_system,
+      as_of_time: as_of_time
     )
     @report_data = service.generate
     @target_system = target_system
+    @mode = mode
+    @selected_month_num = selected_month_num
+    @selected_year = selected_year
+    @as_of_time = as_of_time
 
     # Handle errors
     unless service.success?
@@ -177,8 +198,13 @@ class AuditReportsController < ApplicationController
       format.html
       format.csv do
         csv_data = generate_monthly_csv(@report_data)
+        filename_suffix = if mode == 'current'
+                            'current'
+                          else
+                            "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
+                          end
         send_data csv_data,
-                  filename: "monthly_report_#{target_system.parameterize}_#{Date.current.strftime('%Y%m%d')}.csv",
+                  filename: "monthly_report_#{target_system.parameterize}_#{filename_suffix}.csv",
                   type: 'text/csv',
                   disposition: 'attachment'
       end
@@ -338,27 +364,29 @@ class AuditReportsController < ApplicationController
     return '' unless data
 
     CSV.generate do |csv|
-      # Header row
+      # Header row (matches web view layout with request_code added)
       csv << [
-        'Employee ID',
         'Employee Name',
-        'Status',
-        'Account Action',
+        'Employee ID',
+        'Employee UID',
+        'Account Status',
         'Last Updated',
-        'Request Code',
-        'Issue ID'
+        'Last Issue',
+        'Last Action',
+        'Request Code'
       ]
 
       # Data rows
       data.each do |row|
         csv << [
-          row[:employee_id],
           row[:employee_name],
+          row[:employee_id],
+          row[:employee_uid],
           row[:status],
-          row[:account_action],
           row[:closed_on]&.strftime('%Y-%m-%d'),
-          row[:request_code],
-          row[:issue_id]
+          row[:issue_id],
+          row[:account_action],
+          row[:request_code]
         ]
       end
     end
