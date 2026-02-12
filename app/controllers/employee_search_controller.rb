@@ -60,9 +60,24 @@ class EmployeeSearchController < ApplicationController
   private
 
   def check_permission
-    unless User.current.allowed_to?(:use_employee_autofill, nil, global: true)
+    project = find_project
+
+    # Check if project exists and module is enabled
+    unless project && project.module_enabled?(:audit_utils_employee_autofill)
+      render json: { error: "Access denied" }, status: :forbidden
+      return
+    end
+
+    # Check if user has permission for this project
+    unless User.current.allowed_to?(:use_employee_autofill, project)
       render json: { error: "Access denied" }, status: :forbidden
     end
+  end
+
+  def find_project
+    return nil unless params[:project_id].present?
+
+    Project.find_by(id: params[:project_id])
   end
 
   def sanitize_search_query(query)

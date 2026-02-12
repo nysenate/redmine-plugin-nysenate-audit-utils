@@ -69,6 +69,7 @@ class AutofillHooksTest < ActiveSupport::TestCase
 
     # User has permission
     User.current = @admin
+    @admin.stubs(:allowed_to?).with(:use_employee_autofill, @project).returns(true)
 
     result = @hook.view_issues_form_details_bottom(@context)
 
@@ -98,6 +99,9 @@ class AutofillHooksTest < ActiveSupport::TestCase
   def test_widget_shown_when_user_has_permission
     # Enable the module
     @project.enable_module!(:audit_utils_employee_autofill)
+
+    # Reload issue to pick up fresh project state with updated allowed_permissions cache
+    @issue.reload
 
     # Ensure user has permission
     role = Role.find(1)
@@ -149,6 +153,9 @@ class AutofillHooksTest < ActiveSupport::TestCase
   def test_widget_only_shown_when_all_conditions_met
     # Enable module
     @project.enable_module!(:audit_utils_employee_autofill)
+
+    # Reload issue to pick up fresh project state with updated allowed_permissions cache
+    @issue.reload
 
     # Grant permission
     User.current = @admin
