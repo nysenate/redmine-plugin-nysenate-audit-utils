@@ -293,29 +293,37 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function populateField(mappingKey, value) {
-    if (!value || !fieldMappings || !fieldMappings[mappingKey]) return;
-    
+    if (!fieldMappings || !fieldMappings[mappingKey]) return;
+
     const fieldId = fieldMappings[mappingKey];
     const input = document.getElementById(fieldId);
-    
+
     if (input) {
-      input.value = value;
+      input.value = value || '';
       // Trigger change event for any listeners
       input.dispatchEvent(new Event('change', { bubbles: true }));
       input.dispatchEvent(new Event('input', { bubbles: true }));
-      console.log(`Populated ${mappingKey} (${fieldId}) with value: ${value}`);
+      console.log(`Populated ${mappingKey} (${fieldId}) with value: ${value || '(blank)'}`);
     } else {
       console.warn(`Could not find input field for ${mappingKey} (${fieldId})`);
     }
   }
   
   function populateSelectField(mappingKey, value) {
-    if (!value || !fieldMappings || !fieldMappings[mappingKey]) return;
-    
+    if (!fieldMappings || !fieldMappings[mappingKey]) return;
+
     const fieldId = fieldMappings[mappingKey];
     const select = document.getElementById(fieldId);
-    
+
     if (select && select.tagName === 'SELECT') {
+      if (!value) {
+        // Clear selection by selecting empty/default option
+        select.value = '';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        console.log(`Cleared ${mappingKey} (${fieldId})`);
+        return;
+      }
+
       // Try to find matching option by value or text
       const options = select.querySelectorAll('option');
       for (const option of options) {
