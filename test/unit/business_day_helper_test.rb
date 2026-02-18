@@ -186,7 +186,7 @@ module NysenateAuditUtils::Reporting
     end
 
     test 'previous_business_day uses current date when no parameter given' do
-      travel_to Date.new(2025, 10, 7) do # Tuesday
+      travel_to Time.zone.local(2025, 10, 7) do # Tuesday
         result = NysenateAuditUtils::Reporting::BusinessDayHelper.previous_business_day
 
         assert_equal Date.new(2025, 10, 6), result # Monday
