@@ -1,18 +1,23 @@
-document.addEventListener('DOMContentLoaded', function() {
+// Global state for cleanup
+let employeeSearchState = {
+  initialized: false,
+  listeners: [],
+  searchTimeout: null,
+  currentRequest: null,
+  fieldMappings: null,
+  currentSearchQuery: '',
+  currentOffset: 0,
+  hasMore: false,
+  isLoadingMore: false
+};
+
+function initializeEmployeeSearch() {
   const searchWidget = document.getElementById('employee-search-widget');
   const searchInput = document.getElementById('employee-search-input');
   const resultsContainer = document.getElementById('employee-search-results');
   const resultsList = document.getElementById('employee-results-list');
   const loadingIndicator = document.getElementById('employee-search-loading');
   const errorContainer = document.getElementById('employee-search-error');
-
-  let searchTimeout = null;
-  let currentRequest = null;
-  let fieldMappings = null;
-  let currentSearchQuery = '';
-  let currentOffset = 0;
-  let hasMore = false;
-  let isLoadingMore = false;
 
   if (!searchInput || !searchWidget) {
     console.log('Employee search widget not found - exiting');
@@ -27,52 +32,71 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
+  // Clean up previous initialization
+  cleanupEmployeeSearch();
+
+  // Reset state
+  employeeSearchState.searchTimeout = null;
+  employeeSearchState.currentRequest = null;
+  employeeSearchState.fieldMappings = null;
+  employeeSearchState.currentSearchQuery = '';
+  employeeSearchState.currentOffset = 0;
+  employeeSearchState.hasMore = false;
+  employeeSearchState.isLoadingMore = false;
+  employeeSearchState.initialized = true;
+
   // Load field mappings on initialization
   loadFieldMappings();
 
-  searchInput.addEventListener('input', function() {
+  const inputHandler = function() {
     const query = this.value.trim();
-    
+
     // Clear any existing timeout
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
+    if (employeeSearchState.searchTimeout) {
+      clearTimeout(employeeSearchState.searchTimeout);
     }
-    
+
     // Cancel any existing request
-    if (currentRequest) {
-      currentRequest.abort();
-      currentRequest = null;
+    if (employeeSearchState.currentRequest) {
+      employeeSearchState.currentRequest.abort();
+      employeeSearchState.currentRequest = null;
     }
-    
+
     // Hide results if query is too short
     if (query.length < 2) {
       hideResults();
       return;
     }
-    
+
     // Debounce search requests
-    searchTimeout = setTimeout(() => {
+    employeeSearchState.searchTimeout = setTimeout(() => {
       performSearch(query);
     }, 300);
-  });
+  };
+  searchInput.addEventListener('input', inputHandler);
+  employeeSearchState.listeners.push({ element: searchInput, event: 'input', handler: inputHandler });
 
-  searchInput.addEventListener('keydown', function(e) {
+  const keydownHandler = function(e) {
     if (e.key === 'Escape') {
       hideResults();
       this.blur();
     }
-  });
+  };
+  searchInput.addEventListener('keydown', keydownHandler);
+  employeeSearchState.listeners.push({ element: searchInput, event: 'keydown', handler: keydownHandler });
 
   // Hide results when clicking outside
-  document.addEventListener('click', function(e) {
+  const clickHandler = function(e) {
     if (!e.target.closest('.employee-search-widget')) {
       hideResults();
     }
-  });
+  };
+  document.addEventListener('click', clickHandler);
+  employeeSearchState.listeners.push({ element: document, event: 'click', handler: clickHandler });
 
   // Add scroll listener for infinite scroll
-  resultsContainer.addEventListener('scroll', function() {
-    if (isLoadingMore || !hasMore) return;
+  const scrollHandler = function() {
+    if (employeeSearchState.isLoadingMore || !employeeSearchState.hasMore) return;
 
     const scrollTop = this.scrollTop;
     const scrollHeight = this.scrollHeight;
@@ -82,29 +106,31 @@ document.addEventListener('DOMContentLoaded', function() {
     if (scrollTop + clientHeight >= scrollHeight * 0.8) {
       loadMoreResults();
     }
-  });
+  };
+  resultsContainer.addEventListener('scroll', scrollHandler);
+  employeeSearchState.listeners.push({ element: resultsContainer, event: 'scroll', handler: scrollHandler });
 
   function performSearch(query) {
-    currentSearchQuery = query;
-    currentOffset = 0;
-    hasMore = false;
+    employeeSearchState.currentSearchQuery = query;
+    employeeSearchState.currentOffset = 0;
+    employeeSearchState.hasMore = false;
     showLoading();
     hideError();
 
-    currentRequest = new XMLHttpRequest();
-    currentRequest.open('GET', `/employee_search/search?q=${encodeURIComponent(query)}&limit=20&offset=0&project_id=${encodeURIComponent(projectId)}`);
-    currentRequest.setRequestHeader('Accept', 'application/json');
-    currentRequest.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    employeeSearchState.currentRequest = new XMLHttpRequest();
+    employeeSearchState.currentRequest.open('GET', `/employee_search/search?q=${encodeURIComponent(query)}&limit=20&offset=0&project_id=${encodeURIComponent(projectId)}`);
+    employeeSearchState.currentRequest.setRequestHeader('Accept', 'application/json');
+    employeeSearchState.currentRequest.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
-    currentRequest.onreadystatechange = function() {
+    employeeSearchState.currentRequest.onreadystatechange = function() {
       if (this.readyState === XMLHttpRequest.DONE) {
         hideLoading();
 
         if (this.status === 200) {
           try {
             const response = JSON.parse(this.responseText);
-            hasMore = response.has_more || false;
-            currentOffset = response.offset + response.total;
+            employeeSearchState.hasMore = response.has_more || false;
+            employeeSearchState.currentOffset = response.offset + response.total;
             displayResults(response.employees || [], false);
           } catch (e) {
             showError('Error parsing search results');
@@ -117,40 +143,40 @@ document.addEventListener('DOMContentLoaded', function() {
           showError('Search failed. Please try again.');
         }
 
-        currentRequest = null;
+        employeeSearchState.currentRequest = null;
       }
     };
 
-    currentRequest.onerror = function() {
+    employeeSearchState.currentRequest.onerror = function() {
       hideLoading();
       showError('Network error. Please check your connection.');
-      currentRequest = null;
+      employeeSearchState.currentRequest = null;
     };
 
-    currentRequest.send();
+    employeeSearchState.currentRequest.send();
   }
 
   function loadMoreResults() {
-    if (isLoadingMore || !hasMore || !currentSearchQuery) return;
+    if (employeeSearchState.isLoadingMore || !employeeSearchState.hasMore || !employeeSearchState.currentSearchQuery) return;
 
-    isLoadingMore = true;
+    employeeSearchState.isLoadingMore = true;
     showLoadingMore();
 
     const request = new XMLHttpRequest();
-    request.open('GET', `/employee_search/search?q=${encodeURIComponent(currentSearchQuery)}&limit=20&offset=${currentOffset}&project_id=${encodeURIComponent(projectId)}`);
+    request.open('GET', `/employee_search/search?q=${encodeURIComponent(employeeSearchState.currentSearchQuery)}&limit=20&offset=${employeeSearchState.currentOffset}&project_id=${encodeURIComponent(projectId)}`);
     request.setRequestHeader('Accept', 'application/json');
     request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
     request.onreadystatechange = function() {
       if (this.readyState === XMLHttpRequest.DONE) {
         hideLoadingMore();
-        isLoadingMore = false;
+        employeeSearchState.isLoadingMore = false;
 
         if (this.status === 200) {
           try {
             const response = JSON.parse(this.responseText);
-            hasMore = response.has_more || false;
-            currentOffset = currentOffset + response.total;
+            employeeSearchState.hasMore = response.has_more || false;
+            employeeSearchState.currentOffset = employeeSearchState.currentOffset + response.total;
             displayResults(response.employees || [], true);
           } catch (e) {
             console.error('Error parsing more results:', e);
@@ -163,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     request.onerror = function() {
       hideLoadingMore();
-      isLoadingMore = false;
+      employeeSearchState.isLoadingMore = false;
       console.error('Network error loading more results');
     };
 
@@ -188,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const li = document.createElement('li');
         const statusClass = employee.status === 'Active' ? 'employee-status-active' : 'employee-status-inactive';
         li.innerHTML = `
-          <div class="employee-name">${highlightMatch(employee.name || 'Unknown', currentSearchQuery)}</div>
+          <div class="employee-name">${highlightMatch(employee.name || 'Unknown', employeeSearchState.currentSearchQuery)}</div>
           <div class="employee-details">
             Status: <span class="${statusClass}">${escapeHtml(employee.status || 'N/A')}</span> |
             UID: ${escapeHtml(employee.uid || 'N/A')} |
@@ -214,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
     request.open('GET', `/employee_search/field_mappings?project_id=${encodeURIComponent(projectId)}`);
     request.setRequestHeader('Accept', 'application/json');
     request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-    
+
     request.onreadystatechange = function() {
       console.log('Field mappings request state:', this.readyState, this.status);
       if (this.readyState === XMLHttpRequest.DONE) {
@@ -222,9 +248,9 @@ document.addEventListener('DOMContentLoaded', function() {
           try {
             console.log('Field mappings response text:', this.responseText);
             const response = JSON.parse(this.responseText);
-            fieldMappings = response.field_mappings;
-            console.log('Field mappings loaded successfully:', fieldMappings);
-            window.bachelpFieldMappings = fieldMappings; // Also set globally for debugging
+            employeeSearchState.fieldMappings = response.field_mappings;
+            console.log('Field mappings loaded successfully:', employeeSearchState.fieldMappings);
+            window.bachelpFieldMappings = employeeSearchState.fieldMappings; // Also set globally for debugging
           } catch (e) {
             console.error('Error parsing field mappings:', e);
           }
@@ -233,47 +259,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     };
-    
+
     request.send();
     console.log('Field mappings request sent');
   }
 
-  function loadFieldMappingsSync() {
-    return fetch(`/employee_search/field_mappings?project_id=${encodeURIComponent(projectId)}`, {
-      headers: {
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      fieldMappings = data.field_mappings;
-      console.log('Field mappings loaded synchronously:', fieldMappings);
-      return fieldMappings;
-    })
-    .catch(error => {
-      console.error('Failed to load field mappings synchronously:', error);
-      return null;
-    });
-  }
-
   function selectEmployee(employee) {
     console.log('Selected employee:', employee);
-    console.log('Current fieldMappings state:', fieldMappings);
+    console.log('Current fieldMappings state:', employeeSearchState.fieldMappings);
     hideResults();
     searchInput.value = employee.name || '';
-    
-    if (!fieldMappings) {
+
+    if (!employeeSearchState.fieldMappings) {
       console.warn('Field mappings not loaded yet, trying to use global fallback...');
       if (window.bachelpFieldMappings) {
-        fieldMappings = window.bachelpFieldMappings;
-        console.log('Using global field mappings:', fieldMappings);
+        employeeSearchState.fieldMappings = window.bachelpFieldMappings;
+        console.log('Using global field mappings:', employeeSearchState.fieldMappings);
       } else {
         console.error('No field mappings available, cannot autofill');
         return;
       }
     }
-    
+
     populateEmployeeFields(employee);
   }
   
@@ -293,9 +300,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function populateField(mappingKey, value) {
-    if (!fieldMappings || !fieldMappings[mappingKey]) return;
+    if (!employeeSearchState.fieldMappings || !employeeSearchState.fieldMappings[mappingKey]) return;
 
-    const fieldId = fieldMappings[mappingKey];
+    const fieldId = employeeSearchState.fieldMappings[mappingKey];
     const input = document.getElementById(fieldId);
 
     if (input) {
@@ -308,11 +315,11 @@ document.addEventListener('DOMContentLoaded', function() {
       console.warn(`Could not find input field for ${mappingKey} (${fieldId})`);
     }
   }
-  
-  function populateSelectField(mappingKey, value) {
-    if (!fieldMappings || !fieldMappings[mappingKey]) return;
 
-    const fieldId = fieldMappings[mappingKey];
+  function populateSelectField(mappingKey, value) {
+    if (!employeeSearchState.fieldMappings || !employeeSearchState.fieldMappings[mappingKey]) return;
+
+    const fieldId = employeeSearchState.fieldMappings[mappingKey];
     const select = document.getElementById(fieldId);
 
     if (select && select.tagName === 'SELECT') {
@@ -404,4 +411,51 @@ document.addEventListener('DOMContentLoaded', function() {
   function escapeRegex(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
+}
+
+function cleanupEmployeeSearch() {
+  console.log('Cleaning up employee search...');
+
+  // Clear any pending timeout
+  if (employeeSearchState.searchTimeout) {
+    clearTimeout(employeeSearchState.searchTimeout);
+    employeeSearchState.searchTimeout = null;
+  }
+
+  // Abort any pending request
+  if (employeeSearchState.currentRequest) {
+    employeeSearchState.currentRequest.abort();
+    employeeSearchState.currentRequest = null;
+  }
+
+  // Remove all event listeners
+  employeeSearchState.listeners.forEach(({ element, event, handler }) => {
+    element.removeEventListener(event, handler);
+  });
+  employeeSearchState.listeners = [];
+
+  console.log('Cleanup complete');
+}
+
+// Initialize on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOMContentLoaded: Initializing employee search');
+  initializeEmployeeSearch();
 });
+
+// Re-initialize when issue form is updated via AJAX (e.g., project change)
+// Listen for both jQuery ajaxComplete and native events
+if (typeof jQuery !== 'undefined') {
+  jQuery(document).on('ajaxComplete', function(event, xhr, settings) {
+    // Check if this is an issue form update
+    if (settings.url && settings.url.includes('/issues/') && settings.url.includes('/edit')) {
+      console.log('AJAX form update detected, re-initializing employee search');
+      // Small delay to ensure DOM is updated
+      setTimeout(function() {
+        if (document.getElementById('employee-search-widget')) {
+          initializeEmployeeSearch();
+        }
+      }, 100);
+    }
+  });
+}
