@@ -1,0 +1,38 @@
+Monthly Audit Report - <%= @target_system %>
+<%= '=' * (24 + @target_system.length) %>
+
+<% if @mode == 'current' %>
+Report Type: Current State
+As of: <%= @as_of_time.strftime('%Y-%m-%d %H:%M:%S %Z') %>
+<% else %>
+Report Type: Historical Snapshot
+Snapshot Date: <%= Date::MONTHNAMES[@selected_month_num] %> <%= @selected_year %>
+As of: <%= @as_of_time.strftime('%Y-%m-%d') %>
+<% end %>
+
+Target System: <%= @target_system %>
+Total Accounts: <%= @account_count %>
+
+<% if @account_count > 0 %>
+<% if @mode == 'current' %>
+This report shows the current account status for all employees with
+accounts on <%= @target_system %>.
+<% else %>
+This report shows a historical snapshot of account statuses for all
+employees with accounts on <%= @target_system %> as of the beginning of
+<%= Date::MONTHNAMES[@selected_month_num] %> <%= @selected_year %>.
+<% end %>
+
+The complete report data has been attached as a CSV file for your review.
+
+Summary
+-------
+Total accounts: <%= @account_count %>
+Target system: <%= @target_system %>
+Report generated: <%= Time.current.strftime('%Y-%m-%d %H:%M:%S %Z') %>
+<% else %>
+No accounts found for <%= @target_system %>.
+<% end %>
+
+---
+This is an automated report from the NY Senate Audit Utils system.

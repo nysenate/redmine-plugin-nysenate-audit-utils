@@ -1,0 +1,24 @@
+<h2>Daily Audit Report</h2>
+
+<p><strong>Report Period:</strong> <%= @from_date.strftime('%Y-%m-%d %H:%M') %> to <%= @to_date.strftime('%Y-%m-%d %H:%M') %></p>
+
+<p><strong>Employees with Status Changes:</strong> <%= @employee_count %></p>
+
+<% if @employee_count > 0 %>
+<p>This report shows employees who had status changes (appointments, terminations, transfers, etc.) during the specified time period, along with their current account statuses and any open account requests.</p>
+
+<p>The complete report data has been attached as a CSV file for your review.</p>
+
+<h3>Summary</h3>
+<p>
+  Total employees with status changes: <%= @employee_count %><br>
+  Report generated: <%= Time.current.strftime('%Y-%m-%d %H:%M:%S %Z') %>
+</p>
+<% else %>
+<p>No employees had status changes during this time period.</p>
+<% end %>
+
+<hr>
+<p style="font-size: 0.9em; color: #666;">
+  This is an automated report from the NY Senate Audit Utils system.
+</p>

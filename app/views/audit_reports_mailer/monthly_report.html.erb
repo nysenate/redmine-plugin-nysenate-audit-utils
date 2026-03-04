@@ -1,0 +1,37 @@
+<h2>Monthly Audit Report - <%= @target_system %></h2>
+
+<% if @mode == 'current' %>
+<p><strong>Report Type:</strong> Current State</p>
+<p><strong>As of:</strong> <%= @as_of_time.strftime('%Y-%m-%d %H:%M:%S %Z') %></p>
+<% else %>
+<p><strong>Report Type:</strong> Historical Snapshot</p>
+<p><strong>Snapshot Date:</strong> <%= Date::MONTHNAMES[@selected_month_num] %> <%= @selected_year %></p>
+<p><strong>As of:</strong> <%= @as_of_time.strftime('%Y-%m-%d') %></p>
+<% end %>
+
+<p><strong>Target System:</strong> <%= @target_system %></p>
+<p><strong>Total Accounts:</strong> <%= @account_count %></p>
+
+<% if @account_count > 0 %>
+<% if @mode == 'current' %>
+<p>This report shows the current account status for all employees with accounts on <%= @target_system %>.</p>
+<% else %>
+<p>This report shows a historical snapshot of account statuses for all employees with accounts on <%= @target_system %> as of the beginning of <%= Date::MONTHNAMES[@selected_month_num] %> <%= @selected_year %>.</p>
+<% end %>
+
+<p>The complete report data has been attached as a CSV file for your review.</p>
+
+<h3>Summary</h3>
+<p>
+  Total accounts: <%= @account_count %><br>
+  Target system: <%= @target_system %><br>
+  Report generated: <%= Time.current.strftime('%Y-%m-%d %H:%M:%S %Z') %>
+</p>
+<% else %>
+<p>No accounts found for <%= @target_system %>.</p>
+<% end %>
+
+<hr>
+<p style="font-size: 0.9em; color: #666;">
+  This is an automated report from the NY Senate Audit Utils system.
+</p>

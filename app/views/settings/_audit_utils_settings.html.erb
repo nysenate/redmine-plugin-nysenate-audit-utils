@@ -109,6 +109,26 @@
   </table>
 </div>
 
+<div class="box tabular settings">
+  <h3>Email Reporting Configuration</h3>
+
+  <p style="margin: 1em 0 0.5em 0; padding: 0;">
+    Configure default email recipients for scheduled audit reports. Email addresses should be comma-separated.
+    Individual rake tasks can override this default by providing a recipients parameter.
+  </p>
+
+  <p>
+    <%= content_tag 'label', 'Default Report Recipients' %>
+    <%= text_field_tag 'settings[report_recipients]', @settings['report_recipients'],
+                       :size => 80, :placeholder => 'user1@example.com, user2@example.com' %>
+    <em class="info">Default recipients for all automated reports (daily, weekly, monthly)</em>
+  </p>
+
+  <div class="flash notice" style="margin-top: 1em;">
+    <p><strong>Note:</strong> To enable scheduled reports, you must set up cron jobs on the server. See the plugin README for instructions on configuring rake tasks and cron.</p>
+  </div>
+</div>
+
 <style>
 .button-small {
   padding: 4px 10px;

@@ -6,6 +6,7 @@ require_relative 'lib/nysenate_audit_utils/ess/ess_employee_service'
 require_relative 'lib/nysenate_audit_utils/ess/ess_status_change_service'
 require_relative 'lib/nysenate_audit_utils/reporting/business_day_helper'
 require_relative 'lib/nysenate_audit_utils/reporting/daily_report_service'
+require_relative 'lib/nysenate_audit_utils/reporting/csv_generator'
 require_relative 'lib/nysenate_audit_utils/account_tracking/account_tracking_service'
 require_relative 'lib/nysenate_audit_utils/autofill/employee_mapper'
 require_relative 'lib/nysenate_audit_utils/autofill/hooks'
@@ -62,7 +63,9 @@ Redmine::Plugin.register :nysenate_audit_utils do
     'account_action_field_id' => nil,
     'target_system_field_id' => nil,
     # Request Code Mapping settings
-    'request_code_mappings' => {}      # Custom mappings to override defaults
+    'request_code_mappings' => {},      # Custom mappings to override defaults
+    # Email Reporting settings
+    'report_recipients' => ''            # Comma-separated email addresses for all reports
   }, partial: 'settings/audit_utils_settings'
 end
 

@@ -1,0 +1,24 @@
+Weekly Audit Report
+===================
+
+Report Period: Week of <%= @from_date.strftime('%Y-%m-%d') %>
+Coverage: <%= @from_date.strftime('%Y-%m-%d') %> through <%= @to_date.strftime('%Y-%m-%d %H:%M') %>
+
+Active Tickets: <%= @ticket_count %>
+
+<% if @ticket_count > 0 %>
+This report shows all tickets that were created or updated during the
+current week. This data is used for access list consistency checks.
+
+The complete report data has been attached as a CSV file for your review.
+
+Summary
+-------
+Total active tickets: <%= @ticket_count %>
+Report generated: <%= Time.current.strftime('%Y-%m-%d %H:%M:%S %Z') %>
+<% else %>
+No tickets were created or updated during this week.
+<% end %>
+
+---
+This is an automated report from the NY Senate Audit Utils system.
