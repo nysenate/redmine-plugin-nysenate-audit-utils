@@ -1,6 +1,6 @@
 # NY Senate Audit Utils Plugin
 
-A comprehensive Redmine plugin providing audit utilities, employee data integration, and security workflow tools for the New York State Senate.
+A comprehensive Redmine plugin providing audit utilities, subject data integration, and security workflow tools for the New York State Senate.
 
 ## Quick Start
 
@@ -59,18 +59,19 @@ Configure access to the Employee Self Service API:
 
 ### 2. Custom Field Configuration
 
-The plugin uses custom fields to store employee and request data.
+The plugin uses custom fields to store subject and request data.
 
 Ensure that the following fields exist and are included in desired projects/trackers:
 
-**Employee Fields:**
-- `Employee ID` - Integer
-- `Employee Name` - Text
-- `Employee Email` - Text
-- `Employee Phone` - Text
-- `Employee Status` - List (Active/Inactive)
-- `Employee UID` - Text
-- `Employee Office` - Text
+**Subject Fields:**
+- `Subject Type` - List (Employee/Vendor)
+- `Subject ID` - Integer
+- `Subject Name` - Text
+- `Subject Email` - Text
+- `Subject Phone` - Text
+- `Subject Status` - List (Active/Inactive)
+- `Subject UID` - Text
+- `Subject Location` - Text
 
 **Request Fields:**
 - `Account Action` - List
@@ -100,7 +101,7 @@ Enable features per-project:
 1. Go to **Projects → \*your project name\* → Settings** and scroll to the **Modules** section.
 2. Enable desired modules:
    - **Audit Reporting** - Access to daily/weekly/monthly/triennial reports
-   - **Employee Autofill** - Employee search and autofill functionality
+   - **Subject Autofill** - Subject search and autofill functionality (employees, vendors, etc.)
    - **Packet Creation** - Create ticket packets containing ticket pdf + all issue attachments
 
 ### 4. Permissions
@@ -109,8 +110,8 @@ Configure role permissions under **Administration → Roles and Permissions**:
 
 Edit the desired role(s) so that they grant the following permissions:
 
-**Audit Utils Employee Autofill:**
-- Use employee autofill
+**Audit Utils Subject Autofill:**
+- Use subject autofill
 
 **Audit Utils Packet Creation:**
 - Create ticket packets
@@ -165,10 +166,25 @@ Generate audit-ready zip packages containing:
 - **Single ticket**: "Create Packet" button on issue detail page
 - **Bulk creation**: Right-click context menu on issue list (select multiple issues)
 
-### Employee Autofill
+### Subject Management
 
-- Real-time employee search widget on issue pages
-- Automatic population of configured custom fields from ESS data
+Manage non-employee subjects (vendors, contractors, etc.) through the admin interface:
+
+**Access:** **Administration → Manage Subjects** (admin-only)
+
+**Features:**
+- Create, edit, and delete vendor records
+- Auto-generated vendor IDs (V1, V2, V3, etc.)
+- Search and filter subject list
+- Manage subject details: name, email, phone, location, status
+
+**Note:** Employee data is read-only from the ESS API and cannot be modified locally.
+
+### Subject Autofill
+
+- Real-time subject search widget on issue pages with type selection (Employee, Vendor)
+- Employee data sourced from ESS API; vendor data managed locally
+- Automatic population of configured custom fields
 - AJAX-based search interface
 
 ### Request Code Mapping

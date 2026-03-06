@@ -16,7 +16,7 @@ module NysenateAuditUtils
             phone: employee.work_phone,
             status: employee.active ? 'Active' : 'Inactive',
             uid: employee.uid,
-            office: employee.resp_center_head&.short_name,
+            location: employee.resp_center_head&.short_name,
             resp_center_head: employee.resp_center_head
           }
         end

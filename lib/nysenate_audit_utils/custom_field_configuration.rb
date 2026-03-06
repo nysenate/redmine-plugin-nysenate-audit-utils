@@ -7,45 +7,51 @@ module NysenateAuditUtils
     # Field definitions with metadata
     # Structure: { setting_key => { name:, description:, required: } }
     FIELD_DEFINITIONS = {
-      'employee_id_field_id' => {
-        name: 'Employee ID',
-        description: 'Employee ID field for reports and tracking',
+      'subject_type_field_id' => {
+        name: 'Subject Type',
+        description: 'Subject type field (Employee, Vendor, etc.) for multi-type support',
+        required: true,
+        category: :autofill
+      },
+      'subject_id_field_id' => {
+        name: 'Subject ID',
+        description: 'Subject ID field for reports and tracking',
         required: true,
         category: :reporting
       },
-      'employee_name_field_id' => {
-        name: 'Employee Name',
-        description: 'Employee name field for autofill',
+      'subject_name_field_id' => {
+        name: 'Subject Name',
+        description: 'Subject name field for autofill',
         required: true,
         category: :autofill
       },
-      'employee_email_field_id' => {
-        name: 'Employee Email',
-        description: 'Employee email field for autofill',
+      'subject_email_field_id' => {
+        name: 'Subject Email',
+        description: 'Subject email field for autofill',
         required: true,
         category: :autofill
       },
-      'employee_phone_field_id' => {
-        name: 'Employee Phone',
-        description: 'Employee phone field for autofill',
+      'subject_phone_field_id' => {
+        name: 'Subject Phone',
+        description: 'Subject phone field for autofill',
         required: true,
         category: :autofill
       },
-      'employee_status_field_id' => {
-        name: 'Employee Status',
-        description: 'Employee status field for autofill',
+      'subject_status_field_id' => {
+        name: 'Subject Status',
+        description: 'Subject status field for autofill',
         required: true,
         category: :autofill
       },
-      'employee_uid_field_id' => {
-        name: 'Employee UID',
-        description: 'Employee UID field for autofill',
+      'subject_uid_field_id' => {
+        name: 'Subject UID',
+        description: 'Subject UID field for autofill',
         required: true,
         category: :autofill
       },
-      'employee_office_field_id' => {
-        name: 'Employee Office',
-        description: 'Employee office/Senate office field for autofill',
+      'subject_location_field_id' => {
+        name: 'Subject Location',
+        description: 'Subject location field for autofill',
         required: true,
         category: :autofill
       },
@@ -65,7 +71,7 @@ module NysenateAuditUtils
 
     class << self
       # Get a custom field ID by setting key
-      # @param setting_key [String] The setting key (e.g., 'employee_id_field_id')
+      # @param setting_key [String] The setting key (e.g., 'subject_id_field_id')
       # @return [Integer, nil] The custom field ID or nil if not configured
       def get_field_id(setting_key)
         field_id = Setting.plugin_nysenate_audit_utils[setting_key]
@@ -208,14 +214,24 @@ module NysenateAuditUtils
 
       # Helper methods for common field access patterns
 
-      # Get employee ID field ID
-      def employee_id_field_id
-        get_field_id('employee_id_field_id')
+      # Get subject type field ID
+      def subject_type_field_id
+        get_field_id('subject_type_field_id')
       end
 
-      # Get employee ID field
-      def employee_id_field
-        get_field('employee_id_field_id')
+      # Get subject type field
+      def subject_type_field
+        get_field('subject_type_field_id')
+      end
+
+      # Get subject ID field ID
+      def subject_id_field_id
+        get_field_id('subject_id_field_id')
+      end
+
+      # Get subject ID field
+      def subject_id_field
+        get_field('subject_id_field_id')
       end
 
       # Get account action field ID
@@ -240,16 +256,17 @@ module NysenateAuditUtils
 
       # Get all autofill field IDs as a hash
       # @return [Hash<Symbol, Integer>] Hash mapping field purpose to field ID
-      # Example: { employee_id: 123, employee_name: 124, ... }
+      # Example: { subject_type: 123, subject_id: 124, ... }
       def autofill_field_ids
         {
-          employee_id: get_field_id('employee_id_field_id'),
-          employee_name: get_field_id('employee_name_field_id'),
-          employee_email: get_field_id('employee_email_field_id'),
-          employee_phone: get_field_id('employee_phone_field_id'),
-          employee_status: get_field_id('employee_status_field_id'),
-          employee_uid: get_field_id('employee_uid_field_id'),
-          employee_office: get_field_id('employee_office_field_id')
+          subject_type: get_field_id('subject_type_field_id'),
+          subject_id: get_field_id('subject_id_field_id'),
+          subject_name: get_field_id('subject_name_field_id'),
+          subject_email: get_field_id('subject_email_field_id'),
+          subject_phone: get_field_id('subject_phone_field_id'),
+          subject_status: get_field_id('subject_status_field_id'),
+          subject_uid: get_field_id('subject_uid_field_id'),
+          subject_location: get_field_id('subject_location_field_id')
         }.compact
       end
     end

@@ -12,8 +12,8 @@ Rails.application.routes.draw do
     end
   end
 
-  # Employee search/autofill routes
-  resources :employee_search, only: [] do
+  # Subject search/autofill routes
+  resources :subject_search, only: [] do
     collection do
       get :search
       get :field_mappings
@@ -27,6 +27,11 @@ Rails.application.routes.draw do
       post :autoconfigure_field
       get :configuration_status
     end
+  end
+
+  # Project-scoped subject management routes
+  resources :projects do
+    resources :subjects
   end
 
   # Packet creation routes

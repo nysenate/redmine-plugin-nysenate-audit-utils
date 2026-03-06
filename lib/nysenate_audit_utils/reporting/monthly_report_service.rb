@@ -65,48 +65,55 @@ module NysenateAuditUtils
       end
 
       def enrich_with_employee_names
-        # Get employee name and UID field IDs
-        employee_name_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('employee_name_field_id')
-        employee_uid_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('employee_uid_field_id')
+        # Get subject name, UID, and type field IDs
+        subject_name_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('subject_name_field_id')
+        subject_uid_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('subject_uid_field_id')
+        subject_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('subject_type_field_id')
 
-        return unless employee_name_field_id || employee_uid_field_id
+        return unless subject_name_field_id || subject_uid_field_id
 
-        # Build a hash of issue_id => employee_name for quick lookup
+        # Build a hash of issue_id => subject_name for quick lookup
         issue_ids = @account_statuses.map { |status| status[:issue_id] }.compact.uniq
         return if issue_ids.empty?
 
-        # Fetch custom values for employee names and UIDs in a single query
-        @employee_names = {}
-        @employee_uids = {}
+        # Fetch custom values for subject names, UIDs, and types in a single query
+        @subject_names = {}
+        @subject_uids = {}
+        @subject_types = {}
 
-        field_ids = [employee_name_field_id, employee_uid_field_id].compact
+        field_ids = [subject_name_field_id, subject_uid_field_id, subject_type_field_id].compact
         CustomValue
           .where(customized_type: 'Issue', customized_id: issue_ids, custom_field_id: field_ids)
           .each do |cv|
-            if cv.custom_field_id == employee_name_field_id
-              @employee_names[cv.customized_id] = cv.value
-            elsif cv.custom_field_id == employee_uid_field_id
-              @employee_uids[cv.customized_id] = cv.value
+            if cv.custom_field_id == subject_name_field_id
+              @subject_names[cv.customized_id] = cv.value
+            elsif cv.custom_field_id == subject_uid_field_id
+              @subject_uids[cv.customized_id] = cv.value
+            elsif cv.custom_field_id == subject_type_field_id
+              @subject_types[cv.customized_id] = cv.value
             end
           end
       rescue StandardError => e
-        Rails.logger.error("Failed to enrich with employee data: #{e.message}")
-        @employee_names = {}
-        @employee_uids = {}
+        Rails.logger.error("Failed to enrich with subject data: #{e.message}")
+        @subject_names = {}
+        @subject_uids = {}
+        @subject_types = {}
       end
 
       def build_report_data
         return [] if @account_statuses.nil? || @account_statuses.empty?
 
-        @employee_names ||= {}
-        @employee_uids ||= {}
+        @subject_names ||= {}
+        @subject_uids ||= {}
+        @subject_types ||= {}
 
         # Build report data array
         report_data = @account_statuses.map do |status|
           {
-            employee_id: status[:employee_id],
-            employee_name: @employee_names[status[:issue_id]],
-            employee_uid: @employee_uids[status[:issue_id]],
+            subject_id: status[:subject_id],
+            subject_name: @subject_names[status[:issue_id]],
+            subject_uid: @subject_uids[status[:issue_id]],
+            subject_type: @subject_types[status[:issue_id]] || status[:subject_type],  # Prefer from enrichment, fall back to status hash
             account_type: status[:account_type],
             status: status[:status],
             account_action: status[:account_action],
@@ -116,8 +123,8 @@ module NysenateAuditUtils
           }
         end
 
-        # Sort by employee_id for consistency
-        report_data.sort_by { |row| row[:employee_id].to_i }
+        # Sort by subject_id for consistency
+        report_data.sort_by { |row| row[:subject_id].to_i rescue row[:subject_id].to_s }  # Handle both numeric and prefixed IDs
       end
     end
   end

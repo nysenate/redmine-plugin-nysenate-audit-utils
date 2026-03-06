@@ -4,6 +4,10 @@ require_relative 'lib/nysenate_audit_utils/ess/ess_configuration'
 require_relative 'lib/nysenate_audit_utils/ess/ess_api_client'
 require_relative 'lib/nysenate_audit_utils/ess/ess_employee_service'
 require_relative 'lib/nysenate_audit_utils/ess/ess_status_change_service'
+require_relative 'lib/nysenate_audit_utils/subjects/subject_data_source'
+require_relative 'lib/nysenate_audit_utils/subjects/employee_data_source'
+require_relative 'lib/nysenate_audit_utils/subjects/database_data_source'
+require_relative 'lib/nysenate_audit_utils/subjects/subject_service'
 require_relative 'lib/nysenate_audit_utils/reporting/business_day_helper'
 require_relative 'lib/nysenate_audit_utils/reporting/daily_report_service'
 require_relative 'lib/nysenate_audit_utils/reporting/csv_generator'
@@ -16,7 +20,7 @@ require_relative 'lib/nysenate_audit_utils/request_codes/formula_helper'
 Redmine::Plugin.register :nysenate_audit_utils do
   name 'NYSenate Audit Utils Plugin'
   author 'New York State Senate'
-  description 'Audit utilities including ESS integration, reporting, employee autofill, and packet creation for audit workflows'
+  description 'Audit utilities including ESS integration, reporting, subject autofill, and packet creation for audit workflows'
   version '0.1.1'
   url 'https://github.com/nysenate/redmine-plugin-nysenate-audit-utils'
   author_url 'https://github.com/nysenate'
@@ -30,13 +34,18 @@ Redmine::Plugin.register :nysenate_audit_utils do
   end
 
   # Project module for autofill functionality
-  project_module :audit_utils_employee_autofill do
-    permission :use_employee_autofill, { employee_search: [:search, :field_mappings] }
+  project_module :audit_utils_subject_autofill do
+    permission :use_subject_autofill, { subject_search: [:search, :field_mappings] }
   end
 
   # Project module for packet creation
   project_module :audit_utils_packet_creation do
     permission :create_packet, { packet_creation: [:create, :create_multi_packet] }
+  end
+
+  # Project module for subject management
+  project_module :audit_utils_subject_management do
+    permission :manage_subjects, { subjects: [:index, :new, :create, :edit, :update, :destroy] }
   end
 
   # Menu items
@@ -46,6 +55,12 @@ Redmine::Plugin.register :nysenate_audit_utils do
        param: :project_id,
        if: Proc.new { |p| p.module_enabled?(:audit_utils_reporting) }
 
+  menu :project_menu, :subjects,
+       { controller: 'subjects', action: 'index' },
+       caption: 'Manage Subjects',
+       param: :project_id,
+       if: Proc.new { |p| p.module_enabled?(:audit_utils_subject_management) }
+
   # Consolidated settings
   settings default: {
     # ESS Integration settings
@@ -53,13 +68,14 @@ Redmine::Plugin.register :nysenate_audit_utils do
     'ess_api_key' => '',
     # Custom Field Configuration - all fields use IDs
     # Set to nil to use autoconfiguration by field name
-    'employee_id_field_id' => nil,
-    'employee_name_field_id' => nil,
-    'employee_email_field_id' => nil,
-    'employee_phone_field_id' => nil,
-    'employee_status_field_id' => nil,
-    'employee_uid_field_id' => nil,
-    'employee_office_field_id' => nil,
+    'subject_type_field_id' => nil,
+    'subject_id_field_id' => nil,
+    'subject_name_field_id' => nil,
+    'subject_email_field_id' => nil,
+    'subject_phone_field_id' => nil,
+    'subject_status_field_id' => nil,
+    'subject_uid_field_id' => nil,
+    'subject_location_field_id' => nil,
     'account_action_field_id' => nil,
     'target_system_field_id' => nil,
     # Request Code Mapping settings

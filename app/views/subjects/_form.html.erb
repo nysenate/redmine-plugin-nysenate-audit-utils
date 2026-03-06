@@ -1,0 +1,62 @@
+<%= labelled_form_for @subject, url: (@subject.new_record? ? project_subjects_path(@project) : project_subject_path(@project, @subject)) do |f| %>
+  <%= error_messages_for 'subject' %>
+
+  <div class="box tabular">
+    <p>
+      <%= f.select :subject_type,
+          options_for_select([['Vendor', 'Vendor']], @subject.subject_type),
+          {},
+          { required: true, label: 'Subject Type' } %>
+    </p>
+
+    <p>
+      <%= f.text_field :subject_id, readonly: true, class: 'readonly', required: true, label: 'Subject ID' %>
+      <em class="info">Auto-generated (e.g., V1, V2 for vendors)</em>
+    </p>
+
+    <p>
+      <%= f.text_field :name, size: 60, required: true, maxlength: 200, label: 'Name' %>
+    </p>
+
+    <p>
+      <%= f.text_field :email, size: 60, maxlength: 200 %>
+    </p>
+
+    <p>
+      <%= f.text_field :phone, size: 30, maxlength: 50 %>
+    </p>
+
+    <p>
+      <%= f.text_field :uid, size: 30, maxlength: 100 %>
+      <em class="info">Optional system user identifier</em>
+    </p>
+
+    <p>
+      <%= f.text_field :location, size: 60, maxlength: 200 %>
+    </p>
+
+    <p>
+      <%= f.select :status,
+          options_for_select([['Active', 'Active'], ['Inactive', 'Inactive']], @subject.status),
+          {},
+          { required: true, label: 'Status' } %>
+    </p>
+  </div>
+
+  <%= submit_tag(@subject.new_record? ? 'Create Subject' : 'Save Subject') %>
+  <%= link_to 'Cancel', project_subjects_path(@project), class: 'button' %>
+<% end %>
+
+<style>
+  .readonly {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+
+  em.info {
+    font-size: 0.9em;
+    color: #666;
+    font-style: italic;
+    margin-left: 0.5em;
+  }
+</style>
