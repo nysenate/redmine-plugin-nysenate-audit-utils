@@ -13,8 +13,8 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
 
     # Use helper to setup standard fields and associate with tracker
     @fields = setup_standard_bachelp_fields(@tracker)
-    @employee_id_field = @fields[:employee_id]
-    @employee_name_field = @fields[:employee_name]
+    @employee_id_field = @fields[:subject_id]
+    @employee_name_field = @fields[:subject_name]
     @account_action_field = @fields[:account_action]
     @target_system_field = @fields[:target_system]
 
@@ -44,8 +44,8 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     assert service.success?
 
     row = result.first
-    assert_equal '12345', row[:employee_id]
-    assert_equal 'John Doe', row[:employee_name]
+    assert_equal '12345', row[:subject_id]
+    assert_equal 'John Doe', row[:subject_name]
     assert_equal 'Oracle / SFMS', row[:account_type]
     assert_equal 'active', row[:status]
     assert_equal 'Add', row[:account_action]
@@ -71,8 +71,8 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     result = service.generate
 
     assert_equal 2, result.size
-    assert_equal 'Alice Smith', result.find { |r| r[:employee_id] == '12345' }[:employee_name]
-    assert_equal 'Bob Jones', result.find { |r| r[:employee_id] == '67890' }[:employee_name]
+    assert_equal 'Alice Smith', result.find { |r| r[:subject_id] == '12345' }[:subject_name]
+    assert_equal 'Bob Jones', result.find { |r| r[:subject_id] == '67890' }[:subject_name]
   end
 
   test 'generate handles missing employee name gracefully' do
@@ -83,7 +83,7 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     result = service.generate
 
     assert_equal 1, result.size
-    assert_nil result.first[:employee_name]
+    assert_nil result.first[:subject_name]
   end
 
   test 'generate sorts by employee_id' do
@@ -96,9 +96,9 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     result = service.generate
 
     assert_equal 3, result.size
-    assert_equal '11111', result[0][:employee_id]
-    assert_equal '55555', result[1][:employee_id]
-    assert_equal '99999', result[2][:employee_id]
+    assert_equal '11111', result[0][:subject_id]
+    assert_equal '55555', result[1][:subject_id]
+    assert_equal '99999', result[2][:subject_id]
   end
 
   test 'generate handles errors gracefully' do
@@ -122,8 +122,9 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     result = service.generate
 
     row = result.first
-    assert row.key?(:employee_id)
-    assert row.key?(:employee_name)
+    assert row.key?(:subject_id)
+    assert row.key?(:subject_name)
+    assert row.key?(:subject_type)
     assert row.key?(:account_type)
     assert row.key?(:status)
     assert row.key?(:account_action)
@@ -142,7 +143,7 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     result = service.generate
 
     assert_equal 1, result.size
-    assert_equal '11111', result.first[:employee_id]
+    assert_equal '11111', result.first[:subject_id]
     assert_equal 'Oracle / SFMS', result.first[:account_type]
   end
 
@@ -234,8 +235,8 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
 
     # Should only include the old issue (before cutoff)
     assert_equal 1, result.size
-    assert_equal '12345', result.first[:employee_id]
-    assert_equal 'Alice Before', result.first[:employee_name]
+    assert_equal '12345', result.first[:subject_id]
+    assert_equal 'Alice Before', result.first[:subject_name]
     assert_equal old_issue.id, result.first[:issue_id]
   end
 
@@ -249,8 +250,8 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
 
     # Should include both issues since as_of_time defaults to current
     assert_equal 2, result.size
-    assert_includes result.map { |r| r[:employee_id] }, '12345'
-    assert_includes result.map { |r| r[:employee_id] }, '67890'
+    assert_includes result.map { |r| r[:subject_id] }, '12345'
+    assert_includes result.map { |r| r[:subject_id] }, '67890'
   end
 
   test 'generate selects most recent issue before cutoff time' do
@@ -269,7 +270,7 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
 
     # Should return the most recent issue BEFORE cutoff (before_cutoff)
     assert_equal 1, result.size
-    assert_equal '12345', result.first[:employee_id]
+    assert_equal '12345', result.first[:subject_id]
     assert_equal before_cutoff.id, result.first[:issue_id]
     assert_equal 'Update Account & Privileges', result.first[:account_action]
     assert_equal 'active', result.first[:status]

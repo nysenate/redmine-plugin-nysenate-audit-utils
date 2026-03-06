@@ -14,7 +14,7 @@ module NysenateAuditUtils::AccountTracking
 
       # Use helper to setup standard fields and associate with tracker
       @fields = setup_standard_bachelp_fields(@tracker)
-      @employee_id_field = @fields[:employee_id]
+      @employee_id_field = @fields[:subject_id]
       @account_action_field = @fields[:account_action]
       @target_system_field = @fields[:target_system]
 
@@ -306,7 +306,8 @@ module NysenateAuditUtils::AccountTracking
 
       # Verify all required fields are present
       result.each do |status|
-        assert status.key?(:employee_id)
+        assert status.key?(:subject_id)
+        assert status.key?(:subject_type)
         assert status.key?(:account_type)
         assert status.key?(:status)
         assert status.key?(:issue_id)
@@ -315,16 +316,16 @@ module NysenateAuditUtils::AccountTracking
         assert status.key?(:request_code)
       end
 
-      # Results should be sorted by employee_id
-      assert_equal 'emp001', result[0][:employee_id]
+      # Results should be sorted by subject_id
+      assert_equal 'emp001', result[0][:subject_id]
       assert_equal 'active', result[0][:status]
       assert_equal issue1.id, result[0][:issue_id]
 
-      assert_equal 'emp002', result[1][:employee_id]
+      assert_equal 'emp002', result[1][:subject_id]
       assert_equal 'inactive', result[1][:status]
       assert_equal issue2.id, result[1][:issue_id]
 
-      assert_equal 'emp003', result[2][:employee_id]
+      assert_equal 'emp003', result[2][:subject_id]
       assert_equal 'active', result[2][:status]
       assert_equal issue3.id, result[2][:issue_id]
     end
@@ -339,7 +340,7 @@ module NysenateAuditUtils::AccountTracking
 
       # Should only return one result per employee
       assert_equal 1, result.length
-      assert_equal 'emp001', result[0][:employee_id]
+      assert_equal 'emp001', result[0][:subject_id]
       # Should use the most recent issue
       assert_equal recent_issue.id, result[0][:issue_id]
       assert_equal 'Delete', result[0][:account_action]
@@ -357,7 +358,7 @@ module NysenateAuditUtils::AccountTracking
 
       # Should only return AIX issues
       assert_equal 1, result.length
-      assert_equal 'emp002', result[0][:employee_id]
+      assert_equal 'emp002', result[0][:subject_id]
       assert_equal 'AIX', result[0][:account_type]
       assert_equal aix_issue.id, result[0][:issue_id]
     end
@@ -382,7 +383,7 @@ module NysenateAuditUtils::AccountTracking
 
       # Should only include closed issues
       assert_equal 1, result.length
-      assert_equal 'emp002', result[0][:employee_id]
+      assert_equal 'emp002', result[0][:subject_id]
       assert_equal closed_issue.id, result[0][:issue_id]
     end
 
@@ -399,13 +400,13 @@ module NysenateAuditUtils::AccountTracking
       assert_equal 3, result.length
 
       # Check statuses
-      emp001 = result.find { |r| r[:employee_id] == 'emp001' }
+      emp001 = result.find { |r| r[:subject_id] == 'emp001' }
       assert_equal 'active', emp001[:status]
 
-      emp002 = result.find { |r| r[:employee_id] == 'emp002' }
+      emp002 = result.find { |r| r[:subject_id] == 'emp002' }
       assert_equal 'inactive', emp002[:status]
 
-      emp003 = result.find { |r| r[:employee_id] == 'emp003' }
+      emp003 = result.find { |r| r[:subject_id] == 'emp003' }
       assert_equal 'active', emp003[:status]
     end
 
@@ -462,8 +463,8 @@ module NysenateAuditUtils::AccountTracking
       # Should only return issues closed before or at cutoff time
       assert_equal 2, result.length
 
-      employee_ids = result.map { |r| r[:employee_id] }.sort
-      assert_equal ['emp001', 'emp002'], employee_ids
+      subject_ids = result.map { |r| r[:subject_id] }.sort
+      assert_equal ['emp001', 'emp002'], subject_ids
 
       # Verify the correct issues are included
       assert_includes result.map { |r| r[:issue_id] }, old_issue1.id
@@ -486,7 +487,7 @@ module NysenateAuditUtils::AccountTracking
 
       # Should include the issue at exactly cutoff time (using <=)
       assert_equal 1, result.length
-      assert_equal 'emp001', result[0][:employee_id]
+      assert_equal 'emp001', result[0][:subject_id]
       assert_equal issue_at_cutoff.id, result[0][:issue_id]
     end
 
@@ -500,8 +501,8 @@ module NysenateAuditUtils::AccountTracking
 
       # Should include all closed issues (both old and recent)
       assert_equal 2, result.length
-      assert_includes result.map { |r| r[:employee_id] }, 'emp001'
-      assert_includes result.map { |r| r[:employee_id] }, 'emp002'
+      assert_includes result.map { |r| r[:subject_id] }, 'emp001'
+      assert_includes result.map { |r| r[:subject_id] }, 'emp002'
     end
 
     test 'get_account_statuses_by_system selects most recent issue before cutoff' do
@@ -519,7 +520,7 @@ module NysenateAuditUtils::AccountTracking
       assert_equal 1, result.length
 
       # Should use the most recent issue BEFORE the cutoff (before_cutoff_issue, not after_cutoff_issue)
-      assert_equal 'emp001', result[0][:employee_id]
+      assert_equal 'emp001', result[0][:subject_id]
       assert_equal before_cutoff_issue.id, result[0][:issue_id]
       assert_equal 'Delete', result[0][:account_action]
       assert_equal 'inactive', result[0][:status]

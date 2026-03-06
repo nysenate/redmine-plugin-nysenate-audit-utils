@@ -58,11 +58,11 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     result = @service.generate
 
     assert_equal 1, result.size
-    assert_equal 'John Doe', result.first[:employee_name]
+    assert_equal 'John Doe', result.first[:subject_name]
     assert_equal [], result.first[:account_statuses]
     assert_equal [], result.first[:open_requests]
     assert_equal 'APP', result.first[:transaction_codes]
-    assert_equal 12345, result.first[:employee_id]
+    assert_equal 12345, result.first[:subject_id]
   end
 
   test 'generate builds report data with multiple status changes' do
@@ -77,9 +77,9 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     result = @service.generate
 
     assert_equal 2, result.size
-    assert_equal 'John Doe', result.first[:employee_name]
+    assert_equal 'John Doe', result.first[:subject_name]
     assert_equal [], result.first[:account_statuses]
-    assert_equal 'Jane Smith', result.last[:employee_name]
+    assert_equal 'Jane Smith', result.last[:subject_name]
     assert_equal [], result.last[:open_requests]
   end
 
@@ -91,14 +91,14 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     result = @service.generate
     row = result.first
 
-    assert row.key?(:employee_name)
+    assert row.key?(:subject_name)
     assert row.key?(:account_statuses)
     assert row.key?(:open_requests)
     assert row.key?(:transaction_codes)
     assert row.key?(:phone_number)
     assert row.key?(:office)
     assert row.key?(:office_location)
-    assert row.key?(:employee_id)
+    assert row.key?(:subject_id)
     assert row.key?(:post_date)
   end
 
@@ -196,7 +196,7 @@ class DailyReportServiceTest < ActiveSupport::TestCase
 
     # Should return only one row for the employee with combined transaction codes
     assert_equal 1, result.size
-    assert_equal 12345, result.first[:employee_id]
+    assert_equal 12345, result.first[:subject_id]
     assert_equal 'APP, PHO', result.first[:transaction_codes]
   end
 

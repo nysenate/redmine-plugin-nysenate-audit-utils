@@ -14,10 +14,12 @@ en:
   # Project modules
   project_module_audit_utils_packet_creation: "Audit Utils Packet Creation"
   project_module_audit_utils_reporting: "Audit Utils Reporting"
-  project_module_audit_utils_employee_autofill: "Audit Utils Employee Autofill"
+  project_module_audit_utils_subject_autofill: "Audit Utils Subject Autofill"
+  project_module_audit_utils_subject_management: "Audit Utils Subject Management"
 
   # Permissions
   permission_create_packet: "Create ticket packets"
   permission_view_audit_reports: "View audit reports"
   permission_export_audit_reports: "Export audit reports"
-  permission_use_employee_autofill: "Use employee autofill"
+  permission_use_subject_autofill: "Use subject autofill"
+  permission_manage_subjects: "Manage subjects (vendors, etc.)"

@@ -14,9 +14,9 @@
 
 <% if @account_count > 0 %>
 <% if @mode == 'current' %>
-<p>This report shows the current account status for all employees with accounts on <%= @target_system %>.</p>
+<p>This report shows the current account status for all subjects with accounts on <%= @target_system %>.</p>
 <% else %>
-<p>This report shows a historical snapshot of account statuses for all employees with accounts on <%= @target_system %> as of the beginning of <%= Date::MONTHNAMES[@selected_month_num] %> <%= @selected_year %>.</p>
+<p>This report shows a historical snapshot of account statuses for all subjects with accounts on <%= @target_system %> as of the beginning of <%= Date::MONTHNAMES[@selected_month_num] %> <%= @selected_year %>.</p>
 <% end %>
 
 <p>The complete report data has been attached as a CSV file for your review.</p>

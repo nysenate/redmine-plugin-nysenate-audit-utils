@@ -54,14 +54,14 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
   def test_daily_report_csv_attachment_content
     report_data = [
       {
-        employee_name: 'Jane Smith',
+        subject_name: 'Jane Smith',
         account_statuses: [{ request_code: 'OAA' }],
         open_requests: [{ request_code: 'OAU' }],
         transaction_codes: 'TRN',
         phone_number: '555-5678',
         office: 'Personnel',
         office_location: 'NYC',
-        employee_id: '67890',
+        subject_id: '67890',
         post_date: Date.parse('2026-03-01')
       }
     ]
@@ -71,7 +71,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     mail = AuditReportsMailer.daily_report('user@example.com', report_data, from_date, to_date)
 
     csv_content = mail.attachments.first.body.to_s
-    assert_match /Employee Name/, csv_content
+    assert_match /Subject Name/, csv_content
     assert_match /Jane Smith/, csv_content
     assert_match /67890/, csv_content
   end
@@ -110,8 +110,8 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
         issue_id: 42,
         subject: 'Account Request',
         status: 'Closed',
-        employee_id: '11111',
-        employee_uid: 'test_user',
+        subject_id: '11111',
+        subject_uid: 'test_user',
         request_code: 'OAD',
         updated_on: Time.zone.parse('2026-03-01 15:30:00'),
         created_on: Time.zone.parse('2026-03-01 10:00:00')
@@ -123,7 +123,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     mail = AuditReportsMailer.weekly_report('user@example.com', report_data, from_date, to_date)
 
     csv_content = mail.attachments.first.body.to_s
-    assert_match /Employee UID/, csv_content
+    assert_match /Subject UID/, csv_content
     assert_match /test_user/, csv_content
     assert_match /11111/, csv_content
     assert_match /Account Request/, csv_content
@@ -211,9 +211,10 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
   def test_monthly_report_csv_attachment_content
     report_data = [
       {
-        employee_id: '99999',
-        employee_name: 'Test User',
-        employee_uid: 'testuser',
+        subject_id: '99999',
+        subject_name: 'Test User',
+        subject_type: 'Employee',
+        subject_uid: 'testuser',
         account_type: 'SFS',
         status: 'active',
         account_action: 'Update',
@@ -235,7 +236,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     )
 
     csv_content = mail.attachments.first.body.to_s
-    assert_match /Employee Name/, csv_content
+    assert_match /Subject Name/, csv_content
     assert_match /Test User/, csv_content
     assert_match /99999/, csv_content
     assert_match /testuser/, csv_content

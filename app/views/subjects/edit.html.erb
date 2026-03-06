@@ -1,0 +1,12 @@
+<% html_title('Edit Subject') %>
+
+<div class="contextual">
+  <%= link_to 'Delete', project_subject_path(@project, @subject),
+      method: :delete,
+      data: { confirm: "Are you sure you want to delete #{@subject.name}?" },
+      class: 'icon icon-del' %>
+</div>
+
+<h2>Edit Subject: <%= @subject.name %></h2>
+
+<%= render 'form' %>
