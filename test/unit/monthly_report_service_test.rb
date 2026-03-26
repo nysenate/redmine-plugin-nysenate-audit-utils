@@ -198,6 +198,35 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     assert_match(/Invalid target system/, service.errors.first)
   end
 
+  test 'generate excludes issues with blank user_id' do
+    # Create a closed issue without User ID field
+    issue_without_user_id = Issue.create!(
+      project: @project,
+      tracker: @tracker,
+      author_id: 1,
+      subject: "Issue without User ID",
+      status: @closed_status,
+      priority_id: 5,
+      custom_field_values: {
+        @target_system_field.id => 'Oracle / SFMS',
+        @account_action_field.id => 'Add',
+        @employee_name_field.id => 'Test User'
+      }
+    )
+    Issue.where(id: issue_without_user_id.id).update_all(closed_on: 1.day.ago)
+
+    # Create a normal issue with User ID for comparison
+    issue_with_user_id = create_closed_test_issue('12345', 'Valid User', 'Oracle / SFMS', 'Add', 1.day.ago)
+
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'Oracle / SFMS')
+    result = service.generate
+
+    # Should only include the issue with User ID
+    assert_equal 1, result.size
+    assert_equal '12345', result.first[:user_id]
+    assert_equal issue_with_user_id.id, result.first[:issue_id]
+  end
+
   # Tests for as_of_time parameter
 
   test 'initializes with as_of_time parameter' do
