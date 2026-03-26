@@ -65,7 +65,7 @@ class AutofillHooksTest < ActiveSupport::TestCase
   # Test 2: Widget should be displayed when Employee Autofill module IS enabled
   def test_widget_shown_when_autofill_module_enabled
     # Enable the Employee Autofill module for the project
-    @project.enable_module!(:audit_utils_user_autofill)
+    @project.enable_module!(:audit_utils)
 
     # User has permission
     User.current = @admin
@@ -80,7 +80,7 @@ class AutofillHooksTest < ActiveSupport::TestCase
   # Test 3: Widget should NOT be displayed when user does NOT have use_employee_autofill permission for the project
   def test_widget_not_shown_when_user_lacks_permission
     # Enable the module
-    @project.enable_module!(:audit_utils_user_autofill)
+    @project.enable_module!(:audit_utils)
 
     # Remove the user's permission for this project
     # User 2 is a member with role 1 (Manager) - remove that permission
@@ -98,7 +98,7 @@ class AutofillHooksTest < ActiveSupport::TestCase
   # Test 4: Widget should be displayed when user HAS use_employee_autofill permission
   def test_widget_shown_when_user_has_permission
     # Enable the module
-    @project.enable_module!(:audit_utils_user_autofill)
+    @project.enable_module!(:audit_utils)
 
     # Reload issue to pick up fresh project state with updated allowed_permissions cache
     @issue.reload
@@ -141,7 +141,7 @@ class AutofillHooksTest < ActiveSupport::TestCase
     }
 
     # Enable module and grant permission
-    @project.enable_module!(:audit_utils_user_autofill)
+    @project.enable_module!(:audit_utils)
     User.current = @admin
 
     result = @hook.view_issues_form_details_bottom(context)
@@ -152,7 +152,7 @@ class AutofillHooksTest < ActiveSupport::TestCase
   # Test 6: Combined test - all conditions must be met
   def test_widget_only_shown_when_all_conditions_met
     # Enable module
-    @project.enable_module!(:audit_utils_user_autofill)
+    @project.enable_module!(:audit_utils)
 
     # Reload issue to pick up fresh project state with updated allowed_permissions cache
     @issue.reload

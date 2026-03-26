@@ -26,7 +26,7 @@ module NysenateAuditUtils
         Rails.logger.debug "BachelpAutofill Hook: Issue tracker: #{issue.tracker.name}"
 
         # Check if module is enabled for this project
-        unless issue.project.module_enabled?(:audit_utils_user_autofill)
+        unless issue.project.module_enabled?(:audit_utils)
           Rails.logger.debug "BachelpAutofill Hook: User Autofill module not enabled for project"
           return ''
         end

@@ -9,7 +9,7 @@ class TrackedUsersControllerTest < ActionController::TestCase
 
     # Create test project with tracked user management module enabled
     @project = Project.find(1)
-    @project.enabled_module_names = ['audit_utils_tracked_user_management']
+    @project.enabled_module_names = ['audit_utils']
 
     # Give the regular user the manage_tracked_users permission
     role = Role.find(1)

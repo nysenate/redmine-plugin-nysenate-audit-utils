@@ -78,7 +78,7 @@ class UserSearchController < ApplicationController
     project = find_project
 
     # Check if project exists and module is enabled
-    unless project && project.module_enabled?(:audit_utils_user_autofill)
+    unless project && project.module_enabled?(:audit_utils)
       render json: { error: "Access denied" }, status: :forbidden
       return
     end

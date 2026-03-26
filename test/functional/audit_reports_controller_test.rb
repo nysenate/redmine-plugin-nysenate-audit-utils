@@ -6,7 +6,7 @@ class AuditReportsControllerTest < ActionController::TestCase
   def setup
     @request.session[:user_id] = 1 # Admin user
     @project = Project.find(1)
-    @project.enable_module!(:audit_utils_reporting)
+    @project.enable_module!(:audit_utils)
 
     # Set up role permissions for the admin user
     role = Role.find(1)
