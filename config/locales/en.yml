@@ -11,11 +11,8 @@ en:
   error_packet_creation_failed: "Failed to create packet. Please try again or contact your administrator."
   error_multi_packet_creation_failed: "Failed to create multi-packet. Please try again or contact your administrator."
 
-  # Project modules
-  project_module_audit_utils_packet_creation: "Audit Utils Packet Creation"
-  project_module_audit_utils_reporting: "Audit Utils Reporting"
-  project_module_audit_utils_user_autofill: "Audit Utils User Autofill"
-  project_module_audit_utils_user_management: "Audit Utils User Management"
+  # Project module
+  project_module_audit_utils: "Audit Utils"
 
   # Permissions
   permission_create_packet: "Create ticket packets"

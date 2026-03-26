@@ -9,7 +9,7 @@ class UserSearchControllerTest < ActionController::TestCase
     @project = Project.find(1)
 
     # Enable the User Autofill module for the project
-    @project.enable_module!(:audit_utils_user_autofill)
+    @project.enable_module!(:audit_utils)
 
     # Mock data for employee
     @mock_employee_data = {
@@ -302,7 +302,7 @@ class UserSearchControllerTest < ActionController::TestCase
     project = Project.find(1)
 
     # Disable the User Autofill module for this project
-    project.enabled_modules.where(name: 'audit_utils_user_autofill').destroy_all
+    project.enabled_modules.where(name: 'audit_utils').destroy_all
     project.reload
 
     # Even if user has permission, module must be enabled
@@ -320,7 +320,7 @@ class UserSearchControllerTest < ActionController::TestCase
     project = Project.find(1)
 
     # Enable the module
-    project.enable_module!(:audit_utils_user_autofill)
+    project.enable_module!(:audit_utils)
 
     # User has permission
     @admin.stubs(:allowed_to?).with(:use_user_autofill, project, {}).returns(true)
@@ -350,7 +350,7 @@ class UserSearchControllerTest < ActionController::TestCase
     project = Project.find(1)
 
     # Disable the module
-    project.enabled_modules.where(name: 'audit_utils_user_autofill').destroy_all
+    project.enabled_modules.where(name: 'audit_utils').destroy_all
     project.reload
 
     @admin.stubs(:allowed_to?).with(:use_user_autofill, project, {}).returns(true)

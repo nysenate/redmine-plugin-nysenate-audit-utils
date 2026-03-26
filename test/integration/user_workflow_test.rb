@@ -11,7 +11,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
 
   def setup
     @project = Project.find(1)
-    @project.enabled_modules.create!(name: 'audit_utils_user_autofill')
+    @project.enabled_modules.create!(name: 'audit_utils')
 
     # Create admin user
     @admin = User.find(1)
