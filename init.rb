@@ -27,24 +27,19 @@ Redmine::Plugin.register :nysenate_audit_utils do
 
   requires_redmine version_or_higher: '5.0.0'
 
-  # Project module for reporting functionality
-  project_module :audit_utils_reporting do
+  # Consolidated project module for all audit utils functionality
+  project_module :audit_utils do
+    # Reporting permissions
     permission :view_audit_reports, { audit_reports: [:index, :daily, :weekly, :monthly, :triennial] }
     permission :export_audit_reports, { audit_reports: [:export] }
-  end
 
-  # Project module for autofill functionality
-  project_module :audit_utils_user_autofill do
+    # User autofill permissions
     permission :use_user_autofill, { user_search: [:search, :field_mappings] }
-  end
 
-  # Project module for packet creation
-  project_module :audit_utils_packet_creation do
+    # Packet creation permissions
     permission :create_packet, { packet_creation: [:create, :create_multi_packet] }
-  end
 
-  # Project module for tracked user management
-  project_module :audit_utils_tracked_user_management do
+    # Tracked user management permissions
     permission :manage_tracked_users, { tracked_users: [:index, :new, :create, :edit, :update, :destroy] }
   end
 
@@ -53,13 +48,13 @@ Redmine::Plugin.register :nysenate_audit_utils do
        { controller: 'audit_reports', action: 'index' },
        caption: 'Reports',
        param: :project_id,
-       if: Proc.new { |p| p.module_enabled?(:audit_utils_reporting) }
+       if: Proc.new { |p| p.module_enabled?(:audit_utils) }
 
   menu :project_menu, :tracked_users,
        { controller: 'tracked_users', action: 'index' },
        caption: 'Manage Tracked Users',
        param: :project_id,
-       if: Proc.new { |p| p.module_enabled?(:audit_utils_tracked_user_management) }
+       if: Proc.new { |p| p.module_enabled?(:audit_utils) }
 
   # Consolidated settings
   settings default: {

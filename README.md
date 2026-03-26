@@ -94,31 +94,27 @@ After configuration, check status indicators to ensure all required fields are m
 - ✓ Configured fields with field names
 - ✗ Missing fields with configuration prompts
 
-### 3. Project Modules
+### 3. Project Module
 
-Enable features per-project:
+Enable the Audit Utils module per-project:
 
 1. Go to **Projects → \*your project name\* → Settings** and scroll to the **Modules** section.
-2. Enable desired modules:
-   - **Audit Reporting** - Access to daily/weekly/monthly/triennial reports
-   - **User Autofill** - User search and autofill functionality (employees, vendors, etc.)
-   - **Packet Creation** - Create ticket packets containing ticket pdf + all issue attachments
+2. Enable the **Audit Utils** module to activate all audit utilities features:
+   - Daily/weekly/monthly/triennial report generation and viewing
+   - User search and autofill functionality (employees, vendors, etc.)
+   - Ticket packet creation (PDF + attachments in zip format)
+   - Tracked user management (vendors, contractors, etc.)
 
 ### 4. Permissions
 
 Configure role permissions under **Administration → Roles and Permissions**:
 
-Edit the desired role(s) so that they grant the following permissions:
-
-**Audit Utils User Autofill:**
-- Use user autofill
-
-**Audit Utils Packet Creation:**
-- Create ticket packets
-
-**Audit Utils Reporting:**
-- View audit reports
-- Export audit reports
+Edit the desired role(s) so that they grant the following permissions under **Audit Utils**:
+- **View audit reports** - Access to daily/weekly/monthly/triennial reports
+- **Export audit reports** - Export reports to CSV
+- **Use user autofill** - User search and autofill functionality
+- **Create ticket packets** - Generate ticket packets (PDF + attachments)
+- **Manage tracked users** - Create/edit/delete vendor and contractor records
 
 Assign the role(s) to the applicable user(s) in project member settings:  **Projects → \*your project name\* → Settings → Members**
 
