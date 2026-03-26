@@ -6,22 +6,22 @@ module NysenateAuditUtils
   module Reporting
     class CsvGenerator
       # Generate CSV for daily report data
-      # @param data [Array<Hash>] Report data with subject and account status info
+      # @param data [Array<Hash>] Report data with user and account status info
       # @return [String] CSV content
       def self.generate_daily_csv(data)
         return '' unless data
 
         CSV.generate do |csv|
-          # Header row (using "Subject" terminology for consistency, though daily reports are employee-only)
+          # Header row
           csv << [
-            'Subject Name',
+            'User Name',
             'Account Status',
             'Open Tickets',
             'Transaction Codes',
             'Phone Number',
             'Office',
             'Office Location',
-            'Subject ID',
+            'User ID',
             'Post Date'
           ]
 
@@ -42,14 +42,14 @@ module NysenateAuditUtils
             end
 
             csv << [
-              row[:subject_name],
+              row[:user_name],
               account_status_str,
               open_tickets_str,
               row[:transaction_codes],
               row[:phone_number],
               row[:office],
               row[:office_location],
-              row[:subject_id],
+              row[:user_id],
               row[:post_date]
             ]
           end
@@ -57,16 +57,16 @@ module NysenateAuditUtils
       end
 
       # Generate CSV for weekly report data
-      # @param data [Array<Hash>] Report data with issue and subject info
+      # @param data [Array<Hash>] Report data with issue and user info
       # @return [String] CSV content
       def self.generate_weekly_csv(data)
         return '' unless data
 
         CSV.generate do |csv|
-          # Header row (using "Subject" terminology for consistency)
+          # Header row
           csv << [
-            'Subject UID',
-            'Subject Number',
+            'User UID',
+            'User Number',
             'Request Code',
             'Ticket Description',
             'Status',
@@ -76,8 +76,8 @@ module NysenateAuditUtils
           # Data rows
           data.each do |row|
             csv << [
-              row[:subject_uid],
-              row[:subject_id],
+              row[:user_uid],
+              row[:user_id],
               row[:request_code],
               row[:subject],
               row[:status],
@@ -88,18 +88,18 @@ module NysenateAuditUtils
       end
 
       # Generate CSV for monthly report data
-      # @param data [Array<Hash>] Report data with subject account status
+      # @param data [Array<Hash>] Report data with user account status
       # @return [String] CSV content
       def self.generate_monthly_csv(data)
         return '' unless data
 
         CSV.generate do |csv|
-          # Header row (matches web view layout with subject_type and request_code added)
+          # Header row (matches web view layout with user_type and request_code added)
           csv << [
-            'Subject Name',
-            'Subject ID',
-            'Subject Type',
-            'Subject UID',
+            'User Name',
+            'User ID',
+            'User Type',
+            'User UID',
             'Account Status',
             'Last Updated',
             'Last Issue',
@@ -110,10 +110,10 @@ module NysenateAuditUtils
           # Data rows
           data.each do |row|
             csv << [
-              row[:subject_name],
-              row[:subject_id],
-              row[:subject_type],
-              row[:subject_uid],
+              row[:user_name],
+              row[:user_id],
+              row[:user_type],
+              row[:user_uid],
               row[:status],
               row[:closed_on]&.strftime('%Y-%m-%d'),
               row[:issue_id],

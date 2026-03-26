@@ -26,29 +26,29 @@ module NysenateAuditUtils
         Rails.logger.debug "BachelpAutofill Hook: Issue tracker: #{issue.tracker.name}"
 
         # Check if module is enabled for this project
-        unless issue.project.module_enabled?(:audit_utils_subject_autofill)
-          Rails.logger.debug "BachelpAutofill Hook: Subject Autofill module not enabled for project"
+        unless issue.project.module_enabled?(:audit_utils_user_autofill)
+          Rails.logger.debug "BachelpAutofill Hook: User Autofill module not enabled for project"
           return ''
         end
 
         # Check if user has permission for this project
-        unless User.current.allowed_to?(:use_subject_autofill, issue.project)
-          Rails.logger.debug "BachelpAutofill Hook: User lacks use_subject_autofill permission for project"
+        unless User.current.allowed_to?(:use_user_autofill, issue.project)
+          Rails.logger.debug "BachelpAutofill Hook: User lacks use_user_autofill permission for project"
           return ''
         end
 
-        if has_subject_fields?(issue.tracker)
-          Rails.logger.debug "BachelpAutofill Hook: Tracker has subject fields, rendering widget"
-          return render_subject_search_widget(context)
+        if has_user_fields?(issue.tracker)
+          Rails.logger.debug "BachelpAutofill Hook: Tracker has user fields, rendering widget"
+          return render_user_search_widget(context)
         else
-          Rails.logger.debug "BachelpAutofill Hook: Tracker has no subject fields"
+          Rails.logger.debug "BachelpAutofill Hook: Tracker has no user fields"
           return ''
         end
       end
 
       private
 
-      def has_subject_fields?(tracker)
+      def has_user_fields?(tracker)
         return false unless tracker
 
         field_ids = NysenateAuditUtils::CustomFieldConfiguration.autofill_field_ids.values
@@ -57,15 +57,15 @@ module NysenateAuditUtils
         Rails.logger.debug "BachelpAutofill Hook: Expected field IDs: #{field_ids.inspect}"
         Rails.logger.debug "BachelpAutofill Hook: Tracker field IDs: #{tracker_field_ids.inspect}"
 
-        # Check if any of the configured subject fields are available for this tracker
+        # Check if any of the configured user fields are available for this tracker
         result = (field_ids & tracker_field_ids).any?
-        Rails.logger.debug "BachelpAutofill Hook: has_subject_fields result: #{result}"
+        Rails.logger.debug "BachelpAutofill Hook: has_user_fields result: #{result}"
         result
       end
 
-      def render_subject_search_widget(context)
+      def render_user_search_widget(context)
         context[:controller].render_to_string(
-          partial: 'subject_search/search_widget',
+          partial: 'user_search/search_widget',
           locals: { issue: context[:issue] }
         )
       end

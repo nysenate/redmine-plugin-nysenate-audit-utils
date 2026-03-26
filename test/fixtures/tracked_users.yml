@@ -1,7 +1,7 @@
-# Test fixtures for Subject model
+# Test fixtures for TrackedUser model
 vendor_one:
-  subject_type: Vendor
-  subject_id: V1
+  user_type: Vendor
+  user_id: V1
   name: Fixture Vendor One
   email: vendor1@example.com
   phone: '555-1001'
@@ -11,8 +11,8 @@ vendor_one:
   updated_at: <%= 1.day.ago.to_s(:db) %>
 
 vendor_two:
-  subject_type: Vendor
-  subject_id: V2
+  user_type: Vendor
+  user_id: V2
   name: Fixture Vendor Two
   email: vendor2@example.com
   phone: '555-1002'
@@ -22,8 +22,8 @@ vendor_two:
   updated_at: <%= 2.days.ago.to_s(:db) %>
 
 vendor_inactive:
-  subject_type: Vendor
-  subject_id: V3
+  user_type: Vendor
+  user_id: V3
   name: Fixture Vendor Inactive
   email: vendor3@example.com
   status: Inactive

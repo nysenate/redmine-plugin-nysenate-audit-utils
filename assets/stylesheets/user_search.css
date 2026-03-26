@@ -1,4 +1,4 @@
-.subject-search-widget {
+.user-search-widget {
   margin: 0.5em 0;
   padding: 12px;
   padding-left: 180px;
@@ -8,7 +8,7 @@
   border-radius: 3px;
 }
 
-.subject-search-widget label {
+.user-search-widget label {
   display: inline;
   width: 175px;
   margin-left: -180px;
@@ -17,18 +17,18 @@
   float: left;
 }
 
-.subject-search-content {
+.user-search-content {
   display: inline-block;
   width: 500px;
   max-width: 100%;
 }
 
-.subject-type-selector {
+.user-type-selector {
   margin-bottom: 8px;
   font-size: 11px;
 }
 
-.subject-type-selector label {
+.user-type-selector label {
   display: inline;
   margin-right: 15px;
   font-weight: normal;
@@ -38,7 +38,7 @@
   text-align: left;
 }
 
-.subject-type-selector input[type="radio"] {
+.user-type-selector input[type="radio"] {
   margin-right: 4px;
 }
 
@@ -47,7 +47,7 @@
   margin-bottom: 10px;
 }
 
-.subject-search-input {
+.user-search-input {
   width: 100%;
   padding: 3px;
   border: 1px solid #9EB1C2;
@@ -58,7 +58,7 @@
   box-sizing: border-box;
 }
 
-.subject-search-input:focus {
+.user-search-input:focus {
   border-color: #628DB6;
   outline: none;
   box-shadow: none;
@@ -107,11 +107,11 @@
   border-bottom: none;
 }
 
-.results-list .subject-name {
+.results-list .user-name {
   font-weight: bold;
 }
 
-.results-list .subject-details {
+.results-list .user-details {
   font-size: 10px;
   color: #666;
   margin-top: 2px;
@@ -138,12 +138,12 @@
   background-color: inherit !important;
 }
 
-.subject-status-active {
+.user-status-active {
   color: #2d7a3e;
   font-weight: 600;
 }
 
-.subject-status-inactive {
+.user-status-inactive {
   color: #c24642;
   font-weight: 600;
 }

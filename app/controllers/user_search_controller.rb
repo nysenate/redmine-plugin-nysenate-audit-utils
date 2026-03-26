@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class SubjectSearchController < ApplicationController
+class UserSearchController < ApplicationController
   before_action :require_login
   before_action :check_permission
 
@@ -9,42 +9,42 @@ class SubjectSearchController < ApplicationController
 
   def search
     if params[:q].blank?
-      render json: { subjects: [], message: "Search query cannot be empty" }, status: :bad_request
+      render json: { users: [], message: "Search query cannot be empty" }, status: :bad_request
       return
     end
 
     begin
       query = sanitize_search_query(params[:q])
-      subject_type = params[:type].presence || DEFAULT_TYPE
+      user_type = params[:type].presence || DEFAULT_TYPE
       offset = params[:offset].to_i
       limit = params[:limit].to_i
       limit = 20 if limit <= 0 || limit > 100
 
-      # Validate subject type
-      unless VALID_TYPES.include?(subject_type)
+      # Validate user type
+      unless VALID_TYPES.include?(user_type)
         render json: {
-          error: "Invalid subject type. Must be one of: #{VALID_TYPES.join(', ')}",
-          subjects: []
+          error: "Invalid user type. Must be one of: #{VALID_TYPES.join(', ')}",
+          users: []
         }, status: :bad_request
         return
       end
 
-      subjects = perform_subject_search(query, subject_type, limit, offset)
+      tracked_users = perform_user_search(query, user_type, limit, offset)
 
       render json: {
-        subjects: subjects,
-        total: subjects.length,
+        users: tracked_users,
+        total: tracked_users.length,
         offset: offset,
         limit: limit,
-        has_more: subjects.length == limit,
-        type: subject_type
+        has_more: tracked_users.length == limit,
+        type: user_type
       }
     rescue => e
-      logger.error "Subject search error: #{e.message}"
+      logger.error "User search error: #{e.message}"
       logger.error e.backtrace.join("\n")
       render json: {
-        error: "Subject search temporarily unavailable. Please try again later.",
-        subjects: []
+        error: "User search temporarily unavailable. Please try again later.",
+        users: []
       }, status: :service_unavailable
     end
   end
@@ -55,7 +55,7 @@ class SubjectSearchController < ApplicationController
       field_ids = NysenateAuditUtils::CustomFieldConfiguration.autofill_field_ids
 
       # Build field ID mappings for the frontend in Redmine's expected format
-      # Converts { subject_id: 123, name: 124 } to { subject_id_field: "issue_custom_field_values_123", ... }
+      # Converts { user_id: 123, name: 124 } to { user_id_field: "issue_custom_field_values_123", ... }
       mappings = {}
       field_ids.each do |key, field_id|
         if field_id
@@ -78,13 +78,13 @@ class SubjectSearchController < ApplicationController
     project = find_project
 
     # Check if project exists and module is enabled
-    unless project && project.module_enabled?(:audit_utils_subject_autofill)
+    unless project && project.module_enabled?(:audit_utils_user_autofill)
       render json: { error: "Access denied" }, status: :forbidden
       return
     end
 
     # Check if user has permission for this project
-    unless User.current.allowed_to?(:use_subject_autofill, project)
+    unless User.current.allowed_to?(:use_user_autofill, project)
       render json: { error: "Access denied" }, status: :forbidden
     end
   end
@@ -99,8 +99,8 @@ class SubjectSearchController < ApplicationController
     query.to_s.strip.gsub(/[<>'"&]/, '').first(100)
   end
 
-  def perform_subject_search(query, subject_type, limit, offset)
-    service = NysenateAuditUtils::Subjects::SubjectService.new
-    service.search(query, type: subject_type, limit: limit, offset: offset)
+  def perform_user_search(query, user_type, limit, offset)
+    service = NysenateAuditUtils::Users::UserService.new
+    service.search(query, type: user_type, limit: limit, offset: offset)
   end
 end

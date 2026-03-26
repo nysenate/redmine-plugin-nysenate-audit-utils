@@ -30,12 +30,12 @@ module NysenateAuditUtils
 
       def build_report_data
         # Get custom field IDs
-        subject_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.subject_id_field_id
-        subject_uid_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('subject_uid_field_id')
+        user_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_id_field_id
+        user_uid_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_uid_field_id')
         account_action_field_id = NysenateAuditUtils::CustomFieldConfiguration.account_action_field_id
         target_system_field_id = NysenateAuditUtils::CustomFieldConfiguration.target_system_field_id
 
-        unless subject_id_field_id
+        unless user_id_field_id
           @errors << "Employee ID custom field is not configured"
           return []
         end
@@ -54,11 +54,11 @@ module NysenateAuditUtils
         # Build report data for each issue
         issues.map do |issue|
           # Get employee ID from custom field
-          employee_id = get_custom_field_value(issue, subject_id_field_id)
+          employee_id = get_custom_field_value(issue, user_id_field_id)
 
           # Get employee UID from custom field (if configured)
-          employee_uid = if subject_uid_field_id
-            get_custom_field_value(issue, subject_uid_field_id)
+          employee_uid = if user_uid_field_id
+            get_custom_field_value(issue, user_uid_field_id)
           else
             nil
           end

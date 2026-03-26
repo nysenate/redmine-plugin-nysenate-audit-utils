@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-# Sample vendor data for testing subject type functionality
+# Sample vendor data for testing tracked user functionality
 # This seed file can be run manually via Rails console or as part of test setup
 
 puts 'Creating sample vendors...'
 
 vendors = [
   {
-    subject_type: 'Vendor',
-    subject_id: 'V1',
+    user_type: 'Vendor',
+    user_id: 'V1',
     name: 'Acme Corporation',
     email: 'contact@acmecorp.com',
     phone: '555-0101',
@@ -16,8 +16,8 @@ vendors = [
     status: 'Active'
   },
   {
-    subject_type: 'Vendor',
-    subject_id: 'V2',
+    user_type: 'Vendor',
+    user_id: 'V2',
     name: 'Widget Industries LLC',
     email: 'info@widgetind.com',
     phone: '555-0102',
@@ -25,8 +25,8 @@ vendors = [
     status: 'Active'
   },
   {
-    subject_type: 'Vendor',
-    subject_id: 'V3',
+    user_type: 'Vendor',
+    user_id: 'V3',
     name: 'Tech Solutions Inc',
     email: 'sales@techsolutions.com',
     phone: '555-0103',
@@ -35,8 +35,8 @@ vendors = [
     status: 'Active'
   },
   {
-    subject_type: 'Vendor',
-    subject_id: 'V4',
+    user_type: 'Vendor',
+    user_id: 'V4',
     name: 'Global Services Group',
     email: 'hello@globalservices.com',
     phone: '555-0104',
@@ -44,8 +44,8 @@ vendors = [
     status: 'Inactive'
   },
   {
-    subject_type: 'Vendor',
-    subject_id: 'V5',
+    user_type: 'Vendor',
+    user_id: 'V5',
     name: 'Enterprise Systems Co',
     email: 'contact@entsys.com',
     phone: '555-0105',
@@ -54,8 +54,8 @@ vendors = [
     status: 'Active'
   },
   {
-    subject_type: 'Vendor',
-    subject_id: 'V6',
+    user_type: 'Vendor',
+    user_id: 'V6',
     name: 'Premier Consulting',
     email: 'info@premierconsult.com',
     phone: '555-0106',
@@ -63,8 +63,8 @@ vendors = [
     status: 'Active'
   },
   {
-    subject_type: 'Vendor',
-    subject_id: 'V7',
+    user_type: 'Vendor',
+    user_id: 'V7',
     name: 'DataTech Partners',
     email: 'contact@datatechpartners.com',
     phone: '555-0107',
@@ -72,8 +72,8 @@ vendors = [
     status: 'Inactive'
   },
   {
-    subject_type: 'Vendor',
-    subject_id: 'V8',
+    user_type: 'Vendor',
+    user_id: 'V8',
     name: 'Cloud Services Ltd',
     email: 'support@cloudservices.com',
     phone: '555-0108',
@@ -84,18 +84,18 @@ vendors = [
 ]
 
 vendors.each do |vendor_attrs|
-  vendor = Subject.find_or_create_by(
-    subject_type: vendor_attrs[:subject_type],
-    subject_id: vendor_attrs[:subject_id]
+  vendor = TrackedUser.find_or_create_by(
+    user_type: vendor_attrs[:user_type],
+    user_id: vendor_attrs[:user_id]
   ) do |v|
     v.assign_attributes(vendor_attrs)
   end
 
   if vendor.persisted?
-    puts "  ✓ Created vendor: #{vendor.name} (#{vendor.subject_id})"
+    puts "  ✓ Created vendor: #{vendor.name} (#{vendor.user_id})"
   else
     puts "  ✗ Failed to create vendor: #{vendor_attrs[:name]} - #{vendor.errors.full_messages.join(', ')}"
   end
 end
 
-puts "Finished! Created #{Subject.vendors.count} vendors (#{Subject.active.count} active, #{Subject.inactive.count} inactive)"
+puts "Finished! Created #{TrackedUser.vendors.count} vendors (#{TrackedUser.active.count} active, #{TrackedUser.inactive.count} inactive)"

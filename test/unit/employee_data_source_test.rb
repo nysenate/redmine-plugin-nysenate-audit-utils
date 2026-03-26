@@ -2,7 +2,7 @@ require File.expand_path('../../test_helper', __FILE__)
 
 class EmployeeDataSourceTest < ActiveSupport::TestCase
   def setup
-    @data_source = NysenateAuditUtils::Subjects::EmployeeDataSource.new
+    @data_source = NysenateAuditUtils::Users::EmployeeDataSource.new
   end
 
   # Test search
@@ -26,8 +26,8 @@ class EmployeeDataSourceTest < ActiveSupport::TestCase
     assert_equal 1, results.length
 
     result = results.first
-    assert_equal 'Employee', result[:subject_type]
-    assert_equal '12345', result[:subject_id]
+    assert_equal 'Employee', result[:user_type]
+    assert_equal '12345', result[:user_id]
     assert_equal 'John Doe', result[:name]
     assert_equal 'jdoe@nysenate.gov', result[:email]
     assert_equal '518-555-0123', result[:phone]
@@ -93,8 +93,8 @@ class EmployeeDataSourceTest < ActiveSupport::TestCase
 
     result = @data_source.find_by_id('12345')
 
-    assert_equal 'Employee', result[:subject_type]
-    assert_equal '12345', result[:subject_id]
+    assert_equal 'Employee', result[:user_type]
+    assert_equal '12345', result[:user_id]
     assert_equal 'John Doe', result[:name]
   end
 

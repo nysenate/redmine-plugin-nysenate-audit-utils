@@ -16,7 +16,7 @@ module NysenateAuditUtils
       def generate
         validate_target_system
         fetch_account_statuses
-        enrich_with_employee_names
+        enrich_with_user_names
         build_report_data
       rescue StandardError => e
         @errors << "Report generation failed: #{e.message}"
@@ -64,56 +64,56 @@ module NysenateAuditUtils
         raise
       end
 
-      def enrich_with_employee_names
-        # Get subject name, UID, and type field IDs
-        subject_name_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('subject_name_field_id')
-        subject_uid_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('subject_uid_field_id')
-        subject_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('subject_type_field_id')
+      def enrich_with_user_names
+        # Get user name, UID, and type field IDs
+        user_name_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_name_field_id')
+        user_uid_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_uid_field_id')
+        user_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_type_field_id')
 
-        return unless subject_name_field_id || subject_uid_field_id
+        return unless user_name_field_id || user_uid_field_id
 
-        # Build a hash of issue_id => subject_name for quick lookup
+        # Build a hash of issue_id => user_name for quick lookup
         issue_ids = @account_statuses.map { |status| status[:issue_id] }.compact.uniq
         return if issue_ids.empty?
 
-        # Fetch custom values for subject names, UIDs, and types in a single query
-        @subject_names = {}
-        @subject_uids = {}
-        @subject_types = {}
+        # Fetch custom values for user names, UIDs, and types in a single query
+        @user_names = {}
+        @user_uids = {}
+        @user_types = {}
 
-        field_ids = [subject_name_field_id, subject_uid_field_id, subject_type_field_id].compact
+        field_ids = [user_name_field_id, user_uid_field_id, user_type_field_id].compact
         CustomValue
           .where(customized_type: 'Issue', customized_id: issue_ids, custom_field_id: field_ids)
           .each do |cv|
-            if cv.custom_field_id == subject_name_field_id
-              @subject_names[cv.customized_id] = cv.value
-            elsif cv.custom_field_id == subject_uid_field_id
-              @subject_uids[cv.customized_id] = cv.value
-            elsif cv.custom_field_id == subject_type_field_id
-              @subject_types[cv.customized_id] = cv.value
+            if cv.custom_field_id == user_name_field_id
+              @user_names[cv.customized_id] = cv.value
+            elsif cv.custom_field_id == user_uid_field_id
+              @user_uids[cv.customized_id] = cv.value
+            elsif cv.custom_field_id == user_type_field_id
+              @user_types[cv.customized_id] = cv.value
             end
           end
       rescue StandardError => e
-        Rails.logger.error("Failed to enrich with subject data: #{e.message}")
-        @subject_names = {}
-        @subject_uids = {}
-        @subject_types = {}
+        Rails.logger.error("Failed to enrich with user data: #{e.message}")
+        @user_names = {}
+        @user_uids = {}
+        @user_types = {}
       end
 
       def build_report_data
         return [] if @account_statuses.nil? || @account_statuses.empty?
 
-        @subject_names ||= {}
-        @subject_uids ||= {}
-        @subject_types ||= {}
+        @user_names ||= {}
+        @user_uids ||= {}
+        @user_types ||= {}
 
         # Build report data array
         report_data = @account_statuses.map do |status|
           {
-            subject_id: status[:subject_id],
-            subject_name: @subject_names[status[:issue_id]],
-            subject_uid: @subject_uids[status[:issue_id]],
-            subject_type: @subject_types[status[:issue_id]] || status[:subject_type],  # Prefer from enrichment, fall back to status hash
+            user_id: status[:user_id],
+            user_name: @user_names[status[:issue_id]],
+            user_uid: @user_uids[status[:issue_id]],
+            user_type: @user_types[status[:issue_id]] || status[:user_type],  # Prefer from enrichment, fall back to status hash
             account_type: status[:account_type],
             status: status[:status],
             account_action: status[:account_action],
@@ -123,8 +123,8 @@ module NysenateAuditUtils
           }
         end
 
-        # Sort by subject_id for consistency
-        report_data.sort_by { |row| row[:subject_id].to_i rescue row[:subject_id].to_s }  # Handle both numeric and prefixed IDs
+        # Sort by user_id for consistency
+        report_data.sort_by { |row| row[:user_id].to_i rescue row[:user_id].to_s }  # Handle both numeric and prefixed IDs
       end
     end
   end

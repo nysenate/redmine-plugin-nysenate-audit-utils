@@ -1,8 +1,8 @@
 require File.expand_path('../../test_helper', __FILE__)
 
-class SubjectServiceTest < ActiveSupport::TestCase
+class UserServiceTest < ActiveSupport::TestCase
   def setup
-    @service = NysenateAuditUtils::Subjects::SubjectService.new
+    @service = NysenateAuditUtils::Users::UserService.new
   end
 
   # Test type validation
@@ -11,109 +11,109 @@ class SubjectServiceTest < ActiveSupport::TestCase
     error = assert_raises(ArgumentError) do
       @service.search('test', type: 'Invalid')
     end
-    assert_match(/Invalid subject type/, error.message)
+    assert_match(/Invalid user type/, error.message)
   end
 
   def test_find_by_id_with_invalid_type_raises_error
     error = assert_raises(ArgumentError) do
       @service.find_by_id('123', type: 'Invalid')
     end
-    assert_match(/Invalid subject type/, error.message)
+    assert_match(/Invalid user type/, error.message)
   end
 
   # Test routing to EmployeeDataSource
 
   def test_search_with_employee_type_uses_employee_data_source
-    NysenateAuditUtils::Subjects::EmployeeDataSource.any_instance.stubs(:search).with(
+    NysenateAuditUtils::Users::EmployeeDataSource.any_instance.stubs(:search).with(
       'john',
       limit: 20,
       offset: 0
     ).returns([
-      { subject_type: 'Employee', subject_id: '12345', name: 'John Doe' }
+      { user_type: 'Employee', user_id: '12345', name: 'John Doe' }
     ])
 
     results = @service.search('john', type: 'Employee')
 
     assert_equal 1, results.length
-    assert_equal 'Employee', results.first[:subject_type]
+    assert_equal 'Employee', results.first[:user_type]
   end
 
   def test_find_by_id_with_employee_type_uses_employee_data_source
-    NysenateAuditUtils::Subjects::EmployeeDataSource.any_instance.stubs(:find_by_id).with('12345').returns(
-      { subject_type: 'Employee', subject_id: '12345', name: 'John Doe' }
+    NysenateAuditUtils::Users::EmployeeDataSource.any_instance.stubs(:find_by_id).with('12345').returns(
+      { user_type: 'Employee', user_id: '12345', name: 'John Doe' }
     )
 
     result = @service.find_by_id('12345', type: 'Employee')
 
-    assert_equal 'Employee', result[:subject_type]
-    assert_equal '12345', result[:subject_id]
+    assert_equal 'Employee', result[:user_type]
+    assert_equal '12345', result[:user_id]
   end
 
   # Test routing to DatabaseDataSource
 
   def test_search_with_vendor_type_uses_database_data_source
-    NysenateAuditUtils::Subjects::DatabaseDataSource.any_instance.stubs(:search).with(
+    NysenateAuditUtils::Users::DatabaseDataSource.any_instance.stubs(:search).with(
       'acme',
-      subject_type: 'Vendor',
+      user_type: 'Vendor',
       limit: 20,
       offset: 0
     ).returns([
-      { subject_type: 'Vendor', subject_id: 'V1', name: 'Acme Corp' }
+      { user_type: 'Vendor', user_id: 'V1', name: 'Acme Corp' }
     ])
 
     results = @service.search('acme', type: 'Vendor')
 
     assert_equal 1, results.length
-    assert_equal 'Vendor', results.first[:subject_type]
-    assert_equal 'V1', results.first[:subject_id]
+    assert_equal 'Vendor', results.first[:user_type]
+    assert_equal 'V1', results.first[:user_id]
   end
 
   def test_find_by_id_with_vendor_type_uses_database_data_source
-    NysenateAuditUtils::Subjects::DatabaseDataSource.any_instance.stubs(:find_by_id).with(
+    NysenateAuditUtils::Users::DatabaseDataSource.any_instance.stubs(:find_by_id).with(
       'V1',
-      subject_type: 'Vendor'
+      user_type: 'Vendor'
     ).returns(
-      { subject_type: 'Vendor', subject_id: 'V1', name: 'Acme Corp' }
+      { user_type: 'Vendor', user_id: 'V1', name: 'Acme Corp' }
     )
 
     result = @service.find_by_id('V1', type: 'Vendor')
 
-    assert_equal 'Vendor', result[:subject_type]
-    assert_equal 'V1', result[:subject_id]
+    assert_equal 'Vendor', result[:user_type]
+    assert_equal 'V1', result[:user_id]
   end
 
   # Test create operations
 
   def test_create_vendor_succeeds
-    NysenateAuditUtils::Subjects::DatabaseDataSource.any_instance.stubs(:create).returns(
-      { subject_type: 'Vendor', subject_id: 'V1', name: 'New Vendor' }
+    NysenateAuditUtils::Users::DatabaseDataSource.any_instance.stubs(:create).returns(
+      { user_type: 'Vendor', user_id: 'V1', name: 'New Vendor' }
     )
 
-    result = @service.create(subject_type: 'Vendor', subject_id: 'V1', name: 'New Vendor')
+    result = @service.create(user_type: 'Vendor', user_id: 'V1', name: 'New Vendor')
 
-    assert_equal 'Vendor', result[:subject_type]
-    assert_equal 'V1', result[:subject_id]
+    assert_equal 'Vendor', result[:user_type]
+    assert_equal 'V1', result[:user_id]
   end
 
   def test_create_employee_raises_error
     error = assert_raises(RuntimeError) do
-      @service.create(subject_type: 'Employee', subject_id: '12345', name: 'John Doe')
+      @service.create(user_type: 'Employee', user_id: '12345', name: 'John Doe')
     end
     assert_match(/cannot be created locally/, error.message)
   end
 
-  def test_create_without_subject_type_raises_error
+  def test_create_without_user_type_raises_error
     error = assert_raises(ArgumentError) do
-      @service.create(name: 'Test Subject')
+      @service.create(name: 'Test User')
     end
-    assert_match(/subject_type is required/, error.message)
+    assert_match(/user_type is required/, error.message)
   end
 
   # Test update operations
 
   def test_update_vendor_succeeds
-    NysenateAuditUtils::Subjects::DatabaseDataSource.any_instance.stubs(:update).returns(
-      { subject_type: 'Vendor', subject_id: 'V1', name: 'Updated Vendor' }
+    NysenateAuditUtils::Users::DatabaseDataSource.any_instance.stubs(:update).returns(
+      { user_type: 'Vendor', user_id: 'V1', name: 'Updated Vendor' }
     )
 
     result = @service.update('V1', type: 'Vendor', attributes: { name: 'Updated Vendor' })
@@ -131,7 +131,7 @@ class SubjectServiceTest < ActiveSupport::TestCase
   # Test delete operations
 
   def test_delete_vendor_succeeds
-    NysenateAuditUtils::Subjects::DatabaseDataSource.any_instance.stubs(:delete).returns(true)
+    NysenateAuditUtils::Users::DatabaseDataSource.any_instance.stubs(:delete).returns(true)
 
     result = @service.delete('V1', type: 'Vendor')
 
@@ -148,7 +148,7 @@ class SubjectServiceTest < ActiveSupport::TestCase
   # Test search defaults
 
   def test_search_defaults_to_employee_type
-    NysenateAuditUtils::Subjects::EmployeeDataSource.any_instance.stubs(:search).returns([])
+    NysenateAuditUtils::Users::EmployeeDataSource.any_instance.stubs(:search).returns([])
 
     @service.search('test')
 
@@ -157,7 +157,7 @@ class SubjectServiceTest < ActiveSupport::TestCase
   end
 
   def test_find_by_id_defaults_to_employee_type
-    NysenateAuditUtils::Subjects::EmployeeDataSource.any_instance.stubs(:find_by_id).returns(nil)
+    NysenateAuditUtils::Users::EmployeeDataSource.any_instance.stubs(:find_by_id).returns(nil)
 
     @service.find_by_id('12345')
 

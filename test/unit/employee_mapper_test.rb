@@ -6,14 +6,14 @@ class EmployeeMapperTest < ActiveSupport::TestCase
   def setup
     # Mock plugin settings with field IDs instead of names - use string keys
     @mock_settings = {
-      'subject_type_field_id' => 1,
-      'subject_id_field_id' => 2,
-      'subject_name_field_id' => 3,
-      'subject_email_field_id' => 4,
-      'subject_phone_field_id' => 5,
-      'subject_location_field_id' => 6,
-      'subject_status_field_id' => 7,
-      'subject_uid_field_id' => 8
+      'user_type_field_id' => 1,
+      'user_id_field_id' => 2,
+      'user_name_field_id' => 3,
+      'user_email_field_id' => 4,
+      'user_phone_field_id' => 5,
+      'user_location_field_id' => 6,
+      'user_status_field_id' => 7,
+      'user_uid_field_id' => 8
     }
 
     Setting.stubs(:plugin_nysenate_audit_utils).returns(@mock_settings)
@@ -70,19 +70,19 @@ class EmployeeMapperTest < ActiveSupport::TestCase
     # Now returns field IDs from CustomFieldConfiguration
     mappings = NysenateAuditUtils::CustomFieldConfiguration.autofill_field_ids
 
-    assert_equal 1, mappings[:subject_type]
-    assert_equal 2, mappings[:subject_id]
-    assert_equal 3, mappings[:subject_name]
-    assert_equal 4, mappings[:subject_email]
-    assert_equal 5, mappings[:subject_phone]
-    assert_equal 6, mappings[:subject_location]
-    assert_equal 7, mappings[:subject_status]
-    assert_equal 8, mappings[:subject_uid]
+    assert_equal 1, mappings[:user_type]
+    assert_equal 2, mappings[:user_id]
+    assert_equal 3, mappings[:user_name]
+    assert_equal 4, mappings[:user_email]
+    assert_equal 5, mappings[:user_phone]
+    assert_equal 6, mappings[:user_location]
+    assert_equal 7, mappings[:user_status]
+    assert_equal 8, mappings[:user_uid]
   end
 
   def test_get_field_id_with_existing_field
     # Use CustomFieldConfiguration directly
-    field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('subject_id_field_id')
+    field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_id_field_id')
     assert_equal 2, field_id
   end
 
@@ -90,7 +90,7 @@ class EmployeeMapperTest < ActiveSupport::TestCase
     # Clear the mock setting for this test
     Setting.stubs(:plugin_nysenate_audit_utils).returns({})
 
-    field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('subject_id_field_id')
+    field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_id_field_id')
     assert_nil field_id
   end
 end

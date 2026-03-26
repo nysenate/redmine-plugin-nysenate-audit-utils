@@ -3,40 +3,40 @@
 module NysenateAuditUtils
   module AccountTracking
     # Service for tracking account status history based on closed issues
-    # Determines current active/inactive status of subject accounts across different systems
+    # Determines current active/inactive status of user accounts across different systems
     class AccountTrackingService
       # Account actions that indicate an active account
       ACTIVE_ACTIONS = ['Add', 'Update Account & Privileges', 'Update Privileges Only', 'Update Account Only'].freeze
       # Account action that indicates an inactive account
       INACTIVE_ACTION = 'Delete'
 
-      # Get account statuses for a specific subject
-      # @param subject_id [String] The subject ID to query
+      # Get account statuses for a specific user
+      # @param user_id [String] The user ID to query
       # @return [Array<Hash>] Array of account status hashes, one per account type
       # Each hash contains:
-      #   - subject_id: The subject ID
-      #   - subject_type: The subject type (Employee, Vendor, etc.)
+      #   - user_id: The user ID
+      #   - user_type: The user type (Employee, Vendor, etc.)
       #   - account_type: The Target System value (e.g., "Oracle / SFMS")
       #   - status: "active" or "inactive"
       #   - issue_id: ID of the most recent closed issue for this account type
       #   - closed_on: Date when the issue was closed
       #   - account_action: The Account Action value from the latest issue
       #   - request_code: The BACHelp request code (e.g., "USRA", "AIXI")
-      def get_account_statuses(subject_id)
-        return [] if subject_id.blank?
+      def get_account_statuses(user_id)
+        return [] if user_id.blank?
 
         # Get custom field IDs
-        subject_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.subject_id_field_id
+        user_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_id_field_id
         account_action_field_id = NysenateAuditUtils::CustomFieldConfiguration.account_action_field_id
         target_system_field_id = NysenateAuditUtils::CustomFieldConfiguration.target_system_field_id
 
         # Validate required fields exist
-        unless subject_id_field_id && account_action_field_id && target_system_field_id
-          raise 'Required custom fields not found. Ensure Subject ID, Account Action, and Target System fields are configured.'
+        unless user_id_field_id && account_action_field_id && target_system_field_id
+          raise 'Required custom fields not found. Ensure User ID, Account Action, and Target System fields are configured.'
         end
 
-        # Query closed issues for this subject
-        issues = find_closed_issues_for_subject(subject_id, subject_id_field_id)
+        # Query closed issues for this user
+        issues = find_closed_issues_for_user(user_id, user_id_field_id)
 
         # Group issues by Target System (account type)
         issues_by_account_type = group_issues_by_account_type(
@@ -46,49 +46,49 @@ module NysenateAuditUtils
         )
 
         # Build account status data for each account type
-        build_account_statuses(issues_by_account_type, subject_id)
+        build_account_statuses(issues_by_account_type, user_id)
       end
 
-      # Get open account requests for a specific subject
-      # @param subject_id [String] The subject ID to query
+      # Get open account requests for a specific user
+      # @param user_id [String] The user ID to query
       # @return [Array<Hash>] Array of open request hashes
       # Each hash contains:
-      #   - subject_id: The subject ID
-      #   - subject_type: The subject type (Employee, Vendor, etc.)
+      #   - user_id: The user ID
+      #   - user_type: The user type (Employee, Vendor, etc.)
       #   - account_type: The Target System value (e.g., "Oracle / SFMS")
       #   - account_action: The Account Action value
       #   - issue_id: ID of the open issue
       #   - request_code: The BACHelp request code (e.g., "USRA", "AIXI")
-      def get_open_account_requests(subject_id)
-        return [] if subject_id.blank?
+      def get_open_account_requests(user_id)
+        return [] if user_id.blank?
 
         # Get custom field IDs
-        subject_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.subject_id_field_id
+        user_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_id_field_id
         account_action_field_id = NysenateAuditUtils::CustomFieldConfiguration.account_action_field_id
         target_system_field_id = NysenateAuditUtils::CustomFieldConfiguration.target_system_field_id
 
         # Validate required fields exist
-        unless subject_id_field_id && account_action_field_id && target_system_field_id
-          raise 'Required custom fields not found. Ensure Subject ID, Account Action, and Target System fields are configured.'
+        unless user_id_field_id && account_action_field_id && target_system_field_id
+          raise 'Required custom fields not found. Ensure User ID, Account Action, and Target System fields are configured.'
         end
 
-        # Query open issues for this subject
-        issues = find_open_issues_for_subject(subject_id, subject_id_field_id)
+        # Query open issues for this user
+        issues = find_open_issues_for_user(user_id, user_id_field_id)
 
         # Build open request data
-        build_open_requests(issues, target_system_field_id, account_action_field_id, subject_id)
+        build_open_requests(issues, target_system_field_id, account_action_field_id, user_id)
       end
 
-      # Get account statuses for all subjects with accounts on a specific target system
+      # Get account statuses for all users with accounts on a specific target system
       # @param target_system [String] The target system to query (e.g., "Oracle / SFMS", "AIX")
       # @param as_of_time [Time] The cutoff time for the report (default: current time)
-      # @return [Array<Hash>] Array of account status hashes, one per subject
+      # @return [Array<Hash>] Array of account status hashes, one per user
       # Each hash contains:
-      #   - subject_id: The subject ID
-      #   - subject_type: The subject type (Employee, Vendor, etc.)
+      #   - user_id: The user ID
+      #   - user_type: The user type (Employee, Vendor, etc.)
       #   - account_type: The Target System value (same as target_system parameter)
       #   - status: "active" or "inactive"
-      #   - issue_id: ID of the most recent closed issue for this subject/system
+      #   - issue_id: ID of the most recent closed issue for this user/system
       #   - closed_on: Date when the issue was closed
       #   - account_action: The Account Action value from the latest issue
       #   - request_code: The BACHelp request code (e.g., "USRA", "AIXI")
@@ -96,41 +96,41 @@ module NysenateAuditUtils
         return [] if target_system.blank?
 
         # Get custom field IDs
-        subject_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.subject_id_field_id
+        user_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_id_field_id
         account_action_field_id = NysenateAuditUtils::CustomFieldConfiguration.account_action_field_id
         target_system_field_id = NysenateAuditUtils::CustomFieldConfiguration.target_system_field_id
 
         # Validate required fields exist
-        unless subject_id_field_id && account_action_field_id && target_system_field_id
-          raise 'Required custom fields not found. Ensure Subject ID, Account Action, and Target System fields are configured.'
+        unless user_id_field_id && account_action_field_id && target_system_field_id
+          raise 'Required custom fields not found. Ensure User ID, Account Action, and Target System fields are configured.'
         end
 
         # Single bulk query for all closed issues matching this target system
         # Uses efficient joins to get all needed data in one query
         results = find_closed_issues_by_target_system(
           target_system,
-          subject_id_field_id,
+          user_id_field_id,
           account_action_field_id,
           target_system_field_id,
           as_of_time
         )
 
-        # Group by subject_id and build account status data
-        build_account_statuses_by_subject(results, target_system)
+        # Group by user_id and build account status data
+        build_account_statuses_by_user(results, target_system)
       end
 
       private
 
-      # Find all closed issues for a subject
-      # @param subject_id [String] The subject ID
-      # @param subject_id_field_id [Integer] The Subject ID custom field ID
-      # @return [ActiveRecord::Relation] Closed issues for the subject
-      def find_closed_issues_for_subject(subject_id, subject_id_field_id)
-        # Get issue IDs for this subject
+      # Find all closed issues for a tracked user
+      # @param user_id [String] The user ID
+      # @param user_id_field_id [Integer] The User ID custom field ID
+      # @return [ActiveRecord::Relation] Closed issues for the tracked user
+      def find_closed_issues_for_user(user_id, user_id_field_id)
+        # Get issue IDs for this user
         issue_ids = CustomValue
           .where(customized_type: 'Issue')
-          .where(custom_field_id: subject_id_field_id)
-          .where(value: subject_id.to_s)
+          .where(custom_field_id: user_id_field_id)
+          .where(value: user_id.to_s)
           .pluck(:customized_id)
 
         return Issue.none if issue_ids.empty?
@@ -145,16 +145,16 @@ module NysenateAuditUtils
           .order(closed_on: :desc)
       end
 
-      # Find all open issues for a subject
-      # @param subject_id [String] The subject ID
-      # @param subject_id_field_id [Integer] The Subject ID custom field ID
-      # @return [ActiveRecord::Relation] Open issues for the subject
-      def find_open_issues_for_subject(subject_id, subject_id_field_id)
-        # Get issue IDs for this subject
+      # Find all open issues for a tracked user
+      # @param user_id [String] The user ID
+      # @param user_id_field_id [Integer] The User ID custom field ID
+      # @return [ActiveRecord::Relation] Open issues for the tracked user
+      def find_open_issues_for_user(user_id, user_id_field_id)
+        # Get issue IDs for this user
         issue_ids = CustomValue
           .where(customized_type: 'Issue')
-          .where(custom_field_id: subject_id_field_id)
-          .where(value: subject_id.to_s)
+          .where(custom_field_id: user_id_field_id)
+          .where(value: user_id.to_s)
           .pluck(:customized_id)
 
         return Issue.none if issue_ids.empty?
@@ -186,7 +186,7 @@ module NysenateAuditUtils
             issue_id: issue.id,
             closed_on: issue.closed_on,
             account_action: account_action,
-            issue: issue  # Include issue object for extracting subject_type
+            issue: issue  # Include issue object for extracting user_type
           }
         end
 
@@ -195,24 +195,24 @@ module NysenateAuditUtils
 
       # Build account status data from grouped issues
       # @param issues_by_account_type [Hash] Hash of target_system => array of issue data
-      # @param subject_id [String] The subject ID
+      # @param user_id [String] The user ID
       # @return [Array<Hash>] Array of account status hashes
-      def build_account_statuses(issues_by_account_type, subject_id)
+      def build_account_statuses(issues_by_account_type, user_id)
         mapper = request_code_mapper
-        subject_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.subject_type_field_id
+        user_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_type_field_id
 
         issues_by_account_type.map do |account_type, issue_data_list|
           # Get the most recent issue (first in the list, as issues are sorted by closed_on desc)
           latest_issue = issue_data_list.first
 
-          # Get subject_type from the latest issue
-          subject_type = if subject_type_field_id && latest_issue[:issue]
-                           get_custom_field_value(latest_issue[:issue], subject_type_field_id)
+          # Get user_type from the latest issue
+          user_type = if user_type_field_id && latest_issue[:issue]
+                           get_custom_field_value(latest_issue[:issue], user_type_field_id)
                          end
 
           {
-            subject_id: subject_id,
-            subject_type: subject_type,
+            user_id: user_id,
+            user_type: user_type,
             account_type: account_type,
             status: determine_status(latest_issue[:account_action]),
             issue_id: latest_issue[:issue_id],
@@ -227,23 +227,23 @@ module NysenateAuditUtils
       # @param issues [ActiveRecord::Relation] Open issues to process
       # @param target_system_field_id [Integer] Target System custom field ID
       # @param account_action_field_id [Integer] Account Action custom field ID
-      # @param subject_id [String] The subject ID
+      # @param user_id [String] The user ID
       # @return [Array<Hash>] Array of open request hashes
-      def build_open_requests(issues, target_system_field_id, account_action_field_id, subject_id)
+      def build_open_requests(issues, target_system_field_id, account_action_field_id, user_id)
         mapper = request_code_mapper
-        subject_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.subject_type_field_id
+        user_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_type_field_id
 
         issues.map do |issue|
           target_system = get_custom_field_value(issue, target_system_field_id)
           account_action = get_custom_field_value(issue, account_action_field_id)
-          subject_type = get_custom_field_value(issue, subject_type_field_id) if subject_type_field_id
+          user_type = get_custom_field_value(issue, user_type_field_id) if user_type_field_id
 
           # Skip issues without required fields
           next if target_system.blank? || account_action.blank?
 
           {
-            subject_id: subject_id,
-            subject_type: subject_type,
+            user_id: user_id,
+            user_type: user_type,
             account_type: target_system,
             account_action: account_action,
             issue_id: issue.id,
@@ -286,12 +286,12 @@ module NysenateAuditUtils
 
       # Find all closed issues for a specific target system using efficient bulk query
       # @param target_system [String] The target system value
-      # @param subject_id_field_id [Integer] Subject ID custom field ID
+      # @param user_id_field_id [Integer] User ID custom field ID
       # @param account_action_field_id [Integer] Account Action custom field ID
       # @param target_system_field_id [Integer] Target System custom field ID
       # @param as_of_time [Time] The cutoff time for the report
-      # @return [Array<Hash>] Array of hashes with subject_id, subject_type, account_action, issue_id, closed_on
-      def find_closed_issues_by_target_system(target_system, subject_id_field_id, account_action_field_id, target_system_field_id, as_of_time)
+      # @return [Array<Hash>] Array of hashes with user_id, user_type, account_action, issue_id, closed_on
+      def find_closed_issues_by_target_system(target_system, user_id_field_id, account_action_field_id, target_system_field_id, as_of_time)
         # Query strategy: Single bulk query using joins to get all data at once
         # This avoids N+1 queries by fetching everything in one database round trip
 
@@ -314,21 +314,21 @@ module NysenateAuditUtils
           .includes(:custom_values)
           .order(closed_on: :desc)
 
-        # Get subject_type field ID
-        subject_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.subject_type_field_id
+        # Get user_type field ID
+        user_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_type_field_id
 
         # Extract data from issues and their custom values
         closed_issues.map do |issue|
-          subject_id = get_custom_field_value(issue, subject_id_field_id)
+          user_id = get_custom_field_value(issue, user_id_field_id)
           account_action = get_custom_field_value(issue, account_action_field_id)
-          subject_type = get_custom_field_value(issue, subject_type_field_id) if subject_type_field_id
+          user_type = get_custom_field_value(issue, user_type_field_id) if user_type_field_id
 
           # Skip issues without required data
-          next if subject_id.blank? || account_action.blank?
+          next if user_id.blank? || account_action.blank?
 
           {
-            subject_id: subject_id,
-            subject_type: subject_type,
+            user_id: user_id,
+            user_type: user_type,
             account_action: account_action,
             issue_id: issue.id,
             closed_on: issue.closed_on
@@ -336,23 +336,23 @@ module NysenateAuditUtils
         end.compact
       end
 
-      # Build account status data grouped by subject
+      # Build account status data grouped by user
       # @param results [Array<Hash>] Array of issue data hashes from find_closed_issues_by_target_system
       # @param target_system [String] The target system value
-      # @return [Array<Hash>] Array of account status hashes, one per subject
-      def build_account_statuses_by_subject(results, target_system)
+      # @return [Array<Hash>] Array of account status hashes, one per user
+      def build_account_statuses_by_user(results, target_system)
         mapper = request_code_mapper
 
-        # Group by subject_id
-        grouped = results.group_by { |r| r[:subject_id] }
+        # Group by user_id
+        grouped = results.group_by { |r| r[:user_id] }
 
-        # For each subject, take the most recent issue (first one due to DESC ordering)
-        statuses = grouped.map do |subject_id, subject_issues|
-          latest_issue = subject_issues.first
+        # For each user, take the most recent issue (first one due to DESC ordering)
+        statuses = grouped.map do |user_id, user_issues|
+          latest_issue = user_issues.first
 
           {
-            subject_id: subject_id,
-            subject_type: latest_issue[:subject_type],
+            user_id: user_id,
+            user_type: latest_issue[:user_type],
             account_type: target_system,
             status: determine_status(latest_issue[:account_action]),
             issue_id: latest_issue[:issue_id],
@@ -362,8 +362,8 @@ module NysenateAuditUtils
           }
         end
 
-        # Sort by subject_id for consistent output
-        statuses.sort_by { |s| s[:subject_id] }
+        # Sort by user_id for consistent output
+        statuses.sort_by { |s| s[:user_id] }
       end
     end
   end
