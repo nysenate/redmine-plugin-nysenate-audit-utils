@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 module NysenateAuditUtils
-  module Subjects
+  module Users
     # Data source for employees from ESS API
     # Read-only wrapper around EssEmployeeService
-    class EmployeeDataSource < SubjectDataSource
+    class EmployeeDataSource < UserDataSource
       # Search for employees matching the query
       # @param query [String] The search term
       # @param limit [Integer] Maximum number of results (default: 20)
@@ -50,13 +50,13 @@ module NysenateAuditUtils
 
       private
 
-      # Normalize an EssEmployee object to standard subject hash format
+      # Normalize an EssEmployee object to standard user hash format
       # @param employee [EssEmployee] The employee object from ESS API
-      # @return [Hash] Normalized subject hash
+      # @return [Hash] Normalized user hash
       def normalize_employee(employee)
         {
-          subject_type: 'Employee',
-          subject_id: employee.employee_id.to_s,
+          user_type: 'Employee',
+          user_id: employee.employee_id.to_s,
           name: employee.full_name,
           email: employee.email,
           phone: employee.work_phone,

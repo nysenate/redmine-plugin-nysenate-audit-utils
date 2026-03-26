@@ -1,0 +1,92 @@
+<% html_title('Manage Tracked Users') %>
+
+<div class="contextual">
+  <%= link_to 'New Tracked User', new_project_tracked_user_path(@project), class: 'icon icon-add' %>
+</div>
+
+<h2>Manage Tracked Users</h2>
+
+<% if @tracked_users.empty? %>
+  <p class="nodata">No tracked users found. Create a new tracked user to get started.</p>
+<% else %>
+  <p class="info">
+    Showing <%= @tracked_users.count %> of <%= @tracked_users_count %> <%= pluralize(@tracked_users_count, 'tracked user') %>
+  </p>
+
+  <table class="list tracked-users">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Location</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @tracked_users.each do |tracked_user| %>
+        <tr class="<%= cycle('odd', 'even') %>">
+          <td><%= tracked_user.user_type %></td>
+          <td><%= tracked_user.user_id %></td>
+          <td><%= tracked_user.name %></td>
+          <td><%= tracked_user.email %></td>
+          <td><%= tracked_user.phone %></td>
+          <td><%= tracked_user.location %></td>
+          <td>
+            <span class="status-badge <%= tracked_user.status.downcase %>">
+              <%= tracked_user.status %>
+            </span>
+          </td>
+          <td class="buttons">
+            <%= link_to 'Edit', edit_project_tracked_user_path(@project, tracked_user), class: 'icon icon-edit' %>
+            <%= link_to 'Delete', project_tracked_user_path(@project, tracked_user),
+                method: :delete,
+                data: { confirm: "Are you sure you want to delete #{tracked_user.name}?" },
+                class: 'icon icon-del' %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <span class="pagination">
+    <%= pagination_links_full @tracked_users_pages %>
+  </span>
+<% end %>
+
+<style>
+  .info {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    background-color: #f0f0f0;
+    border-left: 3px solid #169;
+  }
+
+  .nodata {
+    padding: 2em;
+    text-align: center;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    color: #666;
+  }
+
+  .status-badge {
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+    font-size: 0.9em;
+    font-weight: bold;
+  }
+
+  .status-badge.active {
+    background-color: #c6f6d5;
+    color: #2f855a;
+  }
+
+  .status-badge.inactive {
+    background-color: #fed7d7;
+    color: #c53030;
+  }
+</style>

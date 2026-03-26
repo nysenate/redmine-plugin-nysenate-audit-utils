@@ -1,0 +1,12 @@
+<% html_title('Edit Tracked User') %>
+
+<div class="contextual">
+  <%= link_to 'Delete', project_tracked_user_path(@project, @tracked_user),
+      method: :delete,
+      data: { confirm: "Are you sure you want to delete #{@tracked_user.name}?" },
+      class: 'icon icon-del' %>
+</div>
+
+<h2>Edit Tracked User: <%= @tracked_user.name %></h2>
+
+<%= render 'form' %>

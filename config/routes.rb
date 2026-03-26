@@ -12,8 +12,8 @@ Rails.application.routes.draw do
     end
   end
 
-  # Subject search/autofill routes
-  resources :subject_search, only: [] do
+  # User search/autofill routes
+  resources :user_search, only: [] do
     collection do
       get :search
       get :field_mappings
@@ -29,9 +29,9 @@ Rails.application.routes.draw do
     end
   end
 
-  # Project-scoped subject management routes
+  # Project-scoped user management routes
   resources :projects do
-    resources :subjects
+    resources :tracked_users
   end
 
   # Packet creation routes

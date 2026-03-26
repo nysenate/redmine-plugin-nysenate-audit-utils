@@ -81,7 +81,7 @@ class AuditReportsMailer < ActionMailer::Base
     attachments["monthly_report_#{target_system.parameterize}_#{filename_suffix}.csv"] = csv_data
 
     # Build subject line
-    subject = if mode == 'current'
+    email_subject = if mode == 'current'
                 "Monthly Audit Report - #{target_system} - Current State"
               else
                 "Monthly Audit Report - #{target_system} - #{Date::MONTHNAMES[selected_month_num]} #{selected_year}"
@@ -89,7 +89,7 @@ class AuditReportsMailer < ActionMailer::Base
 
     mail(
       to: recipients,
-      subject: subject
+      subject: email_subject
     )
   end
 

@@ -1,0 +1,38 @@
+<div id="user-search-widget" class="user-search-widget" data-project-id="<%= issue.project_id %>">
+  <label for="user-search-input">User Search & Autofill:</label>
+  <div class="user-search-content">
+    <div class="user-type-selector">
+      <label>
+        <input type="radio" name="user-type" value="Employee" checked>
+        Employee
+      </label>
+      <label>
+        <input type="radio" name="user-type" value="Vendor">
+        Vendor
+      </label>
+    </div>
+
+    <div class="search-input-container">
+      <input type="text"
+             id="user-search-input"
+             class="user-search-input"
+             placeholder="Search for user by name"
+             autocomplete="off">
+      <div class="search-loading" id="user-search-loading" style="display: none;">
+        <span>Searching...</span>
+      </div>
+    </div>
+
+    <div id="user-search-results" class="search-results" style="display: none;">
+      <ul id="user-results-list" class="results-list">
+        <!-- Search results will be populated here -->
+      </ul>
+    </div>
+
+    <div id="user-search-error" class="search-error" style="display: none;">
+      <!-- Error messages will be displayed here -->
+    </div>
+  </div>
+</div>
+
+<!-- Assets loaded globally via view_layouts_base_html_head hook -->

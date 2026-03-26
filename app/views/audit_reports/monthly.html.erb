@@ -68,7 +68,7 @@
   </p>
 <% else %>
   <p class="report-info">
-    Showing <%= pluralize(@report_data.size, 'subject') %> with accounts on <%= @target_system %>
+    Showing <%= pluralize(@report_data.size, 'user') %> with accounts on <%= @target_system %>
     <% if @mode == 'monthly' %>
       as of <strong><%= @as_of_time&.to_date&.strftime('%B %Y') %></strong>.
     <% else %>
@@ -79,10 +79,10 @@
   <table class="list issues <%= sort_css_classes %>">
     <thead>
       <tr>
-        <%= sort_header_tag('subject_name', caption: 'Subject Name') %>
-        <%= sort_header_tag('subject_id', caption: 'Subject ID') %>
-        <%= sort_header_tag('subject_type', caption: 'Subject Type') %>
-        <%= sort_header_tag('subject_uid', caption: 'Subject UID') %>
+        <%= sort_header_tag('user_name', caption: 'User Name') %>
+        <%= sort_header_tag('user_id', caption: 'User ID') %>
+        <%= sort_header_tag('user_type', caption: 'User Type') %>
+        <%= sort_header_tag('user_uid', caption: 'User UID') %>
         <%= sort_header_tag('status', caption: 'Account Status') %>
         <%= sort_header_tag('closed_on', caption: 'Last Updated', default_order: 'desc') %>
         <%= sort_header_tag('issue_id', caption: 'Last Issue') %>
@@ -94,22 +94,22 @@
         <tr>
           <td>
             <%
-              subject_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.subject_id_field_id
+              user_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_id_field_id
               filter_url = project_issues_path(@project,
                 set_filter: 1,
-                "f[]": ["cf_#{subject_id_field_id}", "status_id"],
-                "op[cf_#{subject_id_field_id}]": "=",
-                "v[cf_#{subject_id_field_id}][]": row[:subject_id],
+                "f[]": ["cf_#{user_id_field_id}", "status_id"],
+                "op[cf_#{user_id_field_id}]": "=",
+                "v[cf_#{user_id_field_id}][]": row[:user_id],
                 "op[status_id]": "*"
               )
               # Fix the double array encoding in the URL
               filter_url = filter_url.gsub('f%5B%5D%5B%5D=', 'f%5B%5D=')
             %>
-            <%= link_to row[:subject_name] || '—', filter_url, target: '_blank', title: "View all issues for this subject" %>
+            <%= link_to row[:user_name] || '—', filter_url, target: '_blank', title: "View all issues for this user" %>
           </td>
-          <td><%= row[:subject_id] %></td>
-          <td><%= row[:subject_type] || '—' %></td>
-          <td><%= row[:subject_uid] || '—' %></td>
+          <td><%= row[:user_id] %></td>
+          <td><%= row[:user_type] || '—' %></td>
+          <td><%= row[:user_uid] || '—' %></td>
           <td>
             <span class="status-badge status-<%= row[:status] %>">
               <%= row[:status]&.titleize %>

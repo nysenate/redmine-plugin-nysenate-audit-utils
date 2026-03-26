@@ -1,16 +1,16 @@
-<%= labelled_form_for @subject, url: (@subject.new_record? ? project_subjects_path(@project) : project_subject_path(@project, @subject)) do |f| %>
-  <%= error_messages_for 'subject' %>
+<%= labelled_form_for @tracked_user, url: (@tracked_user.new_record? ? project_tracked_users_path(@project) : project_tracked_user_path(@project, @tracked_user)) do |f| %>
+  <%= error_messages_for 'tracked_user' %>
 
   <div class="box tabular">
     <p>
-      <%= f.select :subject_type,
-          options_for_select([['Vendor', 'Vendor']], @subject.subject_type),
+      <%= f.select :user_type,
+          options_for_select([['Vendor', 'Vendor']], @tracked_user.user_type),
           {},
-          { required: true, label: 'Subject Type' } %>
+          { required: true, label: 'User Type' } %>
     </p>
 
     <p>
-      <%= f.text_field :subject_id, readonly: true, class: 'readonly', required: true, label: 'Subject ID' %>
+      <%= f.text_field :user_id, readonly: true, class: 'readonly', required: true, label: 'User ID' %>
       <em class="info">Auto-generated (e.g., V1, V2 for vendors)</em>
     </p>
 
@@ -37,14 +37,14 @@
 
     <p>
       <%= f.select :status,
-          options_for_select([['Active', 'Active'], ['Inactive', 'Inactive']], @subject.status),
+          options_for_select([['Active', 'Active'], ['Inactive', 'Inactive']], @tracked_user.status),
           {},
           { required: true, label: 'Status' } %>
     </p>
   </div>
 
-  <%= submit_tag(@subject.new_record? ? 'Create Subject' : 'Save Subject') %>
-  <%= link_to 'Cancel', project_subjects_path(@project), class: 'button' %>
+  <%= submit_tag(@tracked_user.new_record? ? 'Create User' : 'Save User') %>
+  <%= link_to 'Cancel', project_tracked_users_path(@project), class: 'button' %>
 <% end %>
 
 <style>

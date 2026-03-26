@@ -5,14 +5,14 @@ module AuditTestHelpers
   # This is a common pattern across many tests
   #
   # @param options [Hash] Configuration options
-  # @option options [Integer] :subject_type_field_id Subject Type field ID
-  # @option options [Integer] :subject_id_field_id Subject ID field ID
-  # @option options [Integer] :subject_name_field_id Subject Name field ID
-  # @option options [Integer] :subject_email_field_id Subject Email field ID
-  # @option options [Integer] :subject_phone_field_id Subject Phone field ID
-  # @option options [Integer] :subject_location_field_id Subject Location field ID
-  # @option options [Integer] :subject_status_field_id Subject Status field ID
-  # @option options [Integer] :subject_uid_field_id Subject UID field ID
+  # @option options [Integer] :user_type_field_id User Type field ID
+  # @option options [Integer] :user_id_field_id User ID field ID
+  # @option options [Integer] :user_name_field_id User Name field ID
+  # @option options [Integer] :user_email_field_id User Email field ID
+  # @option options [Integer] :user_phone_field_id User Phone field ID
+  # @option options [Integer] :user_location_field_id User Location field ID
+  # @option options [Integer] :user_status_field_id User Status field ID
+  # @option options [Integer] :user_uid_field_id User UID field ID
   # @option options [Integer] :account_action_field_id Account Action field ID
   # @option options [Integer] :target_system_field_id Target System field ID
   def configure_audit_fields(options = {})
@@ -71,14 +71,14 @@ module AuditTestHelpers
   # @return [Hash] Hash of field name symbols to CustomField objects
   def setup_standard_bachelp_fields(tracker = nil)
     fields = {
-      subject_type: create_or_find_field('Subject Type', 'list', ['Employee', 'Vendor'], tracker),
-      subject_id: create_or_find_field('Subject ID', 'string', [], tracker),
-      subject_name: create_or_find_field('Subject Name', 'string', [], tracker),
-      subject_email: create_or_find_field('Subject Email', 'string', [], tracker),
-      subject_phone: create_or_find_field('Subject Phone', 'string', [], tracker),
-      subject_location: create_or_find_field('Subject Location', 'string', [], tracker),
-      subject_status: create_or_find_field('Subject Status', 'string', [], tracker),
-      subject_uid: create_or_find_field('Subject UID', 'string', [], tracker),
+      user_type: create_or_find_field('User Type', 'list', ['Employee', 'Vendor'], tracker),
+      user_id: create_or_find_field('User ID', 'string', [], tracker),
+      user_name: create_or_find_field('User Name', 'string', [], tracker),
+      user_email: create_or_find_field('User Email', 'string', [], tracker),
+      user_phone: create_or_find_field('User Phone', 'string', [], tracker),
+      user_location: create_or_find_field('User Location', 'string', [], tracker),
+      user_status: create_or_find_field('User Status', 'string', [], tracker),
+      user_uid: create_or_find_field('User UID', 'string', [], tracker),
       account_action: create_or_find_field('Account Action', 'list',
         ['Add', 'Delete', 'Update Account & Privileges', 'Update Privileges Only', 'Update Account Only'], tracker),
       target_system: create_or_find_field('Target System', 'list',
@@ -86,14 +86,14 @@ module AuditTestHelpers
     }
 
     configure_audit_fields(
-      subject_type_field_id: fields[:subject_type].id,
-      subject_id_field_id: fields[:subject_id].id,
-      subject_name_field_id: fields[:subject_name].id,
-      subject_email_field_id: fields[:subject_email].id,
-      subject_phone_field_id: fields[:subject_phone].id,
-      subject_location_field_id: fields[:subject_location].id,
-      subject_status_field_id: fields[:subject_status].id,
-      subject_uid_field_id: fields[:subject_uid].id,
+      user_type_field_id: fields[:user_type].id,
+      user_id_field_id: fields[:user_id].id,
+      user_name_field_id: fields[:user_name].id,
+      user_email_field_id: fields[:user_email].id,
+      user_phone_field_id: fields[:user_phone].id,
+      user_location_field_id: fields[:user_location].id,
+      user_status_field_id: fields[:user_status].id,
+      user_uid_field_id: fields[:user_uid].id,
       account_action_field_id: fields[:account_action].id,
       target_system_field_id: fields[:target_system].id
     )

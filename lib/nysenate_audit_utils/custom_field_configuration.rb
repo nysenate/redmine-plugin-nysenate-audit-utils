@@ -7,51 +7,51 @@ module NysenateAuditUtils
     # Field definitions with metadata
     # Structure: { setting_key => { name:, description:, required: } }
     FIELD_DEFINITIONS = {
-      'subject_type_field_id' => {
-        name: 'Subject Type',
-        description: 'Subject type field (Employee, Vendor, etc.) for multi-type support',
+      'user_type_field_id' => {
+        name: 'User Type',
+        description: 'User type field (Employee, Vendor, etc.) for multi-type support',
         required: true,
         category: :autofill
       },
-      'subject_id_field_id' => {
-        name: 'Subject ID',
-        description: 'Subject ID field for reports and tracking',
+      'user_id_field_id' => {
+        name: 'User ID',
+        description: 'User ID field for reports and tracking',
         required: true,
         category: :reporting
       },
-      'subject_name_field_id' => {
-        name: 'Subject Name',
-        description: 'Subject name field for autofill',
+      'user_name_field_id' => {
+        name: 'User Name',
+        description: 'User name field for autofill',
         required: true,
         category: :autofill
       },
-      'subject_email_field_id' => {
-        name: 'Subject Email',
-        description: 'Subject email field for autofill',
+      'user_email_field_id' => {
+        name: 'User Email',
+        description: 'User email field for autofill',
         required: true,
         category: :autofill
       },
-      'subject_phone_field_id' => {
-        name: 'Subject Phone',
-        description: 'Subject phone field for autofill',
+      'user_phone_field_id' => {
+        name: 'User Phone',
+        description: 'User phone field for autofill',
         required: true,
         category: :autofill
       },
-      'subject_status_field_id' => {
-        name: 'Subject Status',
-        description: 'Subject status field for autofill',
+      'user_status_field_id' => {
+        name: 'User Status',
+        description: 'User status field for autofill',
         required: true,
         category: :autofill
       },
-      'subject_uid_field_id' => {
-        name: 'Subject UID',
-        description: 'Subject UID field for autofill',
+      'user_uid_field_id' => {
+        name: 'User UID',
+        description: 'User UID field for autofill',
         required: true,
         category: :autofill
       },
-      'subject_location_field_id' => {
-        name: 'Subject Location',
-        description: 'Subject location field for autofill',
+      'user_location_field_id' => {
+        name: 'User Location',
+        description: 'User location field for autofill',
         required: true,
         category: :autofill
       },
@@ -71,7 +71,7 @@ module NysenateAuditUtils
 
     class << self
       # Get a custom field ID by setting key
-      # @param setting_key [String] The setting key (e.g., 'subject_id_field_id')
+      # @param setting_key [String] The setting key (e.g., 'user_id_field_id')
       # @return [Integer, nil] The custom field ID or nil if not configured
       def get_field_id(setting_key)
         field_id = Setting.plugin_nysenate_audit_utils[setting_key]
@@ -214,24 +214,24 @@ module NysenateAuditUtils
 
       # Helper methods for common field access patterns
 
-      # Get subject type field ID
-      def subject_type_field_id
-        get_field_id('subject_type_field_id')
+      # Get user type field ID
+      def user_type_field_id
+        get_field_id('user_type_field_id')
       end
 
-      # Get subject type field
-      def subject_type_field
-        get_field('subject_type_field_id')
+      # Get user type field
+      def user_type_field
+        get_field('user_type_field_id')
       end
 
-      # Get subject ID field ID
-      def subject_id_field_id
-        get_field_id('subject_id_field_id')
+      # Get user ID field ID
+      def user_id_field_id
+        get_field_id('user_id_field_id')
       end
 
-      # Get subject ID field
-      def subject_id_field
-        get_field('subject_id_field_id')
+      # Get user ID field
+      def user_id_field
+        get_field('user_id_field_id')
       end
 
       # Get account action field ID
@@ -256,17 +256,17 @@ module NysenateAuditUtils
 
       # Get all autofill field IDs as a hash
       # @return [Hash<Symbol, Integer>] Hash mapping field purpose to field ID
-      # Example: { subject_type: 123, subject_id: 124, ... }
+      # Example: { user_type: 123, user_id: 124, ... }
       def autofill_field_ids
         {
-          subject_type: get_field_id('subject_type_field_id'),
-          subject_id: get_field_id('subject_id_field_id'),
-          subject_name: get_field_id('subject_name_field_id'),
-          subject_email: get_field_id('subject_email_field_id'),
-          subject_phone: get_field_id('subject_phone_field_id'),
-          subject_status: get_field_id('subject_status_field_id'),
-          subject_uid: get_field_id('subject_uid_field_id'),
-          subject_location: get_field_id('subject_location_field_id')
+          user_type: get_field_id('user_type_field_id'),
+          user_id: get_field_id('user_id_field_id'),
+          user_name: get_field_id('user_name_field_id'),
+          user_email: get_field_id('user_email_field_id'),
+          user_phone: get_field_id('user_phone_field_id'),
+          user_status: get_field_id('user_status_field_id'),
+          user_uid: get_field_id('user_uid_field_id'),
+          user_location: get_field_id('user_location_field_id')
         }.compact
       end
     end

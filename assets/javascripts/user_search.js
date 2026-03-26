@@ -1,5 +1,5 @@
 // Global state for cleanup
-let subjectSearchState = {
+let userSearchState = {
   initialized: false,
   listeners: [],
   searchTimeout: null,
@@ -12,41 +12,41 @@ let subjectSearchState = {
   selectedType: 'Employee' // Default to Employee
 };
 
-function initializeSubjectSearch() {
-  const searchWidget = document.getElementById('subject-search-widget');
-  const searchInput = document.getElementById('subject-search-input');
-  const resultsContainer = document.getElementById('subject-search-results');
-  const resultsList = document.getElementById('subject-results-list');
-  const loadingIndicator = document.getElementById('subject-search-loading');
-  const errorContainer = document.getElementById('subject-search-error');
-  const typeRadios = document.querySelectorAll('input[name="subject-type"]');
+function initializeUserSearch() {
+  const searchWidget = document.getElementById('user-search-widget');
+  const searchInput = document.getElementById('user-search-input');
+  const resultsContainer = document.getElementById('user-search-results');
+  const resultsList = document.getElementById('user-results-list');
+  const loadingIndicator = document.getElementById('user-search-loading');
+  const errorContainer = document.getElementById('user-search-error');
+  const typeRadios = document.querySelectorAll('input[name="user-type"]');
 
   if (!searchInput || !searchWidget) {
-    console.log('Subject search widget not found - exiting');
+    console.log('User search widget not found - exiting');
     return; // Exit if widget not present
   }
 
   // Get project_id from data attribute
   const projectId = searchWidget.dataset.projectId;
-  console.log('Subject search widget initialized with project_id:', projectId);
+  console.log('User search widget initialized with project_id:', projectId);
   if (!projectId) {
-    console.error('No project_id found on subject search widget - data-project-id attribute is missing');
+    console.error('No project_id found on user search widget - data-project-id attribute is missing');
     return;
   }
 
   // Clean up previous initialization
-  cleanupSubjectSearch();
+  cleanupUserSearch();
 
   // Reset state
-  subjectSearchState.searchTimeout = null;
-  subjectSearchState.currentRequest = null;
-  subjectSearchState.fieldMappings = null;
-  subjectSearchState.currentSearchQuery = '';
-  subjectSearchState.currentOffset = 0;
-  subjectSearchState.hasMore = false;
-  subjectSearchState.isLoadingMore = false;
-  subjectSearchState.selectedType = 'Employee'; // Default to Employee
-  subjectSearchState.initialized = true;
+  userSearchState.searchTimeout = null;
+  userSearchState.currentRequest = null;
+  userSearchState.fieldMappings = null;
+  userSearchState.currentSearchQuery = '';
+  userSearchState.currentOffset = 0;
+  userSearchState.hasMore = false;
+  userSearchState.isLoadingMore = false;
+  userSearchState.selectedType = 'Employee'; // Default to Employee
+  userSearchState.initialized = true;
 
   // Load field mappings on initialization
   loadFieldMappings();
@@ -57,8 +57,8 @@ function initializeSubjectSearch() {
   // Type selector change handler
   typeRadios.forEach(radio => {
     const typeChangeHandler = function() {
-      subjectSearchState.selectedType = this.value;
-      console.log('Subject type changed to:', subjectSearchState.selectedType);
+      userSearchState.selectedType = this.value;
+      console.log('User type changed to:', userSearchState.selectedType);
       updatePlaceholder();
       hideResults();
       hideError();
@@ -66,21 +66,21 @@ function initializeSubjectSearch() {
       searchInput.value = '';
     };
     radio.addEventListener('change', typeChangeHandler);
-    subjectSearchState.listeners.push({ element: radio, event: 'change', handler: typeChangeHandler });
+    userSearchState.listeners.push({ element: radio, event: 'change', handler: typeChangeHandler });
   });
 
   const inputHandler = function() {
     const query = this.value.trim();
 
     // Clear any existing timeout
-    if (subjectSearchState.searchTimeout) {
-      clearTimeout(subjectSearchState.searchTimeout);
+    if (userSearchState.searchTimeout) {
+      clearTimeout(userSearchState.searchTimeout);
     }
 
     // Cancel any existing request
-    if (subjectSearchState.currentRequest) {
-      subjectSearchState.currentRequest.abort();
-      subjectSearchState.currentRequest = null;
+    if (userSearchState.currentRequest) {
+      userSearchState.currentRequest.abort();
+      userSearchState.currentRequest = null;
     }
 
     // Hide results if query is too short
@@ -90,12 +90,12 @@ function initializeSubjectSearch() {
     }
 
     // Debounce search requests
-    subjectSearchState.searchTimeout = setTimeout(() => {
+    userSearchState.searchTimeout = setTimeout(() => {
       performSearch(query);
     }, 300);
   };
   searchInput.addEventListener('input', inputHandler);
-  subjectSearchState.listeners.push({ element: searchInput, event: 'input', handler: inputHandler });
+  userSearchState.listeners.push({ element: searchInput, event: 'input', handler: inputHandler });
 
   const keydownHandler = function(e) {
     if (e.key === 'Escape') {
@@ -104,20 +104,20 @@ function initializeSubjectSearch() {
     }
   };
   searchInput.addEventListener('keydown', keydownHandler);
-  subjectSearchState.listeners.push({ element: searchInput, event: 'keydown', handler: keydownHandler });
+  userSearchState.listeners.push({ element: searchInput, event: 'keydown', handler: keydownHandler });
 
   // Hide results when clicking outside
   const clickHandler = function(e) {
-    if (!e.target.closest('.subject-search-widget')) {
+    if (!e.target.closest('.user-search-widget')) {
       hideResults();
     }
   };
   document.addEventListener('click', clickHandler);
-  subjectSearchState.listeners.push({ element: document, event: 'click', handler: clickHandler });
+  userSearchState.listeners.push({ element: document, event: 'click', handler: clickHandler });
 
   // Add scroll listener for infinite scroll
   const scrollHandler = function() {
-    if (subjectSearchState.isLoadingMore || !subjectSearchState.hasMore) return;
+    if (userSearchState.isLoadingMore || !userSearchState.hasMore) return;
 
     const scrollTop = this.scrollTop;
     const scrollHeight = this.scrollHeight;
@@ -129,89 +129,89 @@ function initializeSubjectSearch() {
     }
   };
   resultsContainer.addEventListener('scroll', scrollHandler);
-  subjectSearchState.listeners.push({ element: resultsContainer, event: 'scroll', handler: scrollHandler });
+  userSearchState.listeners.push({ element: resultsContainer, event: 'scroll', handler: scrollHandler });
 
   function updatePlaceholder() {
-    const searchInput = document.getElementById('subject-search-input');
+    const searchInput = document.getElementById('user-search-input');
     if (searchInput) {
-      if (subjectSearchState.selectedType === 'Employee') {
+      if (userSearchState.selectedType === 'Employee') {
         searchInput.placeholder = 'Search for employee by name';
-      } else if (subjectSearchState.selectedType === 'Vendor') {
+      } else if (userSearchState.selectedType === 'Vendor') {
         searchInput.placeholder = 'Search for vendor by name';
       } else {
-        searchInput.placeholder = 'Search for subject by name';
+        searchInput.placeholder = 'Search for user by name';
       }
     }
   }
 
   function performSearch(query) {
-    subjectSearchState.currentSearchQuery = query;
-    subjectSearchState.currentOffset = 0;
-    subjectSearchState.hasMore = false;
+    userSearchState.currentSearchQuery = query;
+    userSearchState.currentOffset = 0;
+    userSearchState.hasMore = false;
     showLoading();
     hideError();
 
-    subjectSearchState.currentRequest = new XMLHttpRequest();
-    subjectSearchState.currentRequest.open('GET', `/subject_search/search?q=${encodeURIComponent(query)}&type=${encodeURIComponent(subjectSearchState.selectedType)}&limit=20&offset=0&project_id=${encodeURIComponent(projectId)}`);
-    subjectSearchState.currentRequest.setRequestHeader('Accept', 'application/json');
-    subjectSearchState.currentRequest.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    userSearchState.currentRequest = new XMLHttpRequest();
+    userSearchState.currentRequest.open('GET', `/user_search/search?q=${encodeURIComponent(query)}&type=${encodeURIComponent(userSearchState.selectedType)}&limit=20&offset=0&project_id=${encodeURIComponent(projectId)}`);
+    userSearchState.currentRequest.setRequestHeader('Accept', 'application/json');
+    userSearchState.currentRequest.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
-    subjectSearchState.currentRequest.onreadystatechange = function() {
+    userSearchState.currentRequest.onreadystatechange = function() {
       if (this.readyState === XMLHttpRequest.DONE) {
         hideLoading();
 
         if (this.status === 200) {
           try {
             const response = JSON.parse(this.responseText);
-            subjectSearchState.hasMore = response.has_more || false;
-            subjectSearchState.currentOffset = response.offset + response.total;
-            displayResults(response.subjects || [], false);
+            userSearchState.hasMore = response.has_more || false;
+            userSearchState.currentOffset = response.offset + response.total;
+            displayResults(response.users || [], false);
           } catch (e) {
             showError('Error parsing search results');
           }
         } else if (this.status === 403) {
-          showError('Access denied. You do not have permission to search subjects.');
+          showError('Access denied. You do not have permission to search users.');
         } else if (this.status === 503) {
-          showError('Subject search temporarily unavailable. Please try again later.');
+          showError('User search temporarily unavailable. Please try again later.');
         } else {
           showError('Search failed. Please try again.');
         }
 
-        subjectSearchState.currentRequest = null;
+        userSearchState.currentRequest = null;
       }
     };
 
-    subjectSearchState.currentRequest.onerror = function() {
+    userSearchState.currentRequest.onerror = function() {
       hideLoading();
       showError('Network error. Please check your connection.');
-      subjectSearchState.currentRequest = null;
+      userSearchState.currentRequest = null;
     };
 
-    subjectSearchState.currentRequest.send();
+    userSearchState.currentRequest.send();
   }
 
   function loadMoreResults() {
-    if (subjectSearchState.isLoadingMore || !subjectSearchState.hasMore || !subjectSearchState.currentSearchQuery) return;
+    if (userSearchState.isLoadingMore || !userSearchState.hasMore || !userSearchState.currentSearchQuery) return;
 
-    subjectSearchState.isLoadingMore = true;
+    userSearchState.isLoadingMore = true;
     showLoadingMore();
 
     const request = new XMLHttpRequest();
-    request.open('GET', `/subject_search/search?q=${encodeURIComponent(subjectSearchState.currentSearchQuery)}&type=${encodeURIComponent(subjectSearchState.selectedType)}&limit=20&offset=${subjectSearchState.currentOffset}&project_id=${encodeURIComponent(projectId)}`);
+    request.open('GET', `/user_search/search?q=${encodeURIComponent(userSearchState.currentSearchQuery)}&type=${encodeURIComponent(userSearchState.selectedType)}&limit=20&offset=${userSearchState.currentOffset}&project_id=${encodeURIComponent(projectId)}`);
     request.setRequestHeader('Accept', 'application/json');
     request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
     request.onreadystatechange = function() {
       if (this.readyState === XMLHttpRequest.DONE) {
         hideLoadingMore();
-        subjectSearchState.isLoadingMore = false;
+        userSearchState.isLoadingMore = false;
 
         if (this.status === 200) {
           try {
             const response = JSON.parse(this.responseText);
-            subjectSearchState.hasMore = response.has_more || false;
-            subjectSearchState.currentOffset = subjectSearchState.currentOffset + response.total;
-            displayResults(response.subjects || [], true);
+            userSearchState.hasMore = response.has_more || false;
+            userSearchState.currentOffset = userSearchState.currentOffset + response.total;
+            displayResults(response.users || [], true);
           } catch (e) {
             console.error('Error parsing more results:', e);
           }
@@ -223,14 +223,14 @@ function initializeSubjectSearch() {
 
     request.onerror = function() {
       hideLoadingMore();
-      subjectSearchState.isLoadingMore = false;
+      userSearchState.isLoadingMore = false;
       console.error('Network error loading more results');
     };
 
     request.send();
   }
 
-  function displayResults(subjects, append = false) {
+  function displayResults(users, append = false) {
     if (!append) {
       resultsList.innerHTML = '';
     }
@@ -241,33 +241,33 @@ function initializeSubjectSearch() {
       existingLoader.remove();
     }
 
-    if (subjects.length === 0 && !append) {
-      const typeName = subjectSearchState.selectedType.toLowerCase();
+    if (users.length === 0 && !append) {
+      const typeName = userSearchState.selectedType.toLowerCase();
       resultsList.innerHTML = `<li class="no-results">No ${typeName}s found</li>`;
     } else {
-      subjects.forEach(subject => {
+      users.forEach(tracked_user => {
         const li = document.createElement('li');
-        const statusClass = subject.status === 'Active' ? 'subject-status-active' : 'subject-status-inactive';
+        const statusClass = tracked_user.status === 'Active' ? 'user-status-active' : 'user-status-inactive';
 
         // Build details based on available information
-        let details = `Status: <span class="${statusClass}">${escapeHtml(subject.status || 'N/A')}</span>`;
-        if (subject.uid) {
-          details += ` | UID: ${escapeHtml(subject.uid)}`;
+        let details = `Status: <span class="${statusClass}">${escapeHtml(tracked_user.status || 'N/A')}</span>`;
+        if (tracked_user.uid) {
+          details += ` | UID: ${escapeHtml(tracked_user.uid)}`;
         }
-        if (subject.location) {
-          details += ` | Location: ${escapeHtml(subject.location)}`;
+        if (tracked_user.location) {
+          details += ` | Location: ${escapeHtml(tracked_user.location)}`;
         }
-        if (subject.subject_id) {
-          details += ` | ID #: ${escapeHtml(subject.subject_id)}`;
+        if (tracked_user.user_id) {
+          details += ` | ID #: ${escapeHtml(tracked_user.user_id)}`;
         }
 
         li.innerHTML = `
-          <div class="subject-name">${highlightMatch(subject.name || 'Unknown', subjectSearchState.currentSearchQuery)}</div>
-          <div class="subject-details">${details}</div>
+          <div class="user-name">${highlightMatch(tracked_user.name || 'Unknown', userSearchState.currentSearchQuery)}</div>
+          <div class="user-details">${details}</div>
         `;
 
         li.addEventListener('click', () => {
-          selectSubject(subject);
+          selectUser(tracked_user);
         });
 
         resultsList.appendChild(li);
@@ -280,7 +280,7 @@ function initializeSubjectSearch() {
   function loadFieldMappings() {
     console.log('Starting field mappings load...');
     const request = new XMLHttpRequest();
-    request.open('GET', `/subject_search/field_mappings?project_id=${encodeURIComponent(projectId)}`);
+    request.open('GET', `/user_search/field_mappings?project_id=${encodeURIComponent(projectId)}`);
     request.setRequestHeader('Accept', 'application/json');
     request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
@@ -291,9 +291,9 @@ function initializeSubjectSearch() {
           try {
             console.log('Field mappings response text:', this.responseText);
             const response = JSON.parse(this.responseText);
-            subjectSearchState.fieldMappings = response.field_mappings;
-            console.log('Field mappings loaded successfully:', subjectSearchState.fieldMappings);
-            window.bachelpFieldMappings = subjectSearchState.fieldMappings; // Also set globally for debugging
+            userSearchState.fieldMappings = response.field_mappings;
+            console.log('Field mappings loaded successfully:', userSearchState.fieldMappings);
+            window.bachelpFieldMappings = userSearchState.fieldMappings; // Also set globally for debugging
           } catch (e) {
             console.error('Error parsing field mappings:', e);
           }
@@ -307,53 +307,53 @@ function initializeSubjectSearch() {
     console.log('Field mappings request sent');
   }
 
-  function selectSubject(subject) {
-    console.log('Selected subject:', subject);
-    console.log('Current fieldMappings state:', subjectSearchState.fieldMappings);
+  function selectUser(user) {
+    console.log('Selected user:', user);
+    console.log('Current fieldMappings state:', userSearchState.fieldMappings);
     hideResults();
-    searchInput.value = subject.name || '';
+    searchInput.value = user.name || '';
 
-    if (!subjectSearchState.fieldMappings) {
+    if (!userSearchState.fieldMappings) {
       console.warn('Field mappings not loaded yet, trying to use global fallback...');
       if (window.bachelpFieldMappings) {
-        subjectSearchState.fieldMappings = window.bachelpFieldMappings;
-        console.log('Using global field mappings:', subjectSearchState.fieldMappings);
+        userSearchState.fieldMappings = window.bachelpFieldMappings;
+        console.log('Using global field mappings:', userSearchState.fieldMappings);
       } else {
         console.error('No field mappings available, cannot autofill');
         return;
       }
     }
 
-    populateSubjectFields(subject);
+    populateUserFields(user);
   }
 
-  function populateSubjectFields(subject) {
-    // Populate subject fields using dynamic mappings
-    populateField('subject_id_field', subject.subject_id);
-    populateField('subject_name_field', subject.name);
-    populateField('subject_email_field', subject.email);
-    populateField('subject_phone_field', subject.phone);
-    populateField('subject_uid_field', subject.uid);
-    populateField('subject_location_field', subject.location);
+  function populateUserFields(user) {
+    // Populate user fields using dynamic mappings
+    populateField('user_id_field', user.user_id);
+    populateField('user_name_field', user.name);
+    populateField('user_email_field', user.email);
+    populateField('user_phone_field', user.phone);
+    populateField('user_uid_field', user.uid);
+    populateField('user_location_field', user.location);
 
-    // Populate Subject Status dropdown if mapping exists
-    if (subject.status) {
-      populateSelectField('subject_status_field', subject.status);
+    // Populate User Status dropdown if mapping exists
+    if (user.status) {
+      populateSelectField('user_status_field', user.status);
     }
 
-    // Populate Subject Type dropdown if mapping exists
-    if (subject.subject_type) {
-      populateSelectField('subject_type_field', subject.subject_type);
+    // Populate User Type dropdown if mapping exists
+    if (user.user_type) {
+      populateSelectField('user_type_field', user.user_type);
     } else {
-      // If subject_type not provided, use the selected type from the search
-      populateSelectField('subject_type_field', subjectSearchState.selectedType);
+      // If user_type not provided, use the selected type from the search
+      populateSelectField('user_type_field', userSearchState.selectedType);
     }
   }
 
   function populateField(mappingKey, value) {
-    if (!subjectSearchState.fieldMappings || !subjectSearchState.fieldMappings[mappingKey]) return;
+    if (!userSearchState.fieldMappings || !userSearchState.fieldMappings[mappingKey]) return;
 
-    const fieldId = subjectSearchState.fieldMappings[mappingKey];
+    const fieldId = userSearchState.fieldMappings[mappingKey];
     const input = document.getElementById(fieldId);
 
     if (input) {
@@ -368,9 +368,9 @@ function initializeSubjectSearch() {
   }
 
   function populateSelectField(mappingKey, value) {
-    if (!subjectSearchState.fieldMappings || !subjectSearchState.fieldMappings[mappingKey]) return;
+    if (!userSearchState.fieldMappings || !userSearchState.fieldMappings[mappingKey]) return;
 
-    const fieldId = subjectSearchState.fieldMappings[mappingKey];
+    const fieldId = userSearchState.fieldMappings[mappingKey];
     const select = document.getElementById(fieldId);
 
     if (select && select.tagName === 'SELECT') {
@@ -464,34 +464,34 @@ function initializeSubjectSearch() {
   }
 }
 
-function cleanupSubjectSearch() {
-  console.log('Cleaning up subject search...');
+function cleanupUserSearch() {
+  console.log('Cleaning up user search...');
 
   // Clear any pending timeout
-  if (subjectSearchState.searchTimeout) {
-    clearTimeout(subjectSearchState.searchTimeout);
-    subjectSearchState.searchTimeout = null;
+  if (userSearchState.searchTimeout) {
+    clearTimeout(userSearchState.searchTimeout);
+    userSearchState.searchTimeout = null;
   }
 
   // Abort any pending request
-  if (subjectSearchState.currentRequest) {
-    subjectSearchState.currentRequest.abort();
-    subjectSearchState.currentRequest = null;
+  if (userSearchState.currentRequest) {
+    userSearchState.currentRequest.abort();
+    userSearchState.currentRequest = null;
   }
 
   // Remove all event listeners
-  subjectSearchState.listeners.forEach(({ element, event, handler }) => {
+  userSearchState.listeners.forEach(({ element, event, handler }) => {
     element.removeEventListener(event, handler);
   });
-  subjectSearchState.listeners = [];
+  userSearchState.listeners = [];
 
   console.log('Cleanup complete');
 }
 
 // Initialize on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOMContentLoaded: Initializing subject search');
-  initializeSubjectSearch();
+  console.log('DOMContentLoaded: Initializing user search');
+  initializeUserSearch();
 });
 
 // Re-initialize when issue form is updated via AJAX (e.g., project change)
@@ -500,11 +500,11 @@ if (typeof jQuery !== 'undefined') {
   jQuery(document).on('ajaxComplete', function(event, xhr, settings) {
     // Check if this is an issue form update
     if (settings.url && settings.url.includes('/issues/') && settings.url.includes('/edit')) {
-      console.log('AJAX form update detected, re-initializing subject search');
+      console.log('AJAX form update detected, re-initializing user search');
       // Small delay to ensure DOM is updated
       setTimeout(function() {
-        if (document.getElementById('subject-search-widget')) {
-          initializeSubjectSearch();
+        if (document.getElementById('user-search-widget')) {
+          initializeUserSearch();
         }
       }, 100);
     }

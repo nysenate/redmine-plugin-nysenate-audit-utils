@@ -67,16 +67,16 @@ module NysenateAuditUtils
           account_statuses = @account_tracking_service.get_account_statuses(employee_id)
           open_requests = @account_tracking_service.get_open_account_requests(employee_id)
 
-          # Use subject terminology for consistency across all reports
+          # Use user terminology for consistency across all reports
           {
-            subject_name: employee.display_name,
+            user_name: employee.display_name,
             account_statuses: account_statuses,
             open_requests: open_requests,
             transaction_codes: transaction_codes,
             phone_number: employee.work_phone,
             office: employee.resp_center_display_name,
             office_location: employee.location&.display_name,
-            subject_id: employee_id,
+            user_id: employee_id,
             post_date: latest_post_date
           }
         end
