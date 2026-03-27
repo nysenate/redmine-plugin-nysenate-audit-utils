@@ -305,6 +305,132 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     assert_equal 'active', result.first[:status]
   end
 
+  # Tests for status_filter parameter
+
+  test 'initializes with status_filter parameter' do
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+      target_system: 'Oracle / SFMS',
+      status_filter: 'active'
+    )
+
+    assert_equal 'Oracle / SFMS', service.target_system
+    assert_equal 'active', service.status_filter
+  end
+
+  test 'defaults status_filter to all when not provided' do
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'Oracle / SFMS')
+    assert_equal 'all', service.status_filter
+  end
+
+  test 'generate filters by active status only' do
+    # Create active and inactive accounts for same system
+    active_issue1 = create_closed_test_issue('11111', 'Active User 1', 'AIX', 'Add', 3.days.ago)
+    active_issue2 = create_closed_test_issue('22222', 'Active User 2', 'AIX', 'Update Account & Privileges', 2.days.ago)
+    inactive_issue = create_closed_test_issue('33333', 'Inactive User', 'AIX', 'Delete', 1.day.ago)
+
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+      target_system: 'AIX',
+      status_filter: 'active'
+    )
+    result = service.generate
+
+    # Should only return active accounts
+    assert_equal 2, result.size
+    assert_includes result.map { |r| r[:user_id] }, '11111'
+    assert_includes result.map { |r| r[:user_id] }, '22222'
+    assert_not_includes result.map { |r| r[:user_id] }, '33333'
+    result.each { |r| assert_equal 'active', r[:status] }
+  end
+
+  test 'generate filters by inactive status only' do
+    # Create active and inactive accounts for same system
+    active_issue = create_closed_test_issue('11111', 'Active User', 'SFS', 'Add', 3.days.ago)
+    inactive_issue1 = create_closed_test_issue('22222', 'Inactive User 1', 'SFS', 'Delete', 2.days.ago)
+    inactive_issue2 = create_closed_test_issue('33333', 'Inactive User 2', 'SFS', 'Delete', 1.day.ago)
+
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+      target_system: 'SFS',
+      status_filter: 'inactive'
+    )
+    result = service.generate
+
+    # Should only return inactive accounts
+    assert_equal 2, result.size
+    assert_includes result.map { |r| r[:user_id] }, '22222'
+    assert_includes result.map { |r| r[:user_id] }, '33333'
+    assert_not_includes result.map { |r| r[:user_id] }, '11111'
+    result.each { |r| assert_equal 'inactive', r[:status] }
+  end
+
+  test 'generate with all status filter returns all accounts' do
+    # Create mix of active and inactive accounts
+    active_issue = create_closed_test_issue('11111', 'Active User', 'NYSDS', 'Add', 3.days.ago)
+    inactive_issue = create_closed_test_issue('22222', 'Inactive User', 'NYSDS', 'Delete', 2.days.ago)
+
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+      target_system: 'NYSDS',
+      status_filter: 'all'
+    )
+    result = service.generate
+
+    # Should return both active and inactive accounts
+    assert_equal 2, result.size
+    assert_includes result.map { |r| r[:user_id] }, '11111'
+    assert_includes result.map { |r| r[:user_id] }, '22222'
+    assert_equal 'active', result.find { |r| r[:user_id] == '11111' }[:status]
+    assert_equal 'inactive', result.find { |r| r[:user_id] == '22222' }[:status]
+  end
+
+  test 'generate with blank status filter returns all accounts' do
+    # Create mix of active and inactive accounts
+    active_issue = create_closed_test_issue('11111', 'Active User', 'PayServ', 'Add', 3.days.ago)
+    inactive_issue = create_closed_test_issue('22222', 'Inactive User', 'PayServ', 'Delete', 2.days.ago)
+
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+      target_system: 'PayServ',
+      status_filter: ''
+    )
+    result = service.generate
+
+    # Should return all accounts when filter is blank
+    assert_equal 2, result.size
+  end
+
+  test 'generate returns empty array when no accounts match status filter' do
+    # Create only active accounts
+    active_issue = create_closed_test_issue('11111', 'Active User', 'Oracle / SFMS', 'Add', 1.day.ago)
+
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+      target_system: 'Oracle / SFMS',
+      status_filter: 'inactive'
+    )
+    result = service.generate
+
+    # Should return empty array when no inactive accounts exist
+    assert_equal [], result
+  end
+
+  test 'status filter works with as_of_time parameter' do
+    # Create issues with different timestamps
+    old_active = create_closed_test_issue('11111', 'Old Active', 'OGS Swiper Access', 'Add', 10.days.ago)
+    old_inactive = create_closed_test_issue('22222', 'Old Inactive', 'OGS Swiper Access', 'Delete', 9.days.ago)
+    recent_active = create_closed_test_issue('33333', 'Recent Active', 'OGS Swiper Access', 'Add', 1.day.ago)
+
+    cutoff_time = 5.days.ago
+
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+      target_system: 'OGS Swiper Access',
+      as_of_time: cutoff_time,
+      status_filter: 'active'
+    )
+    result = service.generate
+
+    # Should return only active accounts before cutoff
+    assert_equal 1, result.size
+    assert_equal '11111', result.first[:user_id]
+    assert_equal 'active', result.first[:status]
+  end
+
   private
 
   def create_test_issue(employee_id, employee_name, target_system, account_action)

@@ -141,6 +141,9 @@ class AuditReportsController < ApplicationController
     # Parse target_system parameter
     target_system = params[:target_system].presence || 'Oracle / SFMS'
 
+    # Parse status_filter parameter (default to 'all')
+    status_filter = params[:status_filter].presence || 'all'
+
     # Parse mode parameter (default to 'monthly')
     mode = params[:mode].presence || 'monthly'
 
@@ -160,10 +163,12 @@ class AuditReportsController < ApplicationController
     # Generate report
     service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
       target_system: target_system,
-      as_of_time: as_of_time
+      as_of_time: as_of_time,
+      status_filter: status_filter
     )
     @report_data = service.generate
     @target_system = target_system
+    @status_filter = status_filter
     @mode = mode
     @selected_month_num = selected_month_num
     @selected_year = selected_year
