@@ -6,7 +6,6 @@ Rails.application.routes.draw do
         get :daily
         get :weekly
         get :monthly
-        get :triennial
         get :export
       end
     end

@@ -100,7 +100,7 @@ Enable the Audit Utils module per-project:
 
 1. Go to **Projects → \*your project name\* → Settings** and scroll to the **Modules** section.
 2. Enable the **Audit Utils** module to activate all audit utilities features:
-   - Daily/weekly/monthly/triennial report generation and viewing
+   - Daily/weekly/monthly report generation and viewing
    - User search and autofill functionality (employees, vendors, etc.)
    - Ticket packet creation (PDF + attachments in zip format)
    - Tracked user management (vendors, contractors, etc.)
@@ -110,7 +110,7 @@ Enable the Audit Utils module per-project:
 Configure role permissions under **Administration → Roles and Permissions**:
 
 Edit the desired role(s) so that they grant the following permissions under **Audit Utils**:
-- **View audit reports** - Access to daily/weekly/monthly/triennial reports
+- **View audit reports** - Access to daily/weekly/monthly reports
 - **Export audit reports** - Export reports to CSV
 - **Use user autofill** - User search and autofill functionality
 - **Create ticket packets** - Generate ticket packets (PDF + attachments)
