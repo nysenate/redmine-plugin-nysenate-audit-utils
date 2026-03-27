@@ -3,11 +3,12 @@
 module NysenateAuditUtils
   module Reporting
     class MonthlyReportService
-      attr_reader :target_system, :as_of_time, :errors
+      attr_reader :target_system, :as_of_time, :status_filter, :errors
 
-      def initialize(target_system:, as_of_time: Time.current)
+      def initialize(target_system:, as_of_time: Time.current, status_filter: 'all')
         @target_system = target_system
         @as_of_time = as_of_time
+        @status_filter = status_filter
         @errors = []
       end
 
@@ -123,8 +124,22 @@ module NysenateAuditUtils
           }
         end
 
+        # Apply status filter
+        report_data = filter_by_status(report_data)
+
         # Sort by user_id for consistency
         report_data.sort_by { |row| row[:user_id].to_i rescue row[:user_id].to_s }  # Handle both numeric and prefixed IDs
+      end
+
+      # Filter report data by account status
+      # @param data [Array<Hash>] Array of report data hashes
+      # @return [Array<Hash>] Filtered array of report data
+      def filter_by_status(data)
+        return data if @status_filter == 'all' || @status_filter.blank?
+
+        data.select do |row|
+          row[:status] == @status_filter
+        end
       end
     end
   end

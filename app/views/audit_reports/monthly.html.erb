@@ -1,7 +1,7 @@
 <% html_title(l(:label_audit_monthly_report)) -%>
 
 <div class="contextual">
-  <%= link_to "Export CSV", monthly_project_audit_reports_path(@project, target_system: @target_system, mode: @mode, month: @selected_month_num, year: @selected_year, format: :csv), class: "icon icon-download" %>
+  <%= link_to "Export CSV", monthly_project_audit_reports_path(@project, target_system: @target_system, mode: @mode, month: @selected_month_num, year: @selected_year, status_filter: @status_filter, format: :csv), class: "icon icon-download" %>
   <%= link_to "Back to Reports", project_audit_reports_path(@project), class: "icon icon-cancel" %>
 </div>
 
@@ -54,6 +54,16 @@
         </span>
       </p>
     <% end %>
+    <p>
+      <%= label_tag :status_filter, "Account Status" %>
+      <%= select_tag :status_filter,
+                     options_for_select([
+                                          ['All Statuses', 'all'],
+                                          ['Active Only', 'active'],
+                                          ['Inactive Only', 'inactive']
+                                        ], @status_filter || 'all'),
+                     onchange: "this.form.submit();" %>
+    </p>
   </fieldset>
 <% end %>
 
