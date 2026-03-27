@@ -1,0 +1,17 @@
+# Logs
+*.log
+
+# Temporary files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Notes
+notes/
