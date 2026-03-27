@@ -30,7 +30,10 @@ module NysenateAuditUtils
           params = {}
           params[:term] = term if term.present?
           params[:limit] = validate_limit(limit)
-          params[:offset] = validate_offset(offset)
+          # Translate 0-based offset to ESS API's 1-based offset
+          # Plugin uses: offset=0 (records 0-19), offset=20 (records 20-39)
+          # ESS API uses: offset=0 (positions 1-20), offset=21 (positions 21-40)
+          params[:offset] = translate_offset_to_ess(validate_offset(offset))
           params
         end
 
@@ -44,6 +47,13 @@ module NysenateAuditUtils
         def validate_offset(offset)
           offset = offset.to_i
           offset < 0 ? 0 : offset
+        end
+
+        # Translate 0-based offset to ESS API's 1-based offset
+        # ESS API uses 1-indexed positions where offset=0 is special (positions 1-20),
+        # and offset=N means "start at position N" for N>0
+        def translate_offset_to_ess(offset)
+          offset == 0 ? 0 : offset + 1
         end
 
         def api_client
