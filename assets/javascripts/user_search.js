@@ -494,12 +494,13 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeUserSearch();
 });
 
-// Re-initialize when issue form is updated via AJAX (e.g., project change)
+// Re-initialize when issue form is updated via AJAX (e.g., project change, tracker change)
 // Listen for both jQuery ajaxComplete and native events
 if (typeof jQuery !== 'undefined') {
   jQuery(document).on('ajaxComplete', function(event, xhr, settings) {
-    // Check if this is an issue form update
-    if (settings.url && settings.url.includes('/issues/') && settings.url.includes('/edit')) {
+    // Check if this is an issue form update (new or edit)
+    // Matches: /issues/new, /issues/:id/edit, /issues/update_form
+    if (settings.url && settings.url.includes('/issues/')) {
       console.log('AJAX form update detected, re-initializing user search');
       // Small delay to ensure DOM is updated
       setTimeout(function() {
