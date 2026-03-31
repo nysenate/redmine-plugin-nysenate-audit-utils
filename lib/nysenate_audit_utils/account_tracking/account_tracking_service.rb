@@ -278,10 +278,7 @@ module NysenateAuditUtils
       # Get the request code mapper instance
       # @return [NysenateAuditUtils::RequestCodes::RequestCodeMapper] The mapper instance
       def request_code_mapper
-        @request_code_mapper ||= begin
-          custom_mappings = Setting.plugin_nysenate_audit_utils['request_code_mappings'] || {}
-          NysenateAuditUtils::RequestCodes::RequestCodeMapper.new(custom_mappings)
-        end
+        @request_code_mapper ||= NysenateAuditUtils::RequestCodes::RequestCodeMapper.new
       end
 
       # Find all closed issues for a specific target system using efficient bulk query

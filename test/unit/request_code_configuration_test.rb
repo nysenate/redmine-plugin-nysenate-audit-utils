@@ -119,38 +119,38 @@ class RequestCodeConfigurationTest < ActiveSupport::TestCase
     assert_nil field
   end
 
-  # Test custom mappings
-  test 'should return custom mappings from settings' do
-    custom_mappings = {
-      'Custom System' => {
-        'Add' => 'CSTA'
-      }
+  # Test custom prefix/suffix mappings
+  test 'should return custom system prefixes from settings' do
+    custom_prefixes = {
+      'Custom System' => 'CST'
     }
 
-    Setting.plugin_nysenate_audit_utils = { 'request_code_mappings' => custom_mappings }
+    Setting.plugin_nysenate_audit_utils = { 'request_code_system_prefixes' => custom_prefixes }
 
-    mappings = Setting.plugin_nysenate_audit_utils['request_code_mappings']
-    assert_equal custom_mappings, mappings
+    prefixes = Setting.plugin_nysenate_audit_utils['request_code_system_prefixes']
+    assert_equal custom_prefixes, prefixes
   end
 
-  test 'should return nil when no custom mappings configured' do
-    Setting.plugin_nysenate_audit_utils = {}
-
-    mappings = Setting.plugin_nysenate_audit_utils['request_code_mappings']
-    assert_nil mappings
-  end
-
-  # Test mapper with custom mappings
-  test 'mapper should use custom mappings from settings' do
-    custom_mappings = {
-      'Custom System' => {
-        'Add' => 'CSTA'
-      }
+  test 'should return custom action suffixes from settings' do
+    custom_suffixes = {
+      'Add' => 'A',
+      'Delete' => 'D'
     }
 
-    Setting.plugin_nysenate_audit_utils = { 'request_code_mappings' => custom_mappings }
+    Setting.plugin_nysenate_audit_utils = { 'request_code_action_suffixes' => custom_suffixes }
 
-    mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new(custom_mappings)
+    suffixes = Setting.plugin_nysenate_audit_utils['request_code_action_suffixes']
+    assert_equal custom_suffixes, suffixes
+  end
+
+  # Test mapper loads from settings
+  test 'mapper should use system prefixes from settings' do
+    Setting.plugin_nysenate_audit_utils = {
+      'request_code_system_prefixes' => { 'Custom System' => 'CST' },
+      'request_code_action_suffixes' => { 'Add' => 'A' }
+    }
+
+    mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new
     code = mapper.get_request_code('Add', 'Custom System')
     assert_equal 'CSTA', code
   end

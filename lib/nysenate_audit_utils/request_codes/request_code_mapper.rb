@@ -3,55 +3,46 @@
 module NysenateAuditUtils
   module RequestCodes
     # Provides bidirectional mapping between Account Action + Target System fields
-    # and BACHelp request type codes
+    # and BACHelp request type codes using a simplified prefix-suffix system
     class RequestCodeMapper
-      # Default request code mappings based on BACHelp Request Type Definition Chart
-      # Structure: { 'Target System' => { 'Account Action' => 'CODE' } }
-      DEFAULT_MAPPINGS = {
-        'Oracle / SFMS' => {
-          'Add' => 'USRA',
-          'Delete' => 'USRI',
-          'Update Account & Privileges' => 'USRU',
-          'Update Privileges Only' => 'USRU',
-          'Update Account Only' => 'USRU'
-        },
-        'AIX' => {
-          'Add' => 'AIXA',
-          'Delete' => 'AIXI',
-          'Update Account & Privileges' => 'AIXU',
-          'Update Privileges Only' => 'AIXU',
-          'Update Account Only' => 'AIXU'
-        },
-        'SFS' => {
-          'Add' => 'SFSA',
-          'Delete' => 'SFSI',
-          'Update Account & Privileges' => 'SFSU',
-          'Update Privileges Only' => 'SFSU',
-          'Update Account Only' => 'SFSU'
-        },
-        'NYSDS' => {
-          'Add' => 'DSA',
-          'Delete' => 'DSI',
-          'Update Account & Privileges' => 'DSU',
-          'Update Privileges Only' => 'DSU',
-          'Update Account Only' => 'DSU'
-        },
-        'PayServ' => {
-          'Add' => 'PYSA',
-          'Delete' => 'PYSI',
-          'Update Account & Privileges' => 'PYSU',
-          'Update Privileges Only' => 'PYSU',
-          'Update Account Only' => 'PYSU'
-        },
-        'OGS Swiper Access' => {
-          'Add' => 'CTRA',
-          'Delete' => 'CTRI'
-        }
+      # Default system prefix mappings (fallback if not configured in settings)
+      DEFAULT_SYSTEM_PREFIXES = {
+        'Oracle / SFMS' => 'USR',
+        'AIX' => 'AIX',
+        'SFS' => 'SFS',
+        'NYSDS' => 'DS',
+        'PayServ' => 'PYS',
+        'OGS Swiper Access - A42F' => 'AGB',
+        'OGS Swiper Access - LB2' => 'CTR',
+        'Github' => 'GIT',
+        'NYSenate.gov Website' => 'WEB',
+        'OnSolve / SendWordNow' => 'ALT',
+        'VPN' => 'REM'
       }.freeze
 
-      def initialize(custom_mappings = {})
-        @mappings = DEFAULT_MAPPINGS.deep_merge(custom_mappings)
-        @reverse_mappings = build_reverse_mappings
+      # Default action suffix mappings (fallback if not configured in settings)
+      # Multiple actions may map to the same suffix
+      DEFAULT_ACTION_SUFFIXES = {
+        'Add' => 'A',
+        'Delete' => 'I',
+        'Update Account & Privileges' => 'U',
+        'Update Privileges Only' => 'U',
+        'Update Account Only' => 'U'
+      }.freeze
+
+      def initialize(custom_system_prefixes = {}, custom_action_suffixes = {})
+        # Load from settings or use defaults
+        settings = Setting.plugin_nysenate_audit_utils || {}
+        base_system_prefixes = settings['request_code_system_prefixes'] || DEFAULT_SYSTEM_PREFIXES
+        base_action_suffixes = settings['request_code_action_suffixes'] || DEFAULT_ACTION_SUFFIXES
+
+        # Merge with any custom overrides
+        @system_prefixes = base_system_prefixes.merge(custom_system_prefixes)
+        @action_suffixes = base_action_suffixes.merge(custom_action_suffixes)
+        @reverse_system_prefixes = build_reverse_system_prefixes
+        @reverse_action_suffixes = build_reverse_action_suffixes
+        @action_priority_order = nil # Cached action priority from custom field
+        @action_priority_cached_at = nil # Timestamp of when priority order was cached
       end
 
       # Get request code from Account Action and Target System values
@@ -61,7 +52,12 @@ module NysenateAuditUtils
       def get_request_code(account_action, target_system)
         return nil if account_action.blank? || target_system.blank?
 
-        @mappings.dig(target_system, account_action)
+        prefix = @system_prefixes[target_system]
+        suffix = @action_suffixes[account_action]
+
+        return nil if prefix.nil? || suffix.nil?
+
+        prefix + suffix
       end
 
       # Get Account Action and Target System from request code
@@ -69,20 +65,44 @@ module NysenateAuditUtils
       # @return [Hash, nil] Hash with :account_action and :target_system keys, or nil if not found
       def get_fields_from_code(request_code)
         return nil if request_code.blank?
+        return nil if request_code.length < 2
 
-        @reverse_mappings[request_code]
+        # Split into suffix (last character) and prefix (everything else)
+        suffix = request_code[-1]
+        prefix = request_code[0..-2]
+
+        target_system = @reverse_system_prefixes[prefix]
+        return nil if target_system.nil?
+
+        # Get all actions that map to this suffix
+        actions = @reverse_action_suffixes[suffix]
+        return nil if actions.nil? || actions.empty?
+
+        # If multiple actions map to the same suffix, choose based on field priority order
+        account_action = prioritize_action(actions)
+
+        {
+          account_action: account_action,
+          target_system: target_system
+        }
       end
 
       # Get all available request codes
       # @return [Array<String>] Array of all request codes
       def all_codes
-        @reverse_mappings.keys.sort
+        codes = []
+        @system_prefixes.each do |_system, prefix|
+          @action_suffixes.values.uniq.each do |suffix|
+            codes << prefix + suffix
+          end
+        end
+        codes.sort
       end
 
       # Get all target systems
       # @return [Array<String>] Array of all target systems
       def all_target_systems
-        @mappings.keys.sort
+        @system_prefixes.keys.sort
       end
 
       # Get all account actions for a specific target system
@@ -90,28 +110,70 @@ module NysenateAuditUtils
       # @return [Array<String>] Array of account actions
       def account_actions_for_system(target_system)
         return [] if target_system.blank?
+        return [] unless @system_prefixes.key?(target_system)
 
-        (@mappings[target_system] || {}).keys.sort
+        @action_suffixes.keys.sort
       end
 
       private
 
-      # Build reverse mapping from request codes to field values
-      # When multiple field combinations map to the same code, stores the first found
-      def build_reverse_mappings
+      # Build reverse mapping from prefixes to systems
+      def build_reverse_system_prefixes
         reverse = {}
-        @mappings.each do |target_system, actions|
-          actions.each do |account_action, code|
-            # Only store first occurrence if code already exists
-            next if reverse.key?(code)
-
-            reverse[code] = {
-              account_action: account_action,
-              target_system: target_system
-            }
-          end
+        @system_prefixes.each do |system, prefix|
+          reverse[prefix] = system
         end
         reverse
+      end
+
+      # Build reverse mapping from suffixes to actions
+      # Multiple actions may map to the same suffix
+      def build_reverse_action_suffixes
+        reverse = {}
+        @action_suffixes.each do |action, suffix|
+          reverse[suffix] ||= []
+          reverse[suffix] << action
+        end
+        reverse
+      end
+
+      # Prioritize action from list based on custom field possible_values order
+      # @param actions [Array<String>] List of actions that map to same suffix
+      # @return [String] The highest priority action
+      def prioritize_action(actions)
+        return actions.first if actions.size == 1
+
+        # Get cached action priority order
+        priority_order = action_priority_order
+
+        # If no priority order available, return first action
+        return actions.first unless priority_order
+
+        # Find the first action in possible_values order that exists in our actions list
+        priority_order.each do |value|
+          return value if actions.include?(value)
+        end
+
+        # Fallback to first action if none found in possible_values
+        actions.first
+      end
+
+      # Get action priority order from custom field (cached for 1 minute)
+      # @return [Array<String>, nil] Priority-ordered list of action values
+      def action_priority_order
+        # Check if cache is valid (less than 1 minute old)
+        cache_valid = @action_priority_order &&
+                      @action_priority_cached_at &&
+                      (Time.now - @action_priority_cached_at) < 60
+
+        return @action_priority_order if cache_valid
+
+        # Fetch and cache the priority order from custom field
+        account_action_field = NysenateAuditUtils::CustomFieldConfiguration.account_action_field
+        @action_priority_order = account_action_field&.possible_values
+        @action_priority_cached_at = Time.now
+
+        @action_priority_order
       end
     end
   end

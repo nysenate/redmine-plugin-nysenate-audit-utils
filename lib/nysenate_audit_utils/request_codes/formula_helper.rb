@@ -21,8 +21,7 @@ module NysenateAuditUtils
         return nil if account_action_value.blank? || target_system_value.blank?
 
         # Get request code from mapper
-        custom_mappings = Setting.plugin_nysenate_audit_utils['request_code_mappings'] || {}
-        mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new(custom_mappings)
+        mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new
         mapper.get_request_code(account_action_value, target_system_value)
       end
 
@@ -32,8 +31,7 @@ module NysenateAuditUtils
       def reverse_request_code(code)
         return nil if code.blank?
 
-        custom_mappings = Setting.plugin_nysenate_audit_utils['request_code_mappings'] || {}
-        mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new(custom_mappings)
+        mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new
         mapper.get_fields_from_code(code)
       end
 
