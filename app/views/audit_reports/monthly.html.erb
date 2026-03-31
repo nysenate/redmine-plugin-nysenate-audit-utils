@@ -13,14 +13,7 @@
     <p>
       <%= label_tag :target_system, "Target System" %>
       <%= select_tag :target_system,
-          options_for_select([
-            'Oracle / SFMS',
-            'SFS',
-            'AIX',
-            'NYSDS',
-            'PayServ',
-            'OGS Swiper Access'
-          ], @target_system),
+          options_for_select(@target_systems, @target_system),
           onchange: "this.form.submit();" %>
     </p>
     <p>
@@ -47,10 +40,10 @@
               onchange: "this.form.submit();" %>
           <%= select_tag :year,
               options_for_select(
-                (5.years.ago.year..Date.current.year).to_a.reverse,
+                (@earliest_year..Date.current.year).to_a.reverse,
                 @selected_year || Date.current.year
               ),
-              onchange: "this.form.submit();" %>
+              onchange: "updateMonthOptions(); this.form.submit();" %>
         </span>
       </p>
     <% end %>
@@ -137,6 +130,61 @@
 <% end %>
 
 <script>
+  // Configuration from server
+  const EARLIEST_YEAR = <%= @earliest_year %>;
+  const EARLIEST_MONTH = <%= @earliest_month %>;
+  const CURRENT_YEAR = <%= Date.current.year %>;
+  const CURRENT_MONTH = <%= Date.current.month %>;
+
+  function updateMonthOptions() {
+    const yearSelect = document.getElementById('year');
+    const monthSelect = document.getElementById('month');
+
+    if (!yearSelect || !monthSelect) {
+      return;
+    }
+
+    const selectedYear = parseInt(yearSelect.value);
+    const monthOptions = monthSelect.querySelectorAll('option');
+
+    // Enable all months first
+    monthOptions.forEach(function(option) {
+      option.disabled = false;
+    });
+
+    // Apply restrictions based on selected year
+    if (selectedYear === EARLIEST_YEAR) {
+      // Disable months before earliest month
+      monthOptions.forEach(function(option) {
+        const monthNum = parseInt(option.value);
+        if (monthNum < EARLIEST_MONTH) {
+          option.disabled = true;
+        }
+      });
+    }
+
+    if (selectedYear === CURRENT_YEAR) {
+      // Disable months after current month
+      monthOptions.forEach(function(option) {
+        const monthNum = parseInt(option.value);
+        if (monthNum > CURRENT_MONTH) {
+          option.disabled = true;
+        }
+      });
+    }
+
+    // If selected month is now disabled, select the first enabled month
+    const selectedOption = monthSelect.options[monthSelect.selectedIndex];
+    if (selectedOption && selectedOption.disabled) {
+      for (let i = 0; i < monthOptions.length; i++) {
+        if (!monthOptions[i].disabled) {
+          monthSelect.value = monthOptions[i].value;
+          break;
+        }
+      }
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('system-filter-form');
     const targetSystemSelect = document.getElementById('target_system');
@@ -147,6 +195,9 @@
         form.submit();
       });
     }
+
+    // Initialize month restrictions on page load
+    updateMonthOptions();
   });
 </script>
 
