@@ -4,6 +4,7 @@
   ess_status = status[:sections][:ess_api]
   custom_fields_status = status[:sections][:custom_fields]
   email_status = status[:sections][:email_reporting]
+  request_codes_status = status[:sections][:request_codes]
 %>
 
 <!-- Configuration Issues Summary -->
@@ -188,6 +189,178 @@
         <div class="flash notice" style="margin-top: 1em;">
           <p><strong>Note:</strong> To enable scheduled reports, you must set up cron jobs on the server. See the plugin README for instructions on configuring rake tasks and cron.</p>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Request Code Configuration Section -->
+  <div class="config-accordion">
+    <div class="accordion-header" data-section="request-codes">
+      <h3>
+        <span class="accordion-toggle">▶</span>
+        Request Code Configuration
+        <span class="status-badge <%= NysenateAuditUtils::ConfigurationStatusService.status_badge_class(request_codes_status) %>">
+          <%= NysenateAuditUtils::ConfigurationStatusService.status_badge(request_codes_status) %>
+          <%= NysenateAuditUtils::ConfigurationStatusService.status_description(request_codes_status) %>
+        </span>
+      </h3>
+    </div>
+
+    <div class="accordion-body" id="request-codes-section">
+      <div class="box tabular settings">
+        <%
+          # Get custom fields
+          account_action_field = NysenateAuditUtils::CustomFieldConfiguration.account_action_field
+          target_system_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
+
+          # Get current mappings from settings
+          system_prefixes = @settings['request_code_system_prefixes'] || {}
+          action_suffixes = @settings['request_code_action_suffixes'] || {}
+        %>
+
+        <% if account_action_field && target_system_field %>
+          <p style="margin: 1em 0 0.5em 0; padding: 0;">
+            Configure request code mappings that determine how Account Action and Target System combinations are classified.
+            Each Target System gets a prefix code and each Account Action gets a suffix code.
+          </p>
+
+          <!-- Target System Prefix Mappings -->
+          <h4 style="margin: 1.5em 0 0.5em 0;">Target System Prefix Mappings</h4>
+          <table class="list request-code-mappings">
+            <thead>
+              <tr>
+                <th class="value-col">Target System</th>
+                <th class="code-col">Prefix Code</th>
+                <th class="status-col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% target_system_field.possible_values.each do |value| %>
+                <% is_mapped = system_prefixes.key?(value) %>
+                <tr class="<%= is_mapped ? 'mapped' : 'unmapped' %>">
+                  <td class="value-col"><%= value %></td>
+                  <td class="code-col">
+                    <%= text_field_tag "settings[request_code_system_prefixes][#{value}]",
+                        system_prefixes[value],
+                        :size => 10,
+                        :placeholder => 'Code',
+                        :class => is_mapped ? '' : 'unmapped-field' %>
+                  </td>
+                  <td class="status-col">
+                    <% if is_mapped %>
+                      <span class="status-configured">✓ Mapped</span>
+                    <% else %>
+                      <span class="status-missing">⚠ Not mapped</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+
+              <!-- Dangling System Mappings -->
+              <% if request_codes_status[:dangling_systems].any? %>
+                <tr class="dangling-separator">
+                  <td colspan="3">
+                    <strong>Dangling Mappings (removed from custom field):</strong>
+                    <%= link_to 'Delete All Dangling System Mappings',
+                        delete_all_dangling_mappings_audit_utils_settings_path(type: 'system'),
+                        method: :delete,
+                        class: 'button-small',
+                        style: 'margin-left: 1em;',
+                        data: { confirm: "Delete all #{request_codes_status[:dangling_systems].size} dangling system mapping(s)?" } %>
+                  </td>
+                </tr>
+                <% request_codes_status[:dangling_systems].each do |value| %>
+                  <tr class="dangling-mapping">
+                    <td class="value-col"><strike><%= value %></strike></td>
+                    <td class="code-col">
+                      <%= hidden_field_tag "settings[request_code_system_prefixes][#{value}]",
+                          system_prefixes[value] %>
+                      <input type="text" value="<%= system_prefixes[value] %>" size="10" disabled="disabled" style="background-color: #f0f0f0;" />
+                    </td>
+                    <td class="status-col">
+                      <%= link_to 'Delete',
+                          delete_dangling_mapping_audit_utils_settings_path(type: 'system', value: value),
+                          method: :delete,
+                          class: 'button-small',
+                          data: { confirm: "Delete mapping for '#{value}'?" } %>
+                    </td>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+
+          <!-- Account Action Suffix Mappings -->
+          <h4 style="margin: 1.5em 0 0.5em 0;">Account Action Suffix Mappings</h4>
+          <table class="list request-code-mappings">
+            <thead>
+              <tr>
+                <th class="value-col">Account Action</th>
+                <th class="code-col">Suffix Code</th>
+                <th class="status-col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% account_action_field.possible_values.each do |value| %>
+                <% is_mapped = action_suffixes.key?(value) %>
+                <tr class="<%= is_mapped ? 'mapped' : 'unmapped' %>">
+                  <td class="value-col"><%= value %></td>
+                  <td class="code-col">
+                    <%= text_field_tag "settings[request_code_action_suffixes][#{value}]",
+                        action_suffixes[value],
+                        :size => 10,
+                        :placeholder => 'Code',
+                        :class => is_mapped ? '' : 'unmapped-field' %>
+                  </td>
+                  <td class="status-col">
+                    <% if is_mapped %>
+                      <span class="status-configured">✓ Mapped</span>
+                    <% else %>
+                      <span class="status-missing">⚠ Not mapped</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+
+              <!-- Dangling Action Mappings -->
+              <% if request_codes_status[:dangling_actions].any? %>
+                <tr class="dangling-separator">
+                  <td colspan="3">
+                    <strong>Dangling Mappings (removed from custom field):</strong>
+                    <%= link_to 'Delete All Dangling Action Mappings',
+                        delete_all_dangling_mappings_audit_utils_settings_path(type: 'action'),
+                        method: :delete,
+                        class: 'button-small',
+                        style: 'margin-left: 1em;',
+                        data: { confirm: "Delete all #{request_codes_status[:dangling_actions].size} dangling action mapping(s)?" } %>
+                  </td>
+                </tr>
+                <% request_codes_status[:dangling_actions].each do |value| %>
+                  <tr class="dangling-mapping">
+                    <td class="value-col"><strike><%= value %></strike></td>
+                    <td class="code-col">
+                      <%= hidden_field_tag "settings[request_code_action_suffixes][#{value}]",
+                          action_suffixes[value] %>
+                      <input type="text" value="<%= action_suffixes[value] %>" size="10" disabled="disabled" style="background-color: #f0f0f0;" />
+                    </td>
+                    <td class="status-col">
+                      <%= link_to 'Delete',
+                          delete_dangling_mapping_audit_utils_settings_path(type: 'action', value: value),
+                          method: :delete,
+                          class: 'button-small',
+                          data: { confirm: "Delete mapping for '#{value}'?" } %>
+                    </td>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+
+        <% else %>
+          <div class="flash error" style="margin: 1em 0;">
+            <p><strong>Configuration Required:</strong> Please configure the Account Action and Target System custom fields before setting up request code mappings.</p>
+          </div>
+        <% end %>
       </div>
     </div>
   </div>
@@ -523,6 +696,89 @@
 }
 
 .audit-fields-config .status-missing {
+  color: #ff6600;
+  font-weight: 500;
+}
+
+/* Request Code Mappings Table */
+.request-code-mappings {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  table-layout: fixed;
+}
+
+.request-code-mappings thead th {
+  background-color: #f5f5f5;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid #ddd;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
+.request-code-mappings tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e0e0e0;
+  vertical-align: middle;
+}
+
+.request-code-mappings tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.request-code-mappings tbody tr.unmapped {
+  background-color: #fffef5;
+}
+
+.request-code-mappings tbody tr.dangling-mapping {
+  background-color: #f8f8f8;
+  color: #888;
+}
+
+.request-code-mappings tbody tr.dangling-separator td {
+  background-color: #fff;
+  border-top: 2px solid #ddd;
+  padding-top: 1em;
+  font-size: 0.95em;
+  color: #856404;
+}
+
+/* Column-specific styles */
+.request-code-mappings .value-col {
+  width: auto;
+  text-align: left;
+}
+
+.request-code-mappings td.value-col {
+  font-weight: 500;
+}
+
+.request-code-mappings .code-col {
+  width: 150px;
+  text-align: left;
+}
+
+.request-code-mappings .status-col {
+  width: 150px;
+  text-align: left;
+}
+
+.request-code-mappings td.status-col {
+  font-size: 0.9em;
+}
+
+.request-code-mappings input[type="text"].unmapped-field {
+  border: 2px solid #ffc107;
+  background-color: #fffef5;
+}
+
+.request-code-mappings .status-configured {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.request-code-mappings .status-missing {
   color: #ff6600;
   font-weight: 500;
 }

@@ -25,6 +25,8 @@ Rails.application.routes.draw do
       post :autoconfigure_all
       post :autoconfigure_field
       get :configuration_status
+      delete :delete_dangling_mapping
+      delete :delete_all_dangling_mappings
     end
   end
 
