@@ -1,5 +1,6 @@
 # Load library files explicitly since Rails autoloading doesn't work well with plugin lib directories
 require_relative 'lib/nysenate_audit_utils/custom_field_configuration'
+require_relative 'lib/nysenate_audit_utils/configuration_status_service'
 require_relative 'lib/nysenate_audit_utils/ess/ess_configuration'
 require_relative 'lib/nysenate_audit_utils/ess/ess_api_client'
 require_relative 'lib/nysenate_audit_utils/ess/ess_employee_service'
