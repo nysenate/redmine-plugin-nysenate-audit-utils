@@ -92,7 +92,7 @@ class AuditReportsController < ApplicationController
   end
 
   def weekly
-    service = NysenateAuditUtils::Reporting::WeeklyReportService.new
+    service = NysenateAuditUtils::Reporting::WeeklyReportService.new(project: @project)
     @report_data = service.generate
     @from_date = service.from_date
     @to_date = service.to_date
@@ -110,8 +110,8 @@ class AuditReportsController < ApplicationController
       'issue_id' => 'issue_id',
       'subject' => 'subject',
       'status' => 'status',
-      'employee_id' => 'employee_id',
-      'employee_uid' => 'employee_uid',
+      'user_id' => 'user_id',
+      'user_uid' => 'user_uid',
       'request_code' => 'request_code',
       'updated_on' => 'updated_on'
     })
