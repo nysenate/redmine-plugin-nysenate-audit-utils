@@ -15,11 +15,20 @@ module AuditTestHelpers
   # @option options [Integer] :user_uid_field_id User UID field ID
   # @option options [Integer] :account_action_field_id Account Action field ID
   # @option options [Integer] :target_system_field_id Target System field ID
+  # @option options [Hash] :request_code_system_prefixes Request code system prefix mappings
+  # @option options [Hash] :request_code_action_suffixes Request code action suffix mappings
   def configure_audit_fields(options = {})
     settings = {}
 
     options.each do |key, value|
-      settings[key.to_s] = value.to_s if value
+      next unless value
+
+      # Keep hashes as hashes, only convert field IDs to strings
+      if value.is_a?(Hash)
+        settings[key.to_s] = value
+      else
+        settings[key.to_s] = value.to_s
+      end
     end
 
     Setting.plugin_nysenate_audit_utils = settings
@@ -85,6 +94,24 @@ module AuditTestHelpers
         ['Oracle / SFMS', 'AIX', 'SFS', 'NYSDS', 'PayServ', 'OGS Swiper Access'], tracker)
     }
 
+    # Setup request code mappings for tests
+    request_code_system_prefixes = {
+      'Oracle / SFMS' => 'USR',
+      'AIX' => 'AIX',
+      'SFS' => 'SFS',
+      'NYSDS' => 'DS',
+      'PayServ' => 'PYS',
+      'OGS Swiper Access' => 'CTR'
+    }
+
+    request_code_action_suffixes = {
+      'Add' => 'A',
+      'Delete' => 'I',
+      'Update Account & Privileges' => 'U',
+      'Update Privileges Only' => 'U',
+      'Update Account Only' => 'U'
+    }
+
     configure_audit_fields(
       user_type_field_id: fields[:user_type].id,
       user_id_field_id: fields[:user_id].id,
@@ -95,7 +122,9 @@ module AuditTestHelpers
       user_status_field_id: fields[:user_status].id,
       user_uid_field_id: fields[:user_uid].id,
       account_action_field_id: fields[:account_action].id,
-      target_system_field_id: fields[:target_system].id
+      target_system_field_id: fields[:target_system].id,
+      request_code_system_prefixes: request_code_system_prefixes,
+      request_code_action_suffixes: request_code_action_suffixes
     )
 
     fields

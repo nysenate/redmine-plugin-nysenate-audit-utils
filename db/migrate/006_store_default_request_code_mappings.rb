@@ -3,6 +3,11 @@
 # Migration to move request code prefix/suffix mappings from code to database settings
 class StoreDefaultRequestCodeMappings < ActiveRecord::Migration[7.2]
   def up
+    settings = Setting.find_by(name: 'plugin_nysenate_audit_utils')
+    return unless settings
+
+    value = settings.value || {}
+
     # Define default system prefix mappings
     default_system_prefixes = {
       'Oracle / SFMS' => 'USR',
@@ -27,22 +32,25 @@ class StoreDefaultRequestCodeMappings < ActiveRecord::Migration[7.2]
       'Update Account Only' => 'U'
     }
 
-    # Get current settings or initialize empty hash
-    settings = Setting.plugin_nysenate_audit_utils || {}
-
     # Only set defaults if not already configured
-    settings['request_code_system_prefixes'] ||= default_system_prefixes
-    settings['request_code_action_suffixes'] ||= default_action_suffixes
+    value['request_code_system_prefixes'] ||= default_system_prefixes
+    value['request_code_action_suffixes'] ||= default_action_suffixes
 
-    # Save back to settings
-    Setting.plugin_nysenate_audit_utils = settings
+    settings.value = value
+    settings.save!
   end
 
   def down
+    settings = Setting.find_by(name: 'plugin_nysenate_audit_utils')
+    return unless settings
+
+    value = settings.value || {}
+
     # Remove the request code mappings from settings
-    settings = Setting.plugin_nysenate_audit_utils || {}
-    settings.delete('request_code_system_prefixes')
-    settings.delete('request_code_action_suffixes')
-    Setting.plugin_nysenate_audit_utils = settings
+    value.delete('request_code_system_prefixes')
+    value.delete('request_code_action_suffixes')
+
+    settings.value = value
+    settings.save!
   end
 end

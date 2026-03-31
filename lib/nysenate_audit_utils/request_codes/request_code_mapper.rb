@@ -5,36 +5,11 @@ module NysenateAuditUtils
     # Provides bidirectional mapping between Account Action + Target System fields
     # and BACHelp request type codes using a simplified prefix-suffix system
     class RequestCodeMapper
-      # Default system prefix mappings (fallback if not configured in settings)
-      DEFAULT_SYSTEM_PREFIXES = {
-        'Oracle / SFMS' => 'USR',
-        'AIX' => 'AIX',
-        'SFS' => 'SFS',
-        'NYSDS' => 'DS',
-        'PayServ' => 'PYS',
-        'OGS Swiper Access - A42F' => 'AGB',
-        'OGS Swiper Access - LB2' => 'CTR',
-        'Github' => 'GIT',
-        'NYSenate.gov Website' => 'WEB',
-        'OnSolve / SendWordNow' => 'ALT',
-        'VPN' => 'REM'
-      }.freeze
-
-      # Default action suffix mappings (fallback if not configured in settings)
-      # Multiple actions may map to the same suffix
-      DEFAULT_ACTION_SUFFIXES = {
-        'Add' => 'A',
-        'Delete' => 'I',
-        'Update Account & Privileges' => 'U',
-        'Update Privileges Only' => 'U',
-        'Update Account Only' => 'U'
-      }.freeze
-
       def initialize(custom_system_prefixes = {}, custom_action_suffixes = {})
-        # Load from settings or use defaults
+        # Load from settings
         settings = Setting.plugin_nysenate_audit_utils || {}
-        base_system_prefixes = settings['request_code_system_prefixes'] || DEFAULT_SYSTEM_PREFIXES
-        base_action_suffixes = settings['request_code_action_suffixes'] || DEFAULT_ACTION_SUFFIXES
+        base_system_prefixes = settings['request_code_system_prefixes'] || {}
+        base_action_suffixes = settings['request_code_action_suffixes'] || {}
 
         # Merge with any custom overrides
         @system_prefixes = base_system_prefixes.merge(custom_system_prefixes)
