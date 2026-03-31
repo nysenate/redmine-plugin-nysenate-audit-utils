@@ -82,8 +82,8 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
         issue_id: 1,
         subject: 'Test Issue',
         status: 'Open',
-        employee_id: '12345',
-        employee_uid: 'jdoe',
+        user_id: '12345',
+        user_uid: 'jdoe',
         request_code: 'OAA',
         updated_on: Time.zone.parse('2026-03-01 10:00:00'),
         created_on: Time.zone.parse('2026-03-01 09:00:00')

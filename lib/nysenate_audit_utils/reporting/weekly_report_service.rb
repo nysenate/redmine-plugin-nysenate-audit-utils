@@ -3,9 +3,10 @@
 module NysenateAuditUtils
   module Reporting
     class WeeklyReportService
-      attr_reader :from_date, :to_date, :errors
+      attr_reader :from_date, :to_date, :errors, :project
 
-      def initialize
+      def initialize(project: nil)
+        @project = project
         @from_date = Date.current.beginning_of_week # Monday 00:00:00
         @to_date = Time.zone.now
         @errors = []
@@ -45,19 +46,26 @@ module NysenateAuditUtils
 
         # Query issues that were active in the current week
         # Active = created or updated during the week
+        # Filter by project to only show issues from the specified project
         issues = Issue
+          .where(project_id: @project.id)
           .where("(created_on >= ? AND created_on <= ?) OR (updated_on >= ? AND updated_on <= ?)",
                  @from_date, @to_date, @from_date, @to_date)
           .includes(:status, :custom_values)
           .order(updated_on: :desc)
 
-        # Build report data for each issue
-        issues.map do |issue|
-          # Get employee ID from custom field
-          employee_id = get_custom_field_value(issue, user_id_field_id)
+        # Build report data for each issue, filtering out issues without the User ID field configured
+        issues.filter_map do |issue|
+          # Check if the User ID field is available for this issue
+          # Skip issues that don't have this custom field configured
+          has_user_id_field = issue.available_custom_fields.any? { |cf| cf.id == user_id_field_id }
+          next unless has_user_id_field
 
-          # Get employee UID from custom field (if configured)
-          employee_uid = if user_uid_field_id
+          # Get user ID from custom field (may be blank, that's okay)
+          user_id = get_custom_field_value(issue, user_id_field_id)
+
+          # Get user UID from custom field (if configured)
+          user_uid = if user_uid_field_id
             get_custom_field_value(issue, user_uid_field_id)
           else
             nil
@@ -75,8 +83,8 @@ module NysenateAuditUtils
             issue_id: issue.id,
             subject: issue.subject,
             status: issue.status.name,
-            employee_id: employee_id,
-            employee_uid: employee_uid,
+            user_id: user_id,
+            user_uid: user_uid,
             request_code: request_code,
             updated_on: issue.updated_on,
             created_on: issue.created_on

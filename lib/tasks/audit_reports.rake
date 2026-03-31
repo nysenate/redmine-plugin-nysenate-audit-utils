@@ -71,28 +71,44 @@ END_DESC
 Send weekly audit report via email.
 
 Available options:
+  * project_id => project identifier (required)
   * recipients => comma-separated list of email addresses (optional, uses plugin settings if not provided)
 
 Example:
-  rake nysenate_audit_utils:send_weekly_report recipients="user@example.com,admin@example.com" RAILS_ENV="production"
-  rake nysenate_audit_utils:send_weekly_report RAILS_ENV="production"  # Uses configured recipients
+  rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" recipients="user@example.com,admin@example.com" RAILS_ENV="production"
+  rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV="production"  # Uses configured recipients
 END_DESC
 
   task send_weekly_report: :environment do
+    # Parse project_id - required
+    project_id = ENV['project_id'].presence
+    unless project_id
+      puts "Error: project_id parameter is required"
+      puts "Usage: rake nysenate_audit_utils:send_weekly_report project_id=\"project_identifier\" RAILS_ENV=production"
+      exit 1
+    end
+
+    # Find project
+    project = Project.find_by(identifier: project_id) || Project.find_by(id: project_id)
+    unless project
+      puts "Error: Project not found with identifier or id: #{project_id}"
+      exit 1
+    end
+
     # Parse recipients - use configured default if not provided
     recipients = ENV['recipients'].presence || Setting.plugin_nysenate_audit_utils['report_recipients']
 
     unless recipients.present?
       puts "Error: No recipients configured"
       puts "Either provide recipients parameter or configure default recipients in plugin settings"
-      puts "Usage: rake nysenate_audit_utils:send_weekly_report recipients=\"email1,email2\" RAILS_ENV=production"
+      puts "Usage: rake nysenate_audit_utils:send_weekly_report project_id=\"#{project_id}\" recipients=\"email1,email2\" RAILS_ENV=production"
       exit 1
     end
 
     recipient_list = recipients.split(',').map(&:strip)
 
     # Generate report
-    service = NysenateAuditUtils::Reporting::WeeklyReportService.new
+    service = NysenateAuditUtils::Reporting::WeeklyReportService.new(project: project)
     report_data = service.generate
 
     unless service.success?

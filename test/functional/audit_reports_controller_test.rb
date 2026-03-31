@@ -160,6 +160,115 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_equal '', response.body
   end
 
+  test "should get weekly report" do
+    mock_report_data = [
+      {
+        issue_id: 1,
+        subject: 'Test Issue 1',
+        status: 'New',
+        user_id: '12345',
+        user_uid: 'johndoe',
+        request_code: 'RC1',
+        updated_on: Time.current,
+        created_on: Time.current - 2.days
+      },
+      {
+        issue_id: 2,
+        subject: 'Test Issue 2',
+        status: 'Closed',
+        user_id: '54321',
+        user_uid: 'janesmith',
+        request_code: 'RC2',
+        updated_on: Time.current - 1.day,
+        created_on: Time.current - 3.days
+      }
+    ]
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:from_date).returns(Date.current.beginning_of_week)
+    service_mock.stubs(:to_date).returns(Time.zone.now)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::WeeklyReportService.expects(:new).with(project: @project).returns(service_mock)
+
+    get :weekly, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'h2', text: 'Weekly Report'
+    assert_select 'table.list.issues'
+    assert_select 'td', text: 'Test Issue 1'
+    assert_select 'td', text: 'Test Issue 2'
+  end
+
+  test "should require admin access for weekly report" do
+    @request.session[:user_id] = 2 # Non-admin user
+    role = Role.find(1)
+    role.remove_permission!(:view_audit_reports) if role.permissions.include?(:view_audit_reports)
+    get :weekly, params: { project_id: 1 }
+    assert_response :forbidden
+  end
+
+  test "should handle empty weekly report data" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns([])
+    service_mock.stubs(:from_date).returns(Date.current.beginning_of_week)
+    service_mock.stubs(:to_date).returns(Time.zone.now)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::WeeklyReportService.expects(:new).with(project: @project).returns(service_mock)
+
+    get :weekly, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'p.nodata', text: /No tickets found for the current week/
+  end
+
+  test "should render error page on weekly service failure" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(nil)
+    service_mock.stubs(:from_date).returns(Date.current.beginning_of_week)
+    service_mock.stubs(:to_date).returns(Time.zone.now)
+    service_mock.stubs(:success?).returns(false)
+    service_mock.stubs(:errors).returns(['Custom field configuration error'])
+    NysenateAuditUtils::Reporting::WeeklyReportService.expects(:new).with(project: @project).returns(service_mock)
+
+    get :weekly, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'h2', text: 'Report Generation Error'
+    assert_select 'div.flash.error'
+  end
+
+  test "should export weekly report as CSV" do
+    mock_report_data = [
+      {
+        issue_id: 1,
+        subject: 'Test Issue',
+        status: 'New',
+        user_id: '12345',
+        user_uid: 'johndoe',
+        request_code: 'RC1',
+        updated_on: Time.current,
+        created_on: Time.current - 2.days
+      }
+    ]
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:from_date).returns(Date.current.beginning_of_week)
+    service_mock.stubs(:to_date).returns(Time.zone.now)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::WeeklyReportService.expects(:new).with(project: @project).returns(service_mock)
+
+    get :weekly, params: { project_id: 1 }, format: :csv
+    assert_response :success
+    assert_equal 'text/csv; header=present', response.content_type
+    assert_match /weekly_report_.*\.csv/, response.headers['Content-Disposition']
+
+    csv_content = response.body
+    assert_match /User UID/, csv_content
+    assert_match /User Number/, csv_content
+    assert_match /Request Code/, csv_content
+    assert_match /Test Issue/, csv_content
+    assert_match /12345/, csv_content
+  end
+
   test "should get monthly report with default system" do
     mock_report_data = [
       {

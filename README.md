@@ -232,13 +232,14 @@ Generates and emails the weekly report showing all active tickets for the curren
 
 ```bash
 # Uses configured default recipients
-bundle exec rake nysenate_audit_utils:send_weekly_report RAILS_ENV=production
+bundle exec rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV=production
 
 # Override recipients
-bundle exec rake nysenate_audit_utils:send_weekly_report recipients="email1@example.com,email2@example.com" RAILS_ENV=production
+bundle exec rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" recipients="email1@example.com,email2@example.com" RAILS_ENV=production
 ```
 
 **Options:**
+- `project_id` (required): Project identifier or numeric ID
 - `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
 
 #### Send Monthly Report
@@ -298,7 +299,8 @@ bundle exec rake nysenate_audit_utils:send_daily_report RAILS_ENV=production
 ```bash
 #!/bin/bash
 cd /path/to/redmine
-bundle exec rake nysenate_audit_utils:send_weekly_report RAILS_ENV=production
+# Replace "bachelp-2" with your project identifier
+bundle exec rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV=production
 ```
 
 **Monthly Report Script - Oracle/SFMS** (`scripts/send_monthly_oracle_report.sh`):
@@ -337,7 +339,7 @@ Add entries for your desired schedule:
 # Daily audit report at 8:00 AM on weekdays
 0 8 * * 1-5 /path/to/redmine/scripts/send_daily_audit_report.sh >> /var/log/redmine/audit_reports.log 2>&1
 
-# Weekly audit report at 9:00 AM every Monday
+# Weekly audit report at 9:00 AM every Monday (replace PROJECT_ID with your project identifier)
 0 9 * * 1 /path/to/redmine/scripts/send_weekly_audit_report.sh >> /var/log/redmine/audit_reports.log 2>&1
 
 # Monthly Oracle/SFMS report at 10:00 AM on the 1st of each month
