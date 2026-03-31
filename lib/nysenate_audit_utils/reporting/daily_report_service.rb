@@ -3,11 +3,12 @@
 module NysenateAuditUtils
   module Reporting
     class DailyReportService
-      attr_reader :from_date, :to_date, :status_changes, :errors
+      attr_reader :from_date, :to_date, :status_changes, :errors, :project
 
-      def initialize(from_date: nil, to_date: nil)
+      def initialize(from_date: nil, to_date: nil, project: nil)
         @from_date = from_date || calculate_default_from_date
         @to_date = to_date || Time.zone.now
+        @project = project
         @status_changes = []
         @errors = []
       end
@@ -63,9 +64,9 @@ module NysenateAuditUtils
           transaction_codes = changes.map(&:transaction_code).uniq.join(', ')
           latest_post_date = changes.map { |c| c.post_date_time }.compact.max&.to_date
 
-          # Get account statuses and open requests for this employee
-          account_statuses = @account_tracking_service.get_account_statuses(employee_id)
-          open_requests = @account_tracking_service.get_open_account_requests(employee_id)
+          # Get account statuses and open requests for this employee (filtered by project if provided)
+          account_statuses = @account_tracking_service.get_account_statuses(employee_id, project: @project)
+          open_requests = @account_tracking_service.get_open_account_requests(employee_id, project: @project)
 
           # Use user terminology for consistency across all reports
           {

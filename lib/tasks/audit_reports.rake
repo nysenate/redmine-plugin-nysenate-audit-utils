@@ -5,23 +5,39 @@ namespace :nysenate_audit_utils do
 Send daily audit report via email.
 
 Available options:
+  * project_id => project identifier (required)
   * recipients => comma-separated list of email addresses (optional, uses plugin settings if not provided)
   * start_date => start date in YYYY-MM-DD format (optional, defaults to business day calculation)
   * end_date   => end date in YYYY-MM-DD format (optional, defaults to now)
 
 Example:
-  rake nysenate_audit_utils:send_daily_report recipients="user@example.com,admin@example.com" RAILS_ENV="production"
-  rake nysenate_audit_utils:send_daily_report RAILS_ENV="production"  # Uses configured recipients
+  rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" recipients="user@example.com,admin@example.com" RAILS_ENV="production"
+  rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV="production"  # Uses configured recipients
 END_DESC
 
   task send_daily_report: :environment do
+    # Parse project_id - required
+    project_id = ENV['project_id'].presence
+    unless project_id
+      puts "Error: project_id parameter is required"
+      puts "Usage: rake nysenate_audit_utils:send_daily_report project_id=\"project_identifier\" RAILS_ENV=production"
+      exit 1
+    end
+
+    # Find project
+    project = Project.find_by(identifier: project_id) || Project.find_by(id: project_id)
+    unless project
+      puts "Error: Project not found with identifier or id: #{project_id}"
+      exit 1
+    end
+
     # Parse recipients - use configured default if not provided
     recipients = ENV['recipients'].presence || Setting.plugin_nysenate_audit_utils['report_recipients']
 
     unless recipients.present?
       puts "Error: No recipients configured"
       puts "Either provide recipients parameter or configure default recipients in plugin settings"
-      puts "Usage: rake nysenate_audit_utils:send_daily_report recipients=\"email1,email2\" RAILS_ENV=production"
+      puts "Usage: rake nysenate_audit_utils:send_daily_report project_id=\"#{project_id}\" recipients=\"email1,email2\" RAILS_ENV=production"
       exit 1
     end
 
@@ -43,7 +59,8 @@ END_DESC
     # Generate report
     service = NysenateAuditUtils::Reporting::DailyReportService.new(
       from_date: from_date,
-      to_date: to_date
+      to_date: to_date,
+      project: project
     )
     report_data = service.generate
 
@@ -135,6 +152,7 @@ END_DESC
 Send monthly audit report via email.
 
 Available options:
+  * project_id     => project identifier (required)
   * target_system  => target system name (required)
   * recipients     => comma-separated list of email addresses (optional, uses plugin settings if not provided)
   * mode           => report mode: "current" or "monthly" (default: "current")
@@ -142,18 +160,33 @@ Available options:
   * year           => year (for monthly mode, default: current year)
 
 Example:
-  rake nysenate_audit_utils:send_monthly_report target_system="AIX" RAILS_ENV="production"
-  rake nysenate_audit_utils:send_monthly_report target_system="AIX" mode=current RAILS_ENV="production"
-  rake nysenate_audit_utils:send_monthly_report target_system="SFS" mode=monthly month=1 year=2026 RAILS_ENV="production"
-  rake nysenate_audit_utils:send_monthly_report target_system="AIX" recipients="user@example.com" RAILS_ENV="production"
+  rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_system="AIX" RAILS_ENV="production"
+  rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_system="AIX" mode=current RAILS_ENV="production"
+  rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_system="SFS" mode=monthly month=1 year=2026 RAILS_ENV="production"
+  rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_system="AIX" recipients="user@example.com" RAILS_ENV="production"
 END_DESC
 
   task send_monthly_report: :environment do
+    # Parse project_id - required
+    project_id = ENV['project_id'].presence
+    unless project_id
+      puts "Error: project_id parameter is required"
+      puts "Usage: rake nysenate_audit_utils:send_monthly_report project_id=\"project_identifier\" target_system=\"System\" RAILS_ENV=production"
+      exit 1
+    end
+
+    # Find project
+    project = Project.find_by(identifier: project_id) || Project.find_by(id: project_id)
+    unless project
+      puts "Error: Project not found with identifier or id: #{project_id}"
+      exit 1
+    end
+
     # Parse target_system - required
     target_system = ENV['target_system'].presence
     unless target_system
       puts "Error: target_system parameter is required"
-      puts "Usage: rake nysenate_audit_utils:send_monthly_report target_system=\"System\" RAILS_ENV=production"
+      puts "Usage: rake nysenate_audit_utils:send_monthly_report project_id=\"#{project_id}\" target_system=\"System\" RAILS_ENV=production"
       exit 1
     end
 
@@ -163,7 +196,7 @@ END_DESC
     unless recipients.present?
       puts "Error: No recipients configured"
       puts "Either provide recipients parameter or configure default recipients in plugin settings"
-      puts "Usage: rake nysenate_audit_utils:send_monthly_report target_system=\"System\" recipients=\"email1,email2\" RAILS_ENV=production"
+      puts "Usage: rake nysenate_audit_utils:send_monthly_report project_id=\"#{project_id}\" target_system=\"System\" recipients=\"email1,email2\" RAILS_ENV=production"
       exit 1
     end
 
@@ -186,7 +219,8 @@ END_DESC
     # Generate report
     service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
       target_system: target_system,
-      as_of_time: as_of_time
+      as_of_time: as_of_time,
+      project: project
     )
     report_data = service.generate
 

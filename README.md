@@ -207,13 +207,14 @@ Generates and emails the daily report showing employees with status changes.
 
 ```bash
 # Uses configured default recipients
-bundle exec rake nysenate_audit_utils:send_daily_report RAILS_ENV=production
+bundle exec rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV=production
 
 # Override recipients
-bundle exec rake nysenate_audit_utils:send_daily_report recipients="email1@example.com,email2@example.com" RAILS_ENV=production
+bundle exec rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" recipients="email1@example.com,email2@example.com" RAILS_ENV=production
 ```
 
 **Options:**
+- `project_id` (required): Project identifier or numeric ID
 - `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
 - `start_date` (optional): Start date in YYYY-MM-DD format (defaults to business day calculation)
 - `end_date` (optional): End date in YYYY-MM-DD format (defaults to now)
@@ -248,16 +249,18 @@ Generates and emails the monthly report showing account statuses for a target sy
 
 ```bash
 # Uses configured default recipients
-bundle exec rake nysenate_audit_utils:send_monthly_report target_system="Oracle / SFMS" RAILS_ENV=production
+bundle exec rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_system="Oracle / SFMS" RAILS_ENV=production
 
 # Override recipients
 bundle exec rake nysenate_audit_utils:send_monthly_report \
+  project_id="bachelp-2" \
   target_system="AIX" \
   recipients="email1@example.com,email2@example.com" \
   RAILS_ENV=production
 ```
 
 **Options:**
+- `project_id` (required): Project identifier or numeric ID
 - `target_system` (required): Target system name (e.g., "Oracle / SFMS", "AIX", "SFS")
 - `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
 - `mode` (optional): Report mode - "current" or "monthly" (default: "current")
@@ -267,6 +270,7 @@ bundle exec rake nysenate_audit_utils:send_monthly_report \
 **Example - Historical Snapshot:**
 ```bash
 bundle exec rake nysenate_audit_utils:send_monthly_report \
+  project_id="bachelp-2" \
   target_system="AIX" \
   mode=monthly \
   month=1 \
@@ -292,7 +296,8 @@ Create wrapper scripts for each report type:
 ```bash
 #!/bin/bash
 cd /path/to/redmine
-bundle exec rake nysenate_audit_utils:send_daily_report RAILS_ENV=production
+# Replace "bachelp-2" with your project identifier
+bundle exec rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV=production
 ```
 
 **Weekly Report Script** (`scripts/send_weekly_audit_report.sh`):
@@ -307,7 +312,9 @@ bundle exec rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" 
 ```bash
 #!/bin/bash
 cd /path/to/redmine
+# Replace "bachelp-2" with your project identifier
 bundle exec rake nysenate_audit_utils:send_monthly_report \
+  project_id="bachelp-2" \
   target_system="Oracle / SFMS" \
   RAILS_ENV=production
 ```
@@ -316,7 +323,9 @@ bundle exec rake nysenate_audit_utils:send_monthly_report \
 ```bash
 #!/bin/bash
 cd /path/to/redmine
+# Replace "bachelp-2" with your project identifier
 bundle exec rake nysenate_audit_utils:send_monthly_report \
+  project_id="bachelp-2" \
   target_system="AIX" \
   RAILS_ENV=production
 ```
@@ -336,16 +345,16 @@ crontab -e
 Add entries for your desired schedule:
 
 ```cron
-# Daily audit report at 8:00 AM on weekdays
+# Daily audit report at 8:00 AM on weekdays (replace PROJECT_ID with your project identifier)
 0 8 * * 1-5 /path/to/redmine/scripts/send_daily_audit_report.sh >> /var/log/redmine/audit_reports.log 2>&1
 
 # Weekly audit report at 9:00 AM every Monday (replace PROJECT_ID with your project identifier)
 0 9 * * 1 /path/to/redmine/scripts/send_weekly_audit_report.sh >> /var/log/redmine/audit_reports.log 2>&1
 
-# Monthly Oracle/SFMS report at 10:00 AM on the 1st of each month
+# Monthly Oracle/SFMS report at 10:00 AM on the 1st of each month (replace PROJECT_ID with your project identifier)
 0 10 1 * * /path/to/redmine/scripts/send_monthly_oracle_report.sh >> /var/log/redmine/audit_reports.log 2>&1
 
-# Monthly AIX report at 10:15 AM on the 1st of each month
+# Monthly AIX report at 10:15 AM on the 1st of each month (replace PROJECT_ID with your project identifier)
 15 10 1 * * /path/to/redmine/scripts/send_monthly_aix_report.sh >> /var/log/redmine/audit_reports.log 2>&1
 ```
 

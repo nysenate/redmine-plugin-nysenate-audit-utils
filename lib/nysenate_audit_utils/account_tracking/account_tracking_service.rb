@@ -12,6 +12,7 @@ module NysenateAuditUtils
 
       # Get account statuses for a specific user
       # @param user_id [String] The user ID to query
+      # @param project [Project, nil] Optional project to filter issues by
       # @return [Array<Hash>] Array of account status hashes, one per account type
       # Each hash contains:
       #   - user_id: The user ID
@@ -22,7 +23,7 @@ module NysenateAuditUtils
       #   - closed_on: Date when the issue was closed
       #   - account_action: The Account Action value from the latest issue
       #   - request_code: The BACHelp request code (e.g., "USRA", "AIXI")
-      def get_account_statuses(user_id)
+      def get_account_statuses(user_id, project: nil)
         return [] if user_id.blank?
 
         # Get custom field IDs
@@ -36,7 +37,7 @@ module NysenateAuditUtils
         end
 
         # Query closed issues for this user
-        issues = find_closed_issues_for_user(user_id, user_id_field_id)
+        issues = find_closed_issues_for_user(user_id, user_id_field_id, project: project)
 
         # Group issues by Target System (account type)
         issues_by_account_type = group_issues_by_account_type(
@@ -51,6 +52,7 @@ module NysenateAuditUtils
 
       # Get open account requests for a specific user
       # @param user_id [String] The user ID to query
+      # @param project [Project, nil] Optional project to filter issues by
       # @return [Array<Hash>] Array of open request hashes
       # Each hash contains:
       #   - user_id: The user ID
@@ -59,7 +61,7 @@ module NysenateAuditUtils
       #   - account_action: The Account Action value
       #   - issue_id: ID of the open issue
       #   - request_code: The BACHelp request code (e.g., "USRA", "AIXI")
-      def get_open_account_requests(user_id)
+      def get_open_account_requests(user_id, project: nil)
         return [] if user_id.blank?
 
         # Get custom field IDs
@@ -73,7 +75,7 @@ module NysenateAuditUtils
         end
 
         # Query open issues for this user
-        issues = find_open_issues_for_user(user_id, user_id_field_id)
+        issues = find_open_issues_for_user(user_id, user_id_field_id, project: project)
 
         # Build open request data
         build_open_requests(issues, target_system_field_id, account_action_field_id, user_id)
@@ -82,6 +84,7 @@ module NysenateAuditUtils
       # Get account statuses for all users with accounts on a specific target system
       # @param target_system [String] The target system to query (e.g., "Oracle / SFMS", "AIX")
       # @param as_of_time [Time] The cutoff time for the report (default: current time)
+      # @param project [Project, nil] Optional project to filter issues by
       # @return [Array<Hash>] Array of account status hashes, one per user
       # Each hash contains:
       #   - user_id: The user ID
@@ -92,7 +95,7 @@ module NysenateAuditUtils
       #   - closed_on: Date when the issue was closed
       #   - account_action: The Account Action value from the latest issue
       #   - request_code: The BACHelp request code (e.g., "USRA", "AIXI")
-      def get_account_statuses_by_system(target_system, as_of_time: Time.current)
+      def get_account_statuses_by_system(target_system, as_of_time: Time.current, project: nil)
         return [] if target_system.blank?
 
         # Get custom field IDs
@@ -112,7 +115,8 @@ module NysenateAuditUtils
           user_id_field_id,
           account_action_field_id,
           target_system_field_id,
-          as_of_time
+          as_of_time,
+          project: project
         )
 
         # Group by user_id and build account status data
@@ -124,8 +128,9 @@ module NysenateAuditUtils
       # Find all closed issues for a tracked user
       # @param user_id [String] The user ID
       # @param user_id_field_id [Integer] The User ID custom field ID
+      # @param project [Project, nil] Optional project to filter by
       # @return [ActiveRecord::Relation] Closed issues for the tracked user
-      def find_closed_issues_for_user(user_id, user_id_field_id)
+      def find_closed_issues_for_user(user_id, user_id_field_id, project: nil)
         # Get issue IDs for this user
         issue_ids = CustomValue
           .where(customized_type: 'Issue')
@@ -136,11 +141,16 @@ module NysenateAuditUtils
         return Issue.none if issue_ids.empty?
 
         # Get only closed issues, ordered by closed_on date (most recent first)
-        Issue
+        query = Issue
           .where(id: issue_ids)
           .joins(:status)
           .where(issue_statuses: { is_closed: true })
           .where.not(closed_on: nil)
+
+        # Filter by project if provided
+        query = query.where(project_id: project.id) if project
+
+        query
           .includes(:custom_values)
           .order(closed_on: :desc)
       end
@@ -148,8 +158,9 @@ module NysenateAuditUtils
       # Find all open issues for a tracked user
       # @param user_id [String] The user ID
       # @param user_id_field_id [Integer] The User ID custom field ID
+      # @param project [Project, nil] Optional project to filter by
       # @return [ActiveRecord::Relation] Open issues for the tracked user
-      def find_open_issues_for_user(user_id, user_id_field_id)
+      def find_open_issues_for_user(user_id, user_id_field_id, project: nil)
         # Get issue IDs for this user
         issue_ids = CustomValue
           .where(customized_type: 'Issue')
@@ -160,11 +171,15 @@ module NysenateAuditUtils
         return Issue.none if issue_ids.empty?
 
         # Get only open issues
-        Issue
+        query = Issue
           .where(id: issue_ids)
           .joins(:status)
           .where(issue_statuses: { is_closed: false })
-          .includes(:custom_values)
+
+        # Filter by project if provided
+        query = query.where(project_id: project.id) if project
+
+        query.includes(:custom_values)
       end
 
       # Group issues by their Target System value
@@ -287,8 +302,9 @@ module NysenateAuditUtils
       # @param account_action_field_id [Integer] Account Action custom field ID
       # @param target_system_field_id [Integer] Target System custom field ID
       # @param as_of_time [Time] The cutoff time for the report
+      # @param project [Project, nil] Optional project to filter by
       # @return [Array<Hash>] Array of hashes with user_id, user_type, account_action, issue_id, closed_on
-      def find_closed_issues_by_target_system(target_system, user_id_field_id, account_action_field_id, target_system_field_id, as_of_time)
+      def find_closed_issues_by_target_system(target_system, user_id_field_id, account_action_field_id, target_system_field_id, as_of_time, project: nil)
         # Query strategy: Single bulk query using joins to get all data at once
         # This avoids N+1 queries by fetching everything in one database round trip
 
@@ -302,12 +318,17 @@ module NysenateAuditUtils
         return [] if issue_ids_with_target_system.empty?
 
         # Get closed issues with all custom field values included
-        closed_issues = Issue
+        query = Issue
           .where(id: issue_ids_with_target_system)
           .joins(:status)
           .where(issue_statuses: { is_closed: true })
           .where.not(closed_on: nil)
           .where('issues.closed_on <= ?', as_of_time)
+
+        # Filter by project if provided
+        query = query.where(project_id: project.id) if project
+
+        closed_issues = query
           .includes(:custom_values)
           .order(closed_on: :desc)
 

@@ -286,11 +286,11 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     test_instance = self
     service = Object.new
 
-    service.define_singleton_method(:get_account_statuses) do |emp_id|
+    service.define_singleton_method(:get_account_statuses) do |emp_id, project: nil|
       test_instance.instance_variable_get(:@account_tracking_expectations)[emp_id.to_s]&.dig(:statuses) || []
     end
 
-    service.define_singleton_method(:get_open_account_requests) do |emp_id|
+    service.define_singleton_method(:get_open_account_requests) do |emp_id, project: nil|
       test_instance.instance_variable_get(:@account_tracking_expectations)[emp_id.to_s]&.dig(:requests) || []
     end
 

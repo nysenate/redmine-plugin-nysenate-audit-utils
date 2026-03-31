@@ -37,7 +37,8 @@ class AuditReportsController < ApplicationController
 
     service = NysenateAuditUtils::Reporting::DailyReportService.new(
       from_date: from_date,
-      to_date: to_date
+      to_date: to_date,
+      project: @project
     )
 
     @report_data = service.generate
@@ -164,7 +165,8 @@ class AuditReportsController < ApplicationController
     service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
       target_system: target_system,
       as_of_time: as_of_time,
-      status_filter: status_filter
+      status_filter: status_filter,
+      project: @project
     )
     @report_data = service.generate
     @target_system = target_system
