@@ -22,7 +22,7 @@ Redmine::Plugin.register :nysenate_audit_utils do
   name 'NYSenate Audit Utils Plugin'
   author 'New York State Senate'
   description 'Audit utilities including ESS integration, reporting, user autofill, and packet creation for audit workflows'
-  version '0.2.0'
+  version '0.2.1'
   url 'https://github.com/nysenate/redmine-plugin-nysenate-audit-utils'
   author_url 'https://github.com/nysenate'
 
