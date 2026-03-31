@@ -313,6 +313,11 @@ class AuditReportsControllerTest < ActionController::TestCase
       }
     ]
 
+    # Mock the target system field to include AIX in possible values
+    target_system_field_mock = mock('target_system_field')
+    target_system_field_mock.stubs(:possible_values).returns(['Oracle / SFMS', 'SFS', 'AIX', 'NYSDS', 'PayServ', 'OGS Swiper Access'])
+    NysenateAuditUtils::CustomFieldConfiguration.stubs(:target_system_field).returns(target_system_field_mock)
+
     service_mock = mock('service')
     service_mock.expects(:generate).returns(mock_report_data)
     service_mock.stubs(:success?).returns(true)
