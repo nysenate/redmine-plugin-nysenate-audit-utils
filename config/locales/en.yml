@@ -2,6 +2,8 @@ en:
   # Reporting labels
   label_audit_reports: "Reports"
   label_audit_daily_report: "Daily Report"
+  label_audit_weekly_report: "Weekly Report"
+  label_audit_monthly_report: "Monthly Report"
 
   # Packet creation labels
   button_create_packet: "Create Packet"
@@ -19,4 +21,4 @@ en:
   permission_view_audit_reports: "View audit reports"
   permission_export_audit_reports: "Export audit reports"
   permission_use_user_autofill: "Use user autofill"
-  permission_manage_users: "Manage users (vendors, etc.)"
+  permission_manage_tracked_users: "Manage tracked users"

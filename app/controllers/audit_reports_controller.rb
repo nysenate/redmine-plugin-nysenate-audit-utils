@@ -139,8 +139,25 @@ class AuditReportsController < ApplicationController
   end
 
   def monthly
-    # Parse target_system parameter
-    target_system = params[:target_system].presence || 'Oracle / SFMS'
+    # Get valid target systems from custom field configuration
+    target_system_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
+    @target_systems = target_system_field&.possible_values || ['Oracle / SFMS']
+
+    # Calculate earliest closed issue date in the project
+    earliest_closed_date = calculate_earliest_closed_date(@project)
+    current_date = Date.current
+
+    # Set earliest year/month (floor is the minimum of earliest closed date and current date)
+    if earliest_closed_date && earliest_closed_date < current_date
+      @earliest_year = earliest_closed_date.year
+      @earliest_month = earliest_closed_date.month
+    else
+      @earliest_year = current_date.year
+      @earliest_month = current_date.month
+    end
+
+    # Parse target_system parameter (use first valid system as default)
+    target_system = params[:target_system].presence || @target_systems.first
 
     # Parse status_filter parameter (default to 'all')
     status_filter = params[:status_filter].presence || 'all'
@@ -266,6 +283,23 @@ class AuditReportsController < ApplicationController
     @project = Project.find(params[:project_id])
   rescue ActiveRecord::RecordNotFound
     render_404
+  end
+
+  def calculate_earliest_closed_date(project)
+    # Get the user_id field ID
+    user_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_id_field_id
+    return nil unless user_id_field_id
+
+    # Find the earliest closed issue in the project that has the user_id custom field
+    Issue
+      .where(project_id: project.id)
+      .joins(:status)
+      .joins(:custom_values)
+      .where(issue_statuses: { is_closed: true })
+      .where.not(closed_on: nil)
+      .where(custom_values: { custom_field_id: user_id_field_id })
+      .minimum(:closed_on)
+      &.to_date
   end
 
   def sort_report_data(data)
