@@ -73,8 +73,9 @@ Redmine::Plugin.register :nysenate_audit_utils do
     'user_location_field_id' => nil,
     'account_action_field_id' => nil,
     'target_system_field_id' => nil,
-    # Request Code Mapping settings
-    'request_code_mappings' => {},      # Custom mappings to override defaults
+    # Request Code Mapping settings (stored in DB via migration 006)
+    'request_code_system_prefixes' => {}, # System to prefix mappings (managed via migration)
+    'request_code_action_suffixes' => {}, # Action to suffix mappings (managed via migration)
     # Email Reporting settings
     'report_recipients' => ''            # Comma-separated email addresses for all reports
   }, partial: 'settings/audit_utils_settings'

@@ -4,6 +4,25 @@ require_relative '../test_helper'
 
 class RequestCodeMapperTest < ActiveSupport::TestCase
   def setup
+    # Set test mappings for all tests
+    settings = Setting.plugin_nysenate_audit_utils || {}
+    settings['request_code_system_prefixes'] = {
+      'Oracle / SFMS' => 'USR',
+      'AIX' => 'AIX',
+      'SFS' => 'SFS',
+      'NYSDS' => 'DS',
+      'PayServ' => 'PYS',
+      'OGS Swiper Access' => 'CTR'
+    }
+    settings['request_code_action_suffixes'] = {
+      'Add' => 'A',
+      'Delete' => 'I',
+      'Update Account & Privileges' => 'U',
+      'Update Privileges Only' => 'U',
+      'Update Account Only' => 'U'
+    }
+    Setting.plugin_nysenate_audit_utils = settings
+
     @mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new
   end
 
@@ -210,13 +229,36 @@ class RequestCodeMapperTest < ActiveSupport::TestCase
     assert_equal [], actions
   end
 
-  # Test custom mappings
-  test 'should support custom mappings' do
+  # Test priority-based reverse mapping
+  test 'should prioritize Update Account & Privileges over other Update variants' do
+    fields = @mapper.get_fields_from_code('USRU')
+    assert_equal 'Update Account & Privileges', fields[:account_action]
+    assert_equal 'Oracle / SFMS', fields[:target_system]
+  end
+
+  test 'should prioritize Update Account & Privileges for AIX Update code' do
+    fields = @mapper.get_fields_from_code('AIXU')
+    assert_equal 'Update Account & Privileges', fields[:account_action]
+    assert_equal 'AIX', fields[:target_system]
+  end
+
+  test 'should prioritize Update Account & Privileges for SFS Update code' do
+    fields = @mapper.get_fields_from_code('SFSU')
+    assert_equal 'Update Account & Privileges', fields[:account_action]
+    assert_equal 'SFS', fields[:target_system]
+  end
+
+  test 'should prioritize Update Account & Privileges for PayServ Update code' do
+    fields = @mapper.get_fields_from_code('PYSU')
+    assert_equal 'Update Account & Privileges', fields[:account_action]
+    assert_equal 'PayServ', fields[:target_system]
+  end
+
+  # Test custom mappings with new prefix-suffix system
+  test 'should support custom system prefixes' do
     custom_mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new(
-      'Custom System' => {
-        'Add' => 'CSTA',
-        'Delete' => 'CSTI'
-      }
+      { 'Custom System' => 'CST' },
+      { 'Add' => 'A', 'Delete' => 'I' }
     )
 
     code = custom_mapper.get_request_code('Add', 'Custom System')
@@ -227,11 +269,10 @@ class RequestCodeMapperTest < ActiveSupport::TestCase
     assert_equal 'Custom System', fields[:target_system]
   end
 
-  test 'should merge custom mappings with defaults' do
+  test 'should merge custom prefixes with defaults' do
     custom_mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new(
-      'Custom System' => {
-        'Add' => 'CSTA'
-      }
+      { 'Custom System' => 'CST' },
+      {}
     )
 
     # Should still have default mappings
@@ -243,14 +284,28 @@ class RequestCodeMapperTest < ActiveSupport::TestCase
     assert_equal 'CSTA', custom_code
   end
 
-  test 'should allow overriding default mappings' do
+  test 'should allow overriding default prefixes' do
     custom_mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new(
-      'Oracle / SFMS' => {
-        'Add' => 'CUSTOM'
-      }
+      { 'Oracle / SFMS' => 'ORA' },
+      {}
     )
 
     code = custom_mapper.get_request_code('Add', 'Oracle / SFMS')
-    assert_equal 'CUSTOM', code
+    assert_equal 'ORAA', code
+  end
+
+  test 'should handle single-character prefixes correctly' do
+    # NYSDS has prefix 'DS' which is 2 characters
+    code = @mapper.get_request_code('Add', 'NYSDS')
+    assert_equal 'DSA', code
+
+    fields = @mapper.get_fields_from_code('DSA')
+    assert_equal 'Add', fields[:account_action]
+    assert_equal 'NYSDS', fields[:target_system]
+  end
+
+  test 'should return nil for codes that are too short' do
+    fields = @mapper.get_fields_from_code('A')
+    assert_nil fields
   end
 end
