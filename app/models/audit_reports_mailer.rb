@@ -4,10 +4,10 @@ class AuditReportsMailer < ActionMailer::Base
   include Redmine::I18n
   layout 'mailer'
 
-  # Default URL options for generating URLs in emails
-  def self.default_url_options
+  def default_url_options
     Mailer.default_url_options
   end
+
 
   # Send daily report email with CSV attachment
   #
@@ -26,6 +26,7 @@ class AuditReportsMailer < ActionMailer::Base
     attachments["daily_report_#{Date.today.strftime('%Y%m%d')}.csv"] = csv_data
 
     mail(
+      from: Setting.mail_from,
       to: recipients,
       subject: "Daily Audit Report - #{from_date.strftime('%Y-%m-%d')} to #{to_date.strftime('%Y-%m-%d')}"
     )
@@ -48,6 +49,7 @@ class AuditReportsMailer < ActionMailer::Base
     attachments["weekly_report_#{Date.current.strftime('%Y%m%d')}.csv"] = csv_data
 
     mail(
+      from: Setting.mail_from,
       to: recipients,
       subject: "Weekly Audit Report - Week of #{from_date.strftime('%Y-%m-%d')}"
     )
@@ -88,6 +90,7 @@ class AuditReportsMailer < ActionMailer::Base
               end
 
     mail(
+      from: Setting.mail_from,
       to: recipients,
       subject: email_subject
     )
