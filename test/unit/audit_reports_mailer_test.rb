@@ -242,4 +242,75 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     assert_match /testuser/, csv_content
   end
 
+  def test_all_systems_monthly_report_current_mode
+    reports_by_system = {
+      'Oracle / SFMS' => [
+        { user_id: '111', user_name: 'Alice', user_type: 'Employee', user_uid: 'alice', status: 'active', account_action: 'Add', closed_on: Date.parse('2026-03-01'), request_code: 'OAA', issue_id: 10 }
+      ],
+      'AIX' => [
+        { user_id: '222', user_name: 'Bob', user_type: 'Employee', user_uid: 'bob', status: 'inactive', account_action: 'Delete', closed_on: Date.parse('2026-02-15'), request_code: 'AAD', issue_id: 20 }
+      ]
+    }
+    mode = 'current'
+    as_of_time = Time.current
+
+    mail = AuditReportsMailer.all_systems_monthly_report('user@example.com', reports_by_system, mode, as_of_time)
+
+    assert_equal ['user@example.com'], mail.to
+    assert_match /Monthly Audit Report/, mail.subject
+    assert_match /All Systems/, mail.subject
+    assert_match /Current State/, mail.subject
+    assert_equal 1, mail.attachments.size
+    assert_match /monthly_reports_all_systems_current\.zip/, mail.attachments.first.filename
+
+    zip_data = mail.attachments.first.body.decoded
+    Zip::InputStream.open(StringIO.new(zip_data)) do |zip|
+      entries = {}
+      while (entry = zip.get_next_entry)
+        entries[entry.name] = zip.read
+      end
+      assert_includes entries.keys, 'monthly_report_oracle-sfms_current.csv'
+      assert_includes entries.keys, 'monthly_report_aix_current.csv'
+      assert_match /Alice/, entries['monthly_report_oracle-sfms_current.csv']
+      assert_match /Bob/, entries['monthly_report_aix_current.csv']
+    end
+  end
+
+  def test_all_systems_monthly_report_monthly_mode
+    reports_by_system = {
+      'SFS' => [
+        { user_id: '333', user_name: 'Carol', user_type: 'Employee', user_uid: 'carol', status: 'active', account_action: 'Add', closed_on: Date.parse('2026-01-10'), request_code: 'SAA', issue_id: 30 }
+      ]
+    }
+    mode = 'monthly'
+    selected_month_num = 1
+    selected_year = 2026
+    as_of_time = Date.new(2026, 1, 1).beginning_of_month.in_time_zone
+
+    mail = AuditReportsMailer.all_systems_monthly_report(
+      'user@example.com',
+      reports_by_system,
+      mode,
+      as_of_time,
+      selected_month_num,
+      selected_year
+    )
+
+    assert_match /January 2026/, mail.subject
+    assert_match /All Systems/, mail.subject
+    assert_equal 1, mail.attachments.size
+    assert_match /monthly_reports_all_systems_202601\.zip/, mail.attachments.first.filename
+  end
+
+  def test_all_systems_monthly_report_multiple_recipients
+    reports_by_system = { 'AIX' => [] }
+    mode = 'current'
+    as_of_time = Time.current
+
+    recipients = ['user1@example.com', 'user2@example.com']
+    mail = AuditReportsMailer.all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time)
+
+    assert_equal recipients, mail.to
+  end
+
 end

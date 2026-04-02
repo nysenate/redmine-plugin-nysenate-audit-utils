@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'csv'
+require 'zip'
 
 module NysenateAuditUtils
   module Reporting
@@ -122,6 +123,19 @@ module NysenateAuditUtils
             ]
           end
         end
+      end
+      # Generate a ZIP containing one monthly CSV per target system
+      # @param reports_by_system [Hash<String, Array<Hash>>] Map of system name => report data
+      # @param filename_suffix [String] Suffix appended to each CSV filename (e.g. "202504" or "current")
+      # @return [String] ZIP binary content
+      def self.generate_all_systems_zip(reports_by_system, filename_suffix)
+        Zip::OutputStream.write_buffer do |zos|
+          reports_by_system.each do |system, data|
+            filename = "monthly_report_#{system.parameterize}_#{filename_suffix}.csv"
+            zos.put_next_entry(filename)
+            zos.write(generate_monthly_csv(data))
+          end
+        end.string
       end
     end
   end

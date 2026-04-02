@@ -252,4 +252,103 @@ END_DESC
     end
     puts "Total accounts: #{report_data.size}"
   end
+
+  desc "Send monthly audit report for ALL target systems as a ZIP email attachment"
+  task send_all_systems_monthly_report: :environment do
+    # Parse project_id - required
+    project_id = ENV['project_id'].presence
+    unless project_id
+      puts "Error: project_id parameter is required"
+      puts "Usage: rake nysenate_audit_utils:send_all_systems_monthly_report project_id=\"project_identifier\" RAILS_ENV=production"
+      exit 1
+    end
+
+    # Find project
+    project = Project.find_by(identifier: project_id) || Project.find_by(id: project_id)
+    unless project
+      puts "Error: Project not found with identifier or id: #{project_id}"
+      exit 1
+    end
+
+    # Parse recipients - use configured default if not provided
+    recipients = ENV['recipients'].presence || Setting.plugin_nysenate_audit_utils['report_recipients']
+
+    unless recipients.present?
+      puts "Error: No recipients configured"
+      puts "Either provide recipients parameter or configure default recipients in plugin settings"
+      puts "Usage: rake nysenate_audit_utils:send_all_systems_monthly_report project_id=\"#{project_id}\" recipients=\"email1,email2\" RAILS_ENV=production"
+      exit 1
+    end
+
+    recipient_list = recipients.split(',').map(&:strip)
+
+    # Get all target systems from configuration
+    target_system_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
+    target_systems = target_system_field&.possible_values || ['Oracle / SFMS']
+
+    if target_systems.empty?
+      puts "Error: No target systems configured"
+      exit 1
+    end
+
+    # Parse optional parameters
+    mode = ENV['mode'].presence || 'current'
+
+    # Determine as_of_time based on mode
+    if mode == 'current'
+      as_of_time = Time.current
+      selected_month_num = nil
+      selected_year = nil
+    else
+      selected_month_num = (ENV['month'].presence || Date.current.month).to_i
+      selected_year = (ENV['year'].presence || Date.current.year).to_i
+      as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.in_time_zone
+    end
+
+    # Generate reports for each system
+    reports_by_system = {}
+    target_systems.each do |system|
+      service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+        target_system: system,
+        as_of_time: as_of_time,
+        project: project
+      )
+      data = service.generate
+
+      if service.success?
+        reports_by_system[system] = data
+        puts "  #{system}: #{data.size} accounts"
+      else
+        puts "  Warning: skipping #{system} — #{service.errors.join('; ')}"
+      end
+    end
+
+    if reports_by_system.empty?
+      puts "Error: No report data could be generated for any system"
+      exit 1
+    end
+
+    # Send email with ZIP attachment
+    Mailer.with_synched_deliveries do
+      AuditReportsMailer.deliver_all_systems_monthly_report(
+        recipient_list,
+        reports_by_system,
+        mode,
+        as_of_time,
+        selected_month_num,
+        selected_year
+      )
+    end
+
+    total = reports_by_system.values.sum(&:size)
+    puts "All-systems monthly report sent to: #{recipient_list.join(', ')}"
+    puts "Systems included: #{reports_by_system.keys.join(', ')}"
+    puts "Mode: #{mode}"
+    if mode == 'current'
+      puts "As of: #{as_of_time.strftime('%Y-%m-%d %H:%M:%S %Z')}"
+    else
+      puts "Snapshot: #{Date::MONTHNAMES[selected_month_num]} #{selected_year}"
+    end
+    puts "Total accounts across all systems: #{total}"
+  end
 end

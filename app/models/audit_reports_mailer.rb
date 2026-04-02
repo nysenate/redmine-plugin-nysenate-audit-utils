@@ -128,4 +128,54 @@ class AuditReportsMailer < ActionMailer::Base
   def self.deliver_monthly_report(recipients, report_data, target_system, mode, as_of_time, selected_month_num = nil, selected_year = nil)
     monthly_report(recipients, report_data, target_system, mode, as_of_time, selected_month_num, selected_year).deliver_later
   end
+
+  # Send all-systems monthly report email with ZIP attachment
+  #
+  # @param recipients [Array<String>, String] Email address(es) to send to
+  # @param reports_by_system [Hash<String, Array<Hash>>] Map of system name => report data
+  # @param mode [String] Report mode: 'current' or 'monthly'
+  # @param as_of_time [Time] Time snapshot for the report
+  # @param selected_month_num [Integer, nil] Month number (for monthly mode)
+  # @param selected_year [Integer, nil] Year (for monthly mode)
+  def all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time, selected_month_num = nil, selected_year = nil)
+    @reports_by_system = reports_by_system
+    @mode = mode
+    @as_of_time = as_of_time
+    @selected_month_num = selected_month_num
+    @selected_year = selected_year
+    @system_counts = reports_by_system.transform_values(&:size)
+
+    filename_suffix = if mode == 'current'
+                        'current'
+                      else
+                        "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
+                      end
+
+    zip_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(reports_by_system, filename_suffix)
+    attachments["monthly_reports_all_systems_#{filename_suffix}.zip"] = { mime_type: 'application/zip', content: zip_data }
+
+    email_subject = if mode == 'current'
+                      'Monthly Audit Report - All Systems - Current State'
+                    else
+                      "Monthly Audit Report - All Systems - #{Date::MONTHNAMES[selected_month_num]} #{selected_year}"
+                    end
+
+    mail(
+      from: Setting.mail_from,
+      to: recipients,
+      subject: email_subject
+    )
+  end
+
+  # Class method to deliver all-systems monthly report
+  #
+  # @param recipients [Array<String>, String] Email address(es)
+  # @param reports_by_system [Hash<String, Array<Hash>>] Map of system name => report data
+  # @param mode [String] Report mode
+  # @param as_of_time [Time] Time snapshot
+  # @param selected_month_num [Integer, nil] Month number
+  # @param selected_year [Integer, nil] Year
+  def self.deliver_all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time, selected_month_num = nil, selected_year = nil)
+    all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time, selected_month_num, selected_year).deliver_later
+  end
 end
