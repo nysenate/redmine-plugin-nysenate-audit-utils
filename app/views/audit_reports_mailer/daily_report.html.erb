@@ -1,6 +1,6 @@
 <h2>Daily Audit Report</h2>
 
-<p><strong>Report Period:</strong> <%= @from_date.strftime('%Y-%m-%d %H:%M') %> to <%= @to_date.strftime('%Y-%m-%d %H:%M') %></p>
+<p><strong>Report Period:</strong> <%= @from_date.localtime.strftime('%Y-%m-%d %H:%M %Z') %> to <%= @to_date.localtime.strftime('%Y-%m-%d %H:%M %Z') %></p>
 
 <p><strong>Employees with Status Changes:</strong> <%= @employee_count %></p>
 
@@ -12,7 +12,7 @@
 <h3>Summary</h3>
 <p>
   Total employees with status changes: <%= @employee_count %><br>
-  Report generated: <%= Time.current.strftime('%Y-%m-%d %H:%M:%S %Z') %>
+  Report generated: <%= Time.now.strftime('%Y-%m-%d %H:%M:%S %Z') %>
 </p>
 <% else %>
 <p>No employees had status changes during this time period.</p>

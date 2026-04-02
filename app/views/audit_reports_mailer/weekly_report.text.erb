@@ -2,7 +2,7 @@ Weekly Audit Report
 ===================
 
 Report Period: Week of <%= @from_date.strftime('%Y-%m-%d') %>
-Coverage: <%= @from_date.strftime('%Y-%m-%d') %> through <%= @to_date.strftime('%Y-%m-%d %H:%M') %>
+Coverage: <%= @from_date.strftime('%Y-%m-%d') %> through <%= @to_date.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
 
 Active Tickets: <%= @ticket_count %>
 
@@ -15,7 +15,7 @@ The complete report data has been attached as a CSV file for your review.
 Summary
 -------
 Total active tickets: <%= @ticket_count %>
-Report generated: <%= Time.current.strftime('%Y-%m-%d %H:%M:%S %Z') %>
+Report generated: <%= Time.now.strftime('%Y-%m-%d %H:%M:%S %Z') %>
 <% else %>
 No tickets were created or updated during this week.
 <% end %>

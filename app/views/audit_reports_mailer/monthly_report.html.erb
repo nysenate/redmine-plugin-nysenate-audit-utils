@@ -2,7 +2,7 @@
 
 <% if @mode == 'current' %>
 <p><strong>Report Type:</strong> Current State</p>
-<p><strong>As of:</strong> <%= @as_of_time.strftime('%Y-%m-%d %H:%M:%S %Z') %></p>
+<p><strong>As of:</strong> <%= @as_of_time.localtime.strftime('%Y-%m-%d %H:%M:%S %Z') %></p>
 <% else %>
 <p><strong>Report Type:</strong> Historical Snapshot</p>
 <p><strong>Snapshot Date:</strong> <%= Date::MONTHNAMES[@selected_month_num] %> <%= @selected_year %></p>
@@ -25,7 +25,7 @@
 <p>
   Total accounts: <%= @account_count %><br>
   Target system: <%= @target_system %><br>
-  Report generated: <%= Time.current.strftime('%Y-%m-%d %H:%M:%S %Z') %>
+  Report generated: <%= Time.now.strftime('%Y-%m-%d %H:%M:%S %Z') %>
 </p>
 <% else %>
 <p>No accounts found for <%= @target_system %>.</p>
