@@ -1,7 +1,7 @@
 Daily Audit Report
 ==================
 
-Report Period: <%= @from_date.strftime('%Y-%m-%d %H:%M') %> to <%= @to_date.strftime('%Y-%m-%d %H:%M') %>
+Report Period: <%= @from_date.localtime.strftime('%Y-%m-%d %H:%M %Z') %> to <%= @to_date.localtime.strftime('%Y-%m-%d %H:%M %Z') %>
 
 Employees with Status Changes: <%= @employee_count %>
 
@@ -15,7 +15,7 @@ The complete report data has been attached as a CSV file for your review.
 Summary
 -------
 Total employees with status changes: <%= @employee_count %>
-Report generated: <%= Time.current.strftime('%Y-%m-%d %H:%M:%S %Z') %>
+Report generated: <%= Time.now.strftime('%Y-%m-%d %H:%M:%S %Z') %>
 <% else %>
 No employees had status changes during this time period.
 <% end %>
