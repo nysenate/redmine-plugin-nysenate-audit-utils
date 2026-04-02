@@ -76,18 +76,17 @@ module NysenateAuditUtils::AccountTracking
       assert_equal 'AIXI', result[0][:request_code]
     end
 
-    test 'returns active status for all Update actions' do
+    test 'ignores Update actions when determining account status' do
       update_actions = ['Update Account & Privileges', 'Update Privileges Only', 'Update Account Only']
 
       update_actions.each_with_index do |action, index|
         employee_id = "emp_#{index}"
-        issue = create_closed_issue(employee_id, 'SFS', action, 1.day.ago)
+        create_closed_issue(employee_id, 'SFS', action, 1.day.ago)
 
         result = @service.get_account_statuses(employee_id)
 
-        assert_equal 1, result.length
-        assert_equal 'active', result[0][:status], "Expected active status for action: #{action}"
-        assert_equal action, result[0][:account_action]
+        # Update actions are not relevant to status determination; no result expected
+        assert_equal 0, result.length, "Expected Update action '#{action}' to be ignored"
       end
     end
 
@@ -296,13 +295,15 @@ module NysenateAuditUtils::AccountTracking
 
     test 'get_account_statuses_by_system returns correct statuses' do
       # Create closed issues for multiple employees on same system
+      # Only Add/Delete issues count; Update actions are ignored
       issue1 = create_closed_issue('emp001', 'Oracle / SFMS', 'Add', 2.days.ago)
       issue2 = create_closed_issue('emp002', 'Oracle / SFMS', 'Delete', 1.day.ago)
-      issue3 = create_closed_issue('emp003', 'Oracle / SFMS', 'Update Account & Privileges', 3.hours.ago)
+      _issue3 = create_closed_issue('emp003', 'Oracle / SFMS', 'Update Account & Privileges', 3.hours.ago)
 
       result = @service.get_account_statuses_by_system('Oracle / SFMS')
 
-      assert_equal 3, result.length
+      # emp003 only has an Update action and should be excluded
+      assert_equal 2, result.length
 
       # Verify all required fields are present
       result.each do |status|
@@ -324,10 +325,6 @@ module NysenateAuditUtils::AccountTracking
       assert_equal 'emp002', result[1][:user_id]
       assert_equal 'inactive', result[1][:status]
       assert_equal issue2.id, result[1][:issue_id]
-
-      assert_equal 'emp003', result[2][:user_id]
-      assert_equal 'active', result[2][:status]
-      assert_equal issue3.id, result[2][:issue_id]
     end
 
     test 'get_account_statuses_by_system returns most recent only' do
@@ -392,12 +389,13 @@ module NysenateAuditUtils::AccountTracking
       create_closed_issue('emp001', 'PayServ', 'Add', 1.day.ago)
       # Create issues with "Delete" action (inactive)
       create_closed_issue('emp002', 'PayServ', 'Delete', 1.day.ago)
-      # Create issues with update actions (active)
+      # Update actions are ignored and exclude the user from results
       create_closed_issue('emp003', 'PayServ', 'Update Account & Privileges', 1.day.ago)
 
       result = @service.get_account_statuses_by_system('PayServ')
 
-      assert_equal 3, result.length
+      # emp003 only has an Update action and is excluded
+      assert_equal 2, result.length
 
       # Check statuses
       emp001 = result.find { |r| r[:user_id] == 'emp001' }
@@ -406,15 +404,14 @@ module NysenateAuditUtils::AccountTracking
       emp002 = result.find { |r| r[:user_id] == 'emp002' }
       assert_equal 'inactive', emp002[:status]
 
-      emp003 = result.find { |r| r[:user_id] == 'emp003' }
-      assert_equal 'active', emp003[:status]
+      assert_nil result.find { |r| r[:user_id] == 'emp003' }
     end
 
     test 'get_account_statuses_by_system includes request code' do
       # Create issues with various account_action/target_system combinations
       create_closed_issue('emp001', 'Oracle / SFMS', 'Add', 1.day.ago)
       create_closed_issue('emp002', 'AIX', 'Delete', 1.day.ago)
-      create_closed_issue('emp003', 'SFS', 'Update Account & Privileges', 1.day.ago)
+      create_closed_issue('emp003', 'SFS', 'Add', 1.day.ago)
 
       # Test Oracle / SFMS
       oracle_result = @service.get_account_statuses_by_system('Oracle / SFMS')
@@ -429,7 +426,7 @@ module NysenateAuditUtils::AccountTracking
       # Test SFS
       sfs_result = @service.get_account_statuses_by_system('SFS')
       assert_equal 1, sfs_result.length
-      assert_equal 'SFSU', sfs_result[0][:request_code]
+      assert_equal 'SFSA', sfs_result[0][:request_code]
     end
 
     test 'get_account_statuses_by_system handles blank target system' do

@@ -116,7 +116,7 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
   end
 
   test 'generate includes all required fields' do
-    issue = create_closed_test_issue('12345', 'John Doe', 'PayServ', 'Update Account & Privileges', 1.day.ago)
+    issue = create_closed_test_issue('12345', 'John Doe', 'PayServ', 'Add', 1.day.ago)
 
     service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'PayServ')
     result = service.generate
@@ -283,13 +283,14 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     assert_includes result.map { |r| r[:user_id] }, '67890'
   end
 
-  test 'generate selects most recent issue before cutoff time' do
+  test 'generate selects most recent Add/Delete issue before cutoff time' do
     cutoff_time = 2.days.ago
 
     # Create multiple issues for same employee, before and after cutoff
+    # Only Add/Delete issues count; Update actions are ignored
     oldest = create_closed_test_issue('12345', 'Alice', 'NYSDS', 'Add', 10.days.ago)
-    before_cutoff = create_closed_test_issue('12345', 'Alice', 'NYSDS', 'Update Account & Privileges', 3.days.ago)
-    after_cutoff = create_closed_test_issue('12345', 'Alice', 'NYSDS', 'Delete', 1.day.ago)
+    before_cutoff = create_closed_test_issue('12345', 'Alice', 'NYSDS', 'Delete', 3.days.ago)
+    after_cutoff = create_closed_test_issue('12345', 'Alice', 'NYSDS', 'Add', 1.day.ago)
 
     service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
       target_system: 'NYSDS',
@@ -297,12 +298,12 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     )
     result = service.generate
 
-    # Should return the most recent issue BEFORE cutoff (before_cutoff)
+    # Should return the most recent Add/Delete issue BEFORE cutoff (before_cutoff)
     assert_equal 1, result.size
     assert_equal '12345', result.first[:user_id]
     assert_equal before_cutoff.id, result.first[:issue_id]
-    assert_equal 'Update Account & Privileges', result.first[:account_action]
-    assert_equal 'active', result.first[:status]
+    assert_equal 'Delete', result.first[:account_action]
+    assert_equal 'inactive', result.first[:status]
   end
 
   # Tests for status_filter parameter
@@ -324,8 +325,9 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
 
   test 'generate filters by active status only' do
     # Create active and inactive accounts for same system
+    # Only Add/Delete issues count; Update actions are ignored
     active_issue1 = create_closed_test_issue('11111', 'Active User 1', 'AIX', 'Add', 3.days.ago)
-    active_issue2 = create_closed_test_issue('22222', 'Active User 2', 'AIX', 'Update Account & Privileges', 2.days.ago)
+    active_issue2 = create_closed_test_issue('22222', 'Active User 2', 'AIX', 'Add', 2.days.ago)
     inactive_issue = create_closed_test_issue('33333', 'Inactive User', 'AIX', 'Delete', 1.day.ago)
 
     service = NysenateAuditUtils::Reporting::MonthlyReportService.new(

@@ -6,9 +6,11 @@ module NysenateAuditUtils
     # Determines current active/inactive status of user accounts across different systems
     class AccountTrackingService
       # Account actions that indicate an active account
-      ACTIVE_ACTIONS = ['Add', 'Update Account & Privileges', 'Update Privileges Only', 'Update Account Only'].freeze
+      ACTIVE_ACTIONS = ['Add'].freeze
       # Account action that indicates an inactive account
       INACTIVE_ACTION = 'Delete'
+      # Only Add and Delete are used to determine account status; Update actions are ignored
+      RELEVANT_ACTIONS = ['Add', 'Delete'].freeze
 
       # Get account statuses for a specific user
       # @param user_id [String] The user ID to query
@@ -216,9 +218,13 @@ module NysenateAuditUtils
         mapper = request_code_mapper
         user_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_type_field_id
 
-        issues_by_account_type.map do |account_type, issue_data_list|
-          # Get the most recent issue (first in the list, as issues are sorted by closed_on desc)
-          latest_issue = issue_data_list.first
+        issues_by_account_type.filter_map do |account_type, issue_data_list|
+          # Only Add/Delete issues determine account status; skip account types with no relevant issues
+          relevant_issues = issue_data_list.select { |d| RELEVANT_ACTIONS.include?(d[:account_action]) }
+          next if relevant_issues.empty?
+
+          # Get the most recent relevant issue (list is sorted by closed_on desc)
+          latest_issue = relevant_issues.first
 
           # Get user_type from the latest issue
           user_type = if user_type_field_id && latest_issue[:issue]
@@ -364,9 +370,13 @@ module NysenateAuditUtils
         # Group by user_id
         grouped = results.group_by { |r| r[:user_id] }
 
-        # For each user, take the most recent issue (first one due to DESC ordering)
-        statuses = grouped.map do |user_id, user_issues|
-          latest_issue = user_issues.first
+        # For each user, find the most recent Add/Delete issue (ignoring Update actions)
+        statuses = grouped.filter_map do |user_id, user_issues|
+          # Only Add/Delete issues determine account status; skip users with no relevant issues
+          relevant_issues = user_issues.select { |r| RELEVANT_ACTIONS.include?(r[:account_action]) }
+          next if relevant_issues.empty?
+
+          latest_issue = relevant_issues.first  # Still DESC ordered, so first is most recent
 
           {
             user_id: user_id,
