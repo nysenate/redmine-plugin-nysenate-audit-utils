@@ -1,0 +1,30 @@
+<h2>Monthly Audit Report - All Systems</h2>
+
+<% if @mode == 'current' %>
+<p><strong>Report Type:</strong> Current State</p>
+<p><strong>As of:</strong> <%= @as_of_time.localtime.strftime('%Y-%m-%d %H:%M:%S %Z') %></p>
+<% else %>
+<p><strong>Report Type:</strong> Historical Snapshot</p>
+<p><strong>Snapshot Date:</strong> <%= Date::MONTHNAMES[@selected_month_num] %> <%= @selected_year %></p>
+<p><strong>As of:</strong> <%= @as_of_time.strftime('%Y-%m-%d') %></p>
+<% end %>
+
+<p>The complete report data for all systems has been attached as a ZIP file containing one CSV per target system.</p>
+
+<h3>Summary</h3>
+<table>
+  <thead>
+    <tr><th>Target System</th><th>Account Count</th></tr>
+  </thead>
+  <tbody>
+    <% @system_counts.each do |system, count| %>
+    <tr><td><%= system %></td><td><%= count %></td></tr>
+    <% end %>
+  </tbody>
+</table>
+<p>Report generated: <%= Time.now.strftime('%Y-%m-%d %H:%M:%S %Z') %></p>
+
+<hr>
+<p style="font-size: 0.9em; color: #666;">
+  This is an automated report from the NY Senate Audit Utils system.
+</p>

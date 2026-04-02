@@ -31,7 +31,7 @@ Redmine::Plugin.register :nysenate_audit_utils do
   # Consolidated project module for all audit utils functionality
   project_module :audit_utils do
     # Reporting permissions
-    permission :view_audit_reports, { audit_reports: [:index, :daily, :weekly, :monthly] }
+    permission :view_audit_reports, { audit_reports: [:index, :daily, :weekly, :monthly, :monthly_zip] }
     permission :export_audit_reports, { audit_reports: [:export] }
 
     # User autofill permissions

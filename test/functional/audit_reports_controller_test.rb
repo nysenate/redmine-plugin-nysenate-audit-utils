@@ -569,4 +569,103 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_equal 'text/csv', response.content_type
     assert_match /monthly_report_sfs_current\.csv/, response.headers['Content-Disposition']
   end
+
+  # Tests for monthly_zip action
+
+  test "should export all systems as ZIP in current mode" do
+    target_system_field_mock = mock('target_system_field')
+    target_system_field_mock.stubs(:possible_values).returns(['Oracle / SFMS', 'AIX'])
+    NysenateAuditUtils::CustomFieldConfiguration.stubs(:target_system_field).returns(target_system_field_mock)
+
+    oracle_data = [{ user_id: '111', user_name: 'Alice', status: 'active', account_action: 'Add', closed_on: Date.today, request_code: 'OAA', issue_id: 1 }]
+    aix_data    = [{ user_id: '222', user_name: 'Bob',   status: 'active', account_action: 'Add', closed_on: Date.today, request_code: 'AAA', issue_id: 2 }]
+
+    oracle_svc = mock('oracle_service')
+    oracle_svc.expects(:generate).returns(oracle_data)
+    oracle_svc.stubs(:success?).returns(true)
+
+    aix_svc = mock('aix_service')
+    aix_svc.expects(:generate).returns(aix_data)
+    aix_svc.stubs(:success?).returns(true)
+
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with { |a| a[:target_system] == 'Oracle / SFMS' }.returns(oracle_svc)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with { |a| a[:target_system] == 'AIX' }.returns(aix_svc)
+
+    get :monthly_zip, params: { project_id: 1, mode: 'current' }
+    assert_response :success
+    assert_equal 'application/zip', response.content_type
+    assert_match /attachment/, response.headers['Content-Disposition']
+    assert_match /monthly_reports_all_systems_current\.zip/, response.headers['Content-Disposition']
+
+    zip_content = response.body
+    assert zip_content.length > 0
+
+    Zip::InputStream.open(StringIO.new(zip_content)) do |zip|
+      entries = []
+      while (entry = zip.get_next_entry)
+        entries << entry.name
+      end
+      assert_includes entries, 'monthly_report_oracle-sfms_current.csv'
+      assert_includes entries, 'monthly_report_aix_current.csv'
+    end
+  end
+
+  test "should export all systems as ZIP in monthly mode" do
+    target_system_field_mock = mock('target_system_field')
+    target_system_field_mock.stubs(:possible_values).returns(['Oracle / SFMS'])
+    NysenateAuditUtils::CustomFieldConfiguration.stubs(:target_system_field).returns(target_system_field_mock)
+
+    oracle_data = [{ user_id: '111', user_name: 'Alice', status: 'active', account_action: 'Add', closed_on: Date.today, request_code: 'OAA', issue_id: 1 }]
+    svc = mock('service')
+    svc.expects(:generate).returns(oracle_data)
+    svc.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with do |a|
+      a[:target_system] == 'Oracle / SFMS' && a[:as_of_time].to_date == Date.new(2026, 3, 1)
+    end.returns(svc)
+
+    get :monthly_zip, params: { project_id: 1, mode: 'monthly', month: 3, year: 2026 }
+    assert_response :success
+    assert_equal 'application/zip', response.content_type
+    assert_match /monthly_reports_all_systems_202603\.zip/, response.headers['Content-Disposition']
+  end
+
+  test "should skip failed systems in ZIP export and still succeed" do
+    target_system_field_mock = mock('target_system_field')
+    target_system_field_mock.stubs(:possible_values).returns(['Oracle / SFMS', 'AIX'])
+    NysenateAuditUtils::CustomFieldConfiguration.stubs(:target_system_field).returns(target_system_field_mock)
+
+    oracle_data = [{ user_id: '111', user_name: 'Alice', status: 'active', account_action: 'Add', closed_on: Date.today, request_code: 'OAA', issue_id: 1 }]
+    oracle_svc = mock('oracle_service')
+    oracle_svc.expects(:generate).returns(oracle_data)
+    oracle_svc.stubs(:success?).returns(true)
+
+    aix_svc = mock('aix_service')
+    aix_svc.expects(:generate).returns(nil)
+    aix_svc.stubs(:success?).returns(false)
+    aix_svc.stubs(:errors).returns(['Invalid system'])
+
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with { |a| a[:target_system] == 'Oracle / SFMS' }.returns(oracle_svc)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with { |a| a[:target_system] == 'AIX' }.returns(aix_svc)
+
+    get :monthly_zip, params: { project_id: 1, mode: 'current' }
+    assert_response :success
+    assert_equal 'application/zip', response.content_type
+
+    Zip::InputStream.open(StringIO.new(response.body)) do |zip|
+      entries = []
+      while (entry = zip.get_next_entry)
+        entries << entry.name
+      end
+      assert_includes entries, 'monthly_report_oracle-sfms_current.csv'
+      assert_not_includes entries, 'monthly_report_aix_current.csv'
+    end
+  end
+
+  test "should require view_audit_reports permission for monthly_zip" do
+    @request.session[:user_id] = 2
+    role = Role.find(1)
+    role.remove_permission!(:view_audit_reports) if role.permissions.include?(:view_audit_reports)
+    get :monthly_zip, params: { project_id: 1 }
+    assert_response :forbidden
+  end
 end

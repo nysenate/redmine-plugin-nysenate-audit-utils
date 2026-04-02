@@ -240,6 +240,51 @@ class AuditReportsController < ApplicationController
     render :error
   end
 
+  def monthly_zip
+    target_system_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
+    target_systems = target_system_field&.possible_values || ['Oracle / SFMS']
+
+    mode = params[:mode].presence || 'monthly'
+    status_filter = params[:status_filter].presence || 'all'
+
+    if mode == 'current'
+      as_of_time = Time.current
+      filename_suffix = 'current'
+    else
+      selected_month_num = (params[:month].presence || Date.current.month).to_i
+      selected_year = (params[:year].presence || Date.current.year).to_i
+      as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.in_time_zone
+      filename_suffix = "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
+    end
+
+    reports_by_system = {}
+    target_systems.each do |system|
+      service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+        target_system: system,
+        as_of_time: as_of_time,
+        status_filter: status_filter,
+        project: @project
+      )
+      data = service.generate
+      if service.success?
+        reports_by_system[system] = data
+      else
+        Rails.logger.warn "monthly_zip: skipping #{system} — #{service.errors.join('; ')}"
+      end
+    end
+
+    zip_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(reports_by_system, filename_suffix)
+    send_data zip_data,
+              filename: "monthly_reports_all_systems_#{filename_suffix}.zip",
+              type: 'application/zip',
+              disposition: 'attachment'
+  rescue => e
+    Rails.logger.error "Monthly ZIP export failed: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    @error_message = "Unable to generate ZIP export: #{e.message}"
+    render :error
+  end
+
   private
 
   def parse_date_param(date_string)
