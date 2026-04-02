@@ -67,7 +67,7 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     issue1 = create_closed_test_issue('12345', 'Alice Smith', 'SFS', 'Add', 1.day.ago)
     issue2 = create_closed_test_issue('67890', 'Bob Jones', 'SFS', 'Delete', 2.days.ago)
 
-    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'SFS')
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'SFS', status_filter: 'all')
     result = service.generate
 
     assert_equal 2, result.size
@@ -152,7 +152,7 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     old_issue = create_closed_test_issue('12345', 'John Doe', 'OGS Swiper Access', 'Add', 10.days.ago)
     recent_issue = create_closed_test_issue('12345', 'John Doe', 'OGS Swiper Access', 'Delete', 1.day.ago)
 
-    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'OGS Swiper Access')
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'OGS Swiper Access', status_filter: 'all')
     result = service.generate
 
     # Should return only one row with the most recent issue
@@ -274,7 +274,7 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     old_issue = create_closed_test_issue('12345', 'Alice Old', 'SFS', 'Add', 10.days.ago)
     recent_issue = create_closed_test_issue('67890', 'Bob Recent', 'SFS', 'Delete', 1.hour.ago)
 
-    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'SFS')
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'SFS', status_filter: 'all')
     result = service.generate
 
     # Should include both issues since as_of_time defaults to current
@@ -294,7 +294,8 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
 
     service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
       target_system: 'NYSDS',
-      as_of_time: cutoff_time
+      as_of_time: cutoff_time,
+      status_filter: 'all'
     )
     result = service.generate
 
@@ -318,9 +319,9 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     assert_equal 'active', service.status_filter
   end
 
-  test 'defaults status_filter to all when not provided' do
+  test 'defaults status_filter to active when not provided' do
     service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'Oracle / SFMS')
-    assert_equal 'all', service.status_filter
+    assert_equal 'active', service.status_filter
   end
 
   test 'generate filters by active status only' do
