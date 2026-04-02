@@ -93,7 +93,15 @@ class AuditReportsController < ApplicationController
   end
 
   def weekly
-    service = NysenateAuditUtils::Reporting::WeeklyReportService.new(project: @project)
+    from_date = parse_date_param(params[:start_date])
+    to_date = parse_date_param(params[:end_date])
+    to_date = to_date.end_of_day if to_date && params[:end_date].present?
+
+    service = NysenateAuditUtils::Reporting::WeeklyReportService.new(
+      project: @project,
+      from_date: from_date,
+      to_date: to_date
+    )
     @report_data = service.generate
     @from_date = service.from_date
     @to_date = service.to_date
@@ -113,14 +121,16 @@ class AuditReportsController < ApplicationController
       'status' => 'status',
       'user_id' => 'user_id',
       'user_uid' => 'user_uid',
+      'user_name' => 'user_name',
+      'office' => 'office',
       'request_code' => 'request_code',
-      'updated_on' => 'updated_on'
+      'updated_on' => 'updated_on',
+      'created_on' => 'created_on',
+      'closed_on' => 'closed_on'
     })
 
     # Apply sorting to report data
-    if @report_data.present?
-      @report_data = sort_report_data(@report_data)
-    end
+    @report_data = sort_report_data(@report_data) if @report_data.present?
 
     respond_to do |format|
       format.html

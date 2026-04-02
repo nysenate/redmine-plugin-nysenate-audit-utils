@@ -66,22 +66,32 @@ module NysenateAuditUtils
         CSV.generate do |csv|
           # Header row
           csv << [
+            'Ticket #',
+            'User Name',
             'User UID',
             'User Number',
+            'Office',
             'Request Code',
             'Ticket Description',
             'Status',
+            'Open Date',
+            'Close Date',
             'Updated On'
           ]
 
           # Data rows
           data.each do |row|
             csv << [
+              row[:issue_id],
+              row[:user_name],
               row[:user_uid],
               row[:user_id],
+              row[:office],
               row[:request_code],
               row[:subject],
               row[:status],
+              row[:created_on]&.strftime('%Y-%m-%d'),
+              row[:closed_on]&.strftime('%Y-%m-%d'),
               row[:updated_on]&.strftime('%Y-%m-%d %H:%M')
             ]
           end
