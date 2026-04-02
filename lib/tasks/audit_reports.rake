@@ -203,7 +203,8 @@ END_DESC
     recipient_list = recipients.split(',').map(&:strip)
 
     # Parse optional parameters
-    mode = ENV['mode'].presence || 'current'
+    mode = ENV['mode'].presence || 'monthly'
+    status_filter = ENV['status_filter'].presence || 'active'
 
     # Determine as_of_time based on mode
     if mode == 'current'
@@ -220,6 +221,7 @@ END_DESC
     service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
       target_system: target_system,
       as_of_time: as_of_time,
+      status_filter: status_filter,
       project: project
     )
     report_data = service.generate
@@ -292,7 +294,8 @@ END_DESC
     end
 
     # Parse optional parameters
-    mode = ENV['mode'].presence || 'current'
+    mode = ENV['mode'].presence || 'monthly'
+    status_filter = ENV['status_filter'].presence || 'active'
 
     # Determine as_of_time based on mode
     if mode == 'current'
@@ -311,6 +314,7 @@ END_DESC
       service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
         target_system: system,
         as_of_time: as_of_time,
+        status_filter: status_filter,
         project: project
       )
       data = service.generate

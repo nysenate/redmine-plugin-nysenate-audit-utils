@@ -159,8 +159,8 @@ class AuditReportsController < ApplicationController
     # Parse target_system parameter (use first valid system as default)
     target_system = params[:target_system].presence || @target_systems.first
 
-    # Parse status_filter parameter (default to 'all')
-    status_filter = params[:status_filter].presence || 'all'
+    # Parse status_filter parameter (default to 'active')
+    status_filter = params[:status_filter].presence || 'active'
 
     # Parse mode parameter (default to 'monthly')
     mode = params[:mode].presence || 'monthly'

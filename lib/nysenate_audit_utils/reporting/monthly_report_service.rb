@@ -5,7 +5,7 @@ module NysenateAuditUtils
     class MonthlyReportService
       attr_reader :target_system, :as_of_time, :status_filter, :errors, :project
 
-      def initialize(target_system:, as_of_time: Time.current, status_filter: 'all', project: nil)
+      def initialize(target_system:, as_of_time: Time.current, status_filter: 'active', project: nil)
         @target_system = target_system
         @as_of_time = as_of_time
         @status_filter = status_filter
