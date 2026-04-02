@@ -160,17 +160,20 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_equal '', response.body
   end
 
-  test "should get weekly report" do
-    mock_report_data = [
+  def weekly_mock_data
+    [
       {
         issue_id: 1,
         subject: 'Test Issue 1',
-        status: 'New',
+        status: 'Closed',
         user_id: '12345',
         user_uid: 'johndoe',
+        user_name: 'John Doe',
+        office: 'Senate Office A',
         request_code: 'RC1',
         updated_on: Time.current,
-        created_on: Time.current - 2.days
+        created_on: Time.current - 5.days,
+        closed_on: Time.current - 1.day
       },
       {
         issue_id: 2,
@@ -178,18 +181,31 @@ class AuditReportsControllerTest < ActionController::TestCase
         status: 'Closed',
         user_id: '54321',
         user_uid: 'janesmith',
+        user_name: 'Jane Smith',
+        office: 'Personnel',
         request_code: 'RC2',
         updated_on: Time.current - 1.day,
-        created_on: Time.current - 3.days
+        created_on: Time.current - 6.days,
+        closed_on: Time.current - 2.days
       }
     ]
+  end
 
+  def stub_weekly_service(report_data, from_date: nil, to_date: nil, success: true, errors: [])
+    from_date ||= Date.current.beginning_of_week(:sunday).in_time_zone - 7.days
+    to_date ||= Date.current.beginning_of_week(:sunday).in_time_zone
     service_mock = mock('service')
-    service_mock.expects(:generate).returns(mock_report_data)
-    service_mock.stubs(:from_date).returns(Date.current.beginning_of_week)
-    service_mock.stubs(:to_date).returns(Time.zone.now)
-    service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::WeeklyReportService.expects(:new).with(project: @project).returns(service_mock)
+    service_mock.expects(:generate).returns(report_data)
+    service_mock.stubs(:from_date).returns(from_date)
+    service_mock.stubs(:to_date).returns(to_date)
+    service_mock.stubs(:success?).returns(success)
+    service_mock.stubs(:errors).returns(errors)
+    NysenateAuditUtils::Reporting::WeeklyReportService.expects(:new).returns(service_mock)
+    service_mock
+  end
+
+  test "should get weekly report" do
+    stub_weekly_service(weekly_mock_data)
 
     get :weekly, params: { project_id: 1 }
     assert_response :success
@@ -197,6 +213,45 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'table.list.issues'
     assert_select 'td', text: 'Test Issue 1'
     assert_select 'td', text: 'Test Issue 2'
+  end
+
+  test "should render new weekly columns" do
+    stub_weekly_service(weekly_mock_data)
+
+    get :weekly, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'td', text: 'John Doe'
+    assert_select 'td', text: 'Senate Office A'
+    assert_select 'th a', text: 'User Name'
+    assert_select 'th a', text: 'Office'
+    assert_select 'th a', text: 'Open Date'
+    assert_select 'th a', text: 'Close Date'
+  end
+
+  test "should display date range inputs" do
+    stub_weekly_service(weekly_mock_data)
+
+    get :weekly, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'input[name=start_date][type=date]'
+    assert_select 'input[name=end_date][type=date]'
+  end
+
+  test "should not display status filter dropdown" do
+    stub_weekly_service(weekly_mock_data)
+
+    get :weekly, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'select[name=status_filter]', count: 0
+  end
+
+  test "should pass date range to weekly service" do
+    NysenateAuditUtils::Reporting::WeeklyReportService.expects(:new).with do |args|
+      args[:from_date].present? && args[:to_date].present?
+    end.returns(stub_returning_service(weekly_mock_data))
+
+    get :weekly, params: { project_id: 1, start_date: '2026-03-29', end_date: '2026-04-05' }
+    assert_response :success
   end
 
   test "should require admin access for weekly report" do
@@ -208,26 +263,15 @@ class AuditReportsControllerTest < ActionController::TestCase
   end
 
   test "should handle empty weekly report data" do
-    service_mock = mock('service')
-    service_mock.expects(:generate).returns([])
-    service_mock.stubs(:from_date).returns(Date.current.beginning_of_week)
-    service_mock.stubs(:to_date).returns(Time.zone.now)
-    service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::WeeklyReportService.expects(:new).with(project: @project).returns(service_mock)
+    stub_weekly_service([])
 
     get :weekly, params: { project_id: 1 }
     assert_response :success
-    assert_select 'p.nodata', text: /No tickets found for the current week/
+    assert_select 'p.nodata', text: /No closed tickets found/
   end
 
   test "should render error page on weekly service failure" do
-    service_mock = mock('service')
-    service_mock.expects(:generate).returns(nil)
-    service_mock.stubs(:from_date).returns(Date.current.beginning_of_week)
-    service_mock.stubs(:to_date).returns(Time.zone.now)
-    service_mock.stubs(:success?).returns(false)
-    service_mock.stubs(:errors).returns(['Custom field configuration error'])
-    NysenateAuditUtils::Reporting::WeeklyReportService.expects(:new).with(project: @project).returns(service_mock)
+    stub_weekly_service(nil, success: false, errors: ['Custom field configuration error'])
 
     get :weekly, params: { project_id: 1 }
     assert_response :success
@@ -236,25 +280,7 @@ class AuditReportsControllerTest < ActionController::TestCase
   end
 
   test "should export weekly report as CSV" do
-    mock_report_data = [
-      {
-        issue_id: 1,
-        subject: 'Test Issue',
-        status: 'New',
-        user_id: '12345',
-        user_uid: 'johndoe',
-        request_code: 'RC1',
-        updated_on: Time.current,
-        created_on: Time.current - 2.days
-      }
-    ]
-
-    service_mock = mock('service')
-    service_mock.expects(:generate).returns(mock_report_data)
-    service_mock.stubs(:from_date).returns(Date.current.beginning_of_week)
-    service_mock.stubs(:to_date).returns(Time.zone.now)
-    service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::WeeklyReportService.expects(:new).with(project: @project).returns(service_mock)
+    stub_weekly_service(weekly_mock_data)
 
     get :weekly, params: { project_id: 1 }, format: :csv
     assert_response :success
@@ -262,11 +288,18 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_match /weekly_report_.*\.csv/, response.headers['Content-Disposition']
 
     csv_content = response.body
+    assert_match /Ticket #/, csv_content
+    assert_match /User Name/, csv_content
     assert_match /User UID/, csv_content
     assert_match /User Number/, csv_content
+    assert_match /Office/, csv_content
+    assert_match /Open Date/, csv_content
+    assert_match /Close Date/, csv_content
     assert_match /Request Code/, csv_content
-    assert_match /Test Issue/, csv_content
+    assert_match /Test Issue 1/, csv_content
     assert_match /12345/, csv_content
+    assert_match /John Doe/, csv_content
+    assert_match /Senate Office A/, csv_content
   end
 
   test "should get monthly report with default system" do
@@ -667,5 +700,19 @@ class AuditReportsControllerTest < ActionController::TestCase
     role.remove_permission!(:view_audit_reports) if role.permissions.include?(:view_audit_reports)
     get :monthly_zip, params: { project_id: 1 }
     assert_response :forbidden
+  end
+
+  private
+
+  # Returns a simple service mock that generates report_data and succeeds.
+  # Used in tests that verify service params via .expects(:new).with { ... }
+  def stub_returning_service(report_data)
+    svc = mock('service')
+    svc.expects(:generate).returns(report_data)
+    svc.stubs(:from_date).returns(Date.current.beginning_of_week(:sunday).in_time_zone - 7.days)
+    svc.stubs(:to_date).returns(Date.current.beginning_of_week(:sunday).in_time_zone)
+    svc.stubs(:success?).returns(true)
+    svc.stubs(:errors).returns([])
+    svc
   end
 end

@@ -5,10 +5,19 @@ module NysenateAuditUtils
     class WeeklyReportService
       attr_reader :from_date, :to_date, :errors, :project
 
-      def initialize(project: nil)
+      def initialize(project: nil, from_date: nil, to_date: nil)
         @project = project
-        @from_date = Date.current.beginning_of_week # Monday 00:00:00
-        @to_date = Time.zone.now
+
+        if from_date && to_date
+          @from_date = from_date
+          @to_date = to_date
+        else
+          # Default: previous full week from Sunday 00:00 to Sunday 00:00
+          most_recent_sunday = Date.current.beginning_of_week(:sunday).in_time_zone
+          @from_date = most_recent_sunday - 7.days
+          @to_date = most_recent_sunday
+        end
+
         @errors = []
       end
 
@@ -33,6 +42,8 @@ module NysenateAuditUtils
         # Get custom field IDs
         user_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_id_field_id
         user_uid_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_uid_field_id')
+        user_name_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_name_field_id')
+        user_location_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_location_field_id')
         account_action_field_id = NysenateAuditUtils::CustomFieldConfiguration.account_action_field_id
         target_system_field_id = NysenateAuditUtils::CustomFieldConfiguration.target_system_field_id
 
@@ -44,15 +55,14 @@ module NysenateAuditUtils
         # Initialize request code mapper
         request_code_mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new
 
-        # Query issues that were active in the current week
-        # Active = created or updated during the week
-        # Filter by project to only show issues from the specified project
+        # Query closed issues where closed_on falls within the date range
         issues = Issue
           .where(project_id: @project.id)
-          .where("(created_on >= ? AND created_on <= ?) OR (updated_on >= ? AND updated_on <= ?)",
-                 @from_date, @to_date, @from_date, @to_date)
+          .where(closed_on: @from_date..@to_date)
+          .joins(:status)
+          .where(issue_statuses: { is_closed: true })
           .includes(:status, :custom_values)
-          .order(updated_on: :desc)
+          .order(closed_on: :desc)
 
         # Build report data for each issue, filtering out issues without the User ID field configured
         issues.filter_map do |issue|
@@ -65,11 +75,13 @@ module NysenateAuditUtils
           user_id = get_custom_field_value(issue, user_id_field_id)
 
           # Get user UID from custom field (if configured)
-          user_uid = if user_uid_field_id
-            get_custom_field_value(issue, user_uid_field_id)
-          else
-            nil
-          end
+          user_uid = user_uid_field_id ? get_custom_field_value(issue, user_uid_field_id) : nil
+
+          # Get user name from custom field (if configured)
+          user_name = user_name_field_id ? get_custom_field_value(issue, user_name_field_id) : nil
+
+          # Get office/location from custom field (if configured)
+          office = user_location_field_id ? get_custom_field_value(issue, user_location_field_id) : nil
 
           # Get request code from Account Action and Target System
           request_code = nil
@@ -85,9 +97,12 @@ module NysenateAuditUtils
             status: issue.status.name,
             user_id: user_id,
             user_uid: user_uid,
+            user_name: user_name,
+            office: office,
             request_code: request_code,
             updated_on: issue.updated_on,
-            created_on: issue.created_on
+            created_on: issue.created_on,
+            closed_on: issue.closed_on
           }
         end
       end

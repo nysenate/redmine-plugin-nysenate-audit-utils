@@ -85,15 +85,17 @@ END_DESC
   end
 
   desc <<-END_DESC
-Send weekly audit report via email.
+Send weekly audit report via email. Reports only closed tickets.
 
 Available options:
   * project_id => project identifier (required)
   * recipients => comma-separated list of email addresses (optional, uses plugin settings if not provided)
+  * start_date => report start date YYYY-MM-DD (optional, defaults to previous Sunday)
+  * end_date   => report end date YYYY-MM-DD (optional, defaults to most recent Sunday)
 
 Example:
-  rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" recipients="user@example.com,admin@example.com" RAILS_ENV="production"
-  rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV="production"  # Uses configured recipients
+  rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV="production"
+  rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" start_date="2026-03-29" end_date="2026-04-05" RAILS_ENV="production"
 END_DESC
 
   task send_weekly_report: :environment do
@@ -124,8 +126,16 @@ END_DESC
 
     recipient_list = recipients.split(',').map(&:strip)
 
+    # Parse optional date range
+    from_date = ENV['start_date'].present? ? Date.parse(ENV['start_date']).in_time_zone : nil
+    to_date = ENV['end_date'].present? ? Date.parse(ENV['end_date']).end_of_day : nil
+
     # Generate report
-    service = NysenateAuditUtils::Reporting::WeeklyReportService.new(project: project)
+    service = NysenateAuditUtils::Reporting::WeeklyReportService.new(
+      project: project,
+      from_date: from_date,
+      to_date: to_date
+    )
     report_data = service.generate
 
     unless service.success?
@@ -144,8 +154,8 @@ END_DESC
     end
 
     puts "Weekly report sent to: #{recipient_list.join(', ')}"
-    puts "Report period: Week of #{service.from_date.strftime('%Y-%m-%d')}"
-    puts "Active tickets: #{report_data.size}"
+    puts "Report period: #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
+    puts "Closed tickets: #{report_data.size}"
   end
 
   desc <<-END_DESC
