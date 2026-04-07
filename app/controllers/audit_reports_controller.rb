@@ -13,8 +13,8 @@ class AuditReportsController < ApplicationController
 
   def daily
     # Handle day mode vs range mode
-    if params[:mode] == "day"
-      # Day mode: use end_date parameter for the selected date
+    if params[:mode] != "range"
+      # Day mode (default): use end_date parameter for the selected date
       selected_date = params[:end_date].present? ? Date.parse(params[:end_date]) : nil
       if selected_date
         from_date = selected_date.beginning_of_day
@@ -24,7 +24,7 @@ class AuditReportsController < ApplicationController
         to_date = nil
       end
     else
-      # Range mode: parse date parameters from the date pickers
+      # Range mode: parse date parameters from the date pickers (only when explicitly selected)
       from_date = parse_date_param(params[:start_date])
       to_date = parse_date_param(params[:end_date])
       to_date = to_date.end_of_day if to_date
