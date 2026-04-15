@@ -17,8 +17,8 @@ class AuditReportsController < ApplicationController
       # Day mode (default): use end_date parameter for the selected date
       selected_date = params[:end_date].present? ? Date.parse(params[:end_date]) : nil
       if selected_date
-        from_date = selected_date.beginning_of_day
-        to_date = selected_date.end_of_day
+        from_date = (selected_date - 1.day).beginning_of_day
+        to_date = selected_date.beginning_of_day
       else
         from_date = nil
         to_date = nil

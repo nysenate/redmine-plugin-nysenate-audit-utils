@@ -26,10 +26,8 @@ module NysenateAuditUtils
           when String
             datetime
           when Date
-            # Format as ISO date (YYYY-MM-DD)
             datetime.strftime('%Y-%m-%d')
           when Time, DateTime
-            # Format as ISO date (YYYY-MM-DD)
             datetime.strftime('%Y-%m-%d')
           else
             datetime.to_s
