@@ -172,6 +172,7 @@
     const endDateInput = document.getElementById('end_date');
     const prevDayBtn = document.getElementById('prev-day-btn');
     const nextDayBtn = document.getElementById('next-day-btn');
+    const dayEndDateInput = document.querySelector('#day-mode-fields input[type="date"]');
 
     // Format dates as YYYY-MM-DD
     function formatDateTime(date) {
@@ -251,9 +252,9 @@
     // Update button states based on current date (for day mode)
     function updateButtonStates() {
       // Only update buttons in day mode
-      if (!modeDay.checked || !endDateInput.value) return;
+      if (!modeDay.checked || !dayEndDateInput.value) return;
 
-      const currentDate = parseLocalDate(endDateInput.value);
+      const currentDate = parseLocalDate(dayEndDateInput.value);
       const prevDate = new Date(currentDate);
       prevDate.setDate(prevDate.getDate() - 1);
 
@@ -300,11 +301,11 @@
     prevDayBtn.addEventListener('click', function() {
       if (this.disabled) return;
 
-      const currentDate = parseLocalDate(endDateInput.value);
+      const currentDate = parseLocalDate(dayEndDateInput.value);
       const prevDate = new Date(currentDate);
       prevDate.setDate(prevDate.getDate() - 1);
 
-      endDateInput.value = formatDate(prevDate);
+      dayEndDateInput.value = formatDate(prevDate);
       form.submit();
     });
 
@@ -312,16 +313,16 @@
     nextDayBtn.addEventListener('click', function() {
       if (this.disabled) return;
 
-      const currentDate = parseLocalDate(endDateInput.value);
+      const currentDate = parseLocalDate(dayEndDateInput.value);
       const nextDate = new Date(currentDate);
       nextDate.setDate(nextDate.getDate() + 1);
 
-      endDateInput.value = formatDate(nextDate);
+      dayEndDateInput.value = formatDate(nextDate);
       form.submit();
     });
 
     // Update button states when date changes (in day mode)
-    endDateInput.addEventListener('change', updateButtonStates);
+    dayEndDateInput.addEventListener('change', updateButtonStates);
 
     // Initialize on page load
     toggleMode();
