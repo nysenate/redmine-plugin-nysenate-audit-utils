@@ -58,6 +58,20 @@
                                         ], @status_filter || 'active'),
                      onchange: "this.form.submit();" %>
     </p>
+    <%
+      monthly_at_default = (params[:mode].blank? || params[:mode] == 'monthly') &&
+                           (params[:status_filter].blank? || params[:status_filter] == 'active') &&
+                           (params[:month].blank? || params[:month].to_i == Date.current.month) &&
+                           (params[:year].blank? || params[:year].to_i == Date.current.year)
+    %>
+    <p>
+      <label></label>
+      <% if monthly_at_default %>
+        <span class="button-small disabled-link">Reset to Default</span>
+      <% else %>
+        <%= link_to "Reset to Default", monthly_project_audit_reports_path(@project, target_system: @target_system), class: "button-small" %>
+      <% end %>
+    </p>
   </fieldset>
 <% end %>
 
@@ -203,6 +217,12 @@
 </script>
 
 <style>
+  .disabled-link {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+  }
+
   #system-filter-form {
     margin-bottom: 2em;
   }

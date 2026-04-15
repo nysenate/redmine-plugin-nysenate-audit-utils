@@ -69,9 +69,14 @@
       </p>
     </div>
 
+    <% daily_at_default = params[:mode] != 'range' && params[:end_date].blank? %>
     <p>
       <label></label>
-      <%= link_to "Reset to Default", daily_project_audit_reports_path(@project), class: "button-small" %>
+      <% if daily_at_default %>
+        <span class="button-small disabled-link">Reset to Default</span>
+      <% else %>
+        <%= link_to "Reset to Default", daily_project_audit_reports_path(@project), class: "button-small" %>
+      <% end %>
     </p>
   </fieldset>
 <% end %>
@@ -376,6 +381,12 @@
 
   #date-filter-form .button-small {
     margin-right: 0.5em;
+  }
+
+  .disabled-link {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
   }
 
   #date-filter-form .info-text {

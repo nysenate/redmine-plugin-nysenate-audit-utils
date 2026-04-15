@@ -21,6 +21,12 @@
     <%= date_field_tag :end_date, @to_date.to_date.iso8601 %>
   </label>
   <%= submit_tag "Apply", name: nil %>
+  <% weekly_at_default = params[:start_date].blank? && params[:end_date].blank? %>
+  <% if weekly_at_default %>
+    <span class="button-small disabled-link">Reset to Default</span>
+  <% else %>
+    <%= link_to "Reset to Default", weekly_project_audit_reports_path(@project), class: "button-small" %>
+  <% end %>
 <% end %>
 
 <% if @report_data.nil? || @report_data.empty? %>
@@ -79,6 +85,12 @@
     align-items: center;
     gap: 1em;
     flex-wrap: wrap;
+  }
+
+  .disabled-link {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
   }
 
   .report-filters label {
