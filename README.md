@@ -134,9 +134,9 @@ Configure default recipients for automated email delivery of audit reports:
 
 Access via project menu: **Reports → Audit Utils**
 
-- **Daily Reports**: Account status of employees with status changes in past 24 hours
-- **Weekly Reports**: All completed tickets for previous week
-- **Monthly Reports**: Snapshot of current employee account status
+- **Daily Reports**: Account status of employees with status changes; defaults to the previous business day
+- **Weekly Reports**: Closed tickets from the previous full week (Sunday–Sunday), ordered by close date
+- **Monthly Reports**: Account status snapshot; defaults to the last complete month, active accounts only
 
 All reports support CSV export for further analysis.
 
@@ -145,12 +145,11 @@ All reports support CSV export for further analysis.
 Reports can be automatically generated and emailed on a schedule using rake tasks and cron jobs:
 
 - **Daily Reports**: Employee status changes with account information
-- **Weekly Reports**: All active tickets for the current week
-- **Monthly Reports**: Current or historical account status snapshots
+- **Weekly Reports**: Closed tickets from the previous full week
+- **Monthly Reports**: Monthly or current account status snapshots
+- **All-Systems Monthly Reports**: Monthly snapshot ZIP containing one CSV per target system
 
-Each report is delivered as an email with the full data attached as a CSV file.
-
-See [Rake Tasks](#rake-tasks) section below for setup instructions.
+Each report is delivered as an email with the full data attached as a CSV file. See the [Rake Tasks](#rake-tasks) section for available tasks and options.
 
 ### Ticket Packet Creation
 
@@ -195,7 +194,7 @@ Library providing:
 
 ## Rake Tasks
 
-The plugin provides rake tasks for generating and emailing audit reports on a schedule.
+The plugin provides rake tasks for generating and emailing audit reports. Run these on a cron schedule to automate report delivery (see your system's crontab documentation).
 
 **Important**: All rake tasks must be run from the Redmine root directory.
 
@@ -206,175 +205,59 @@ The plugin provides rake tasks for generating and emailing audit reports on a sc
 Generates and emails the daily report showing employees with status changes.
 
 ```bash
-# Uses configured default recipients
-bundle exec rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV=production
-
-# Override recipients
-bundle exec rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" recipients="email1@example.com,email2@example.com" RAILS_ENV=production
+rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV=production
 ```
 
 **Options:**
 - `project_id` (required): Project identifier or numeric ID
 - `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
-- `start_date` (optional): Start date in YYYY-MM-DD format (defaults to business day calculation)
-- `end_date` (optional): End date in YYYY-MM-DD format (defaults to now)
-
-**Example with date range:**
-```bash
-bundle exec rake nysenate_audit_utils:send_daily_report \
-  start_date="2026-03-01" \
-  end_date="2026-03-02" \
-  RAILS_ENV=production
-```
+- `start_date` (optional): Start date in YYYY-MM-DD format (defaults to previous business day midnight)
+- `end_date` (optional): End date in YYYY-MM-DD format (defaults to today midnight)
 
 #### Send Weekly Report
 
-Generates and emails the weekly report showing all active tickets for the current week.
+Generates and emails the weekly report showing closed tickets. Defaults to the previous full week (Sunday–Sunday), filtered by ticket close date.
 
 ```bash
-# Uses configured default recipients
-bundle exec rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV=production
-
-# Override recipients
-bundle exec rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" recipients="email1@example.com,email2@example.com" RAILS_ENV=production
+rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV=production
 ```
 
 **Options:**
 - `project_id` (required): Project identifier or numeric ID
 - `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
+- `start_date` (optional): Start of date range in YYYY-MM-DD format (defaults to previous Sunday)
+- `end_date` (optional): End of date range in YYYY-MM-DD format (defaults to most recent Sunday)
 
 #### Send Monthly Report
 
 Generates and emails the monthly report showing account statuses for a target system.
 
 ```bash
-# Uses configured default recipients
-bundle exec rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_system="Oracle / SFMS" RAILS_ENV=production
-
-# Override recipients
-bundle exec rake nysenate_audit_utils:send_monthly_report \
-  project_id="bachelp-2" \
-  target_system="AIX" \
-  recipients="email1@example.com,email2@example.com" \
-  RAILS_ENV=production
+rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_system="Oracle / SFMS" RAILS_ENV=production
 ```
 
 **Options:**
 - `project_id` (required): Project identifier or numeric ID
 - `target_system` (required): Target system name (e.g., "Oracle / SFMS", "AIX", "SFS")
 - `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
-- `mode` (optional): Report mode - "current" or "monthly" (default: "current")
+- `mode` (optional): "current" (live snapshot) or "monthly" (end-of-month snapshot, default: "monthly")
 - `month` (optional): Month number 1-12 (for monthly mode, default: current month)
 - `year` (optional): Year (for monthly mode, default: current year)
 
-**Example - Historical Snapshot:**
-```bash
-bundle exec rake nysenate_audit_utils:send_monthly_report \
-  project_id="bachelp-2" \
-  target_system="AIX" \
-  mode=monthly \
-  month=1 \
-  year=2026 \
-  RAILS_ENV=production
-```
+#### Send All-Systems Monthly Report
 
-### Setting Up Scheduled Reports with Cron
-
-To automate report delivery, create wrapper scripts and configure cron jobs.
-
-#### Step 1: Create Wrapper Scripts
-
-Create a directory for your scripts (e.g., `/path/to/redmine/scripts/`):
+Generates and emails the monthly report for **all configured target systems** as a single ZIP attachment containing one CSV per system.
 
 ```bash
-mkdir -p /path/to/redmine/scripts
+rake nysenate_audit_utils:send_all_systems_monthly_report project_id="bachelp-2" RAILS_ENV=production
 ```
 
-Create wrapper scripts for each report type:
-
-**Daily Report Script** (`scripts/send_daily_audit_report.sh`):
-```bash
-#!/bin/bash
-cd /path/to/redmine
-# Replace "bachelp-2" with your project identifier
-bundle exec rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV=production
-```
-
-**Weekly Report Script** (`scripts/send_weekly_audit_report.sh`):
-```bash
-#!/bin/bash
-cd /path/to/redmine
-# Replace "bachelp-2" with your project identifier
-bundle exec rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV=production
-```
-
-**Monthly Report Script - Oracle/SFMS** (`scripts/send_monthly_oracle_report.sh`):
-```bash
-#!/bin/bash
-cd /path/to/redmine
-# Replace "bachelp-2" with your project identifier
-bundle exec rake nysenate_audit_utils:send_monthly_report \
-  project_id="bachelp-2" \
-  target_system="Oracle / SFMS" \
-  RAILS_ENV=production
-```
-
-**Monthly Report Script - AIX** (`scripts/send_monthly_aix_report.sh`):
-```bash
-#!/bin/bash
-cd /path/to/redmine
-# Replace "bachelp-2" with your project identifier
-bundle exec rake nysenate_audit_utils:send_monthly_report \
-  project_id="bachelp-2" \
-  target_system="AIX" \
-  RAILS_ENV=production
-```
-
-Make the scripts executable:
-```bash
-chmod +x /path/to/redmine/scripts/send_*_audit_report.sh
-```
-
-#### Step 2: Configure Cron Jobs
-
-Edit your crontab:
-```bash
-crontab -e
-```
-
-Add entries for your desired schedule:
-
-```cron
-# Daily audit report at 8:00 AM on weekdays (replace PROJECT_ID with your project identifier)
-0 8 * * 1-5 /path/to/redmine/scripts/send_daily_audit_report.sh >> /var/log/redmine/audit_reports.log 2>&1
-
-# Weekly audit report at 9:00 AM every Monday (replace PROJECT_ID with your project identifier)
-0 9 * * 1 /path/to/redmine/scripts/send_weekly_audit_report.sh >> /var/log/redmine/audit_reports.log 2>&1
-
-# Monthly Oracle/SFMS report at 10:00 AM on the 1st of each month (replace PROJECT_ID with your project identifier)
-0 10 1 * * /path/to/redmine/scripts/send_monthly_oracle_report.sh >> /var/log/redmine/audit_reports.log 2>&1
-
-# Monthly AIX report at 10:15 AM on the 1st of each month (replace PROJECT_ID with your project identifier)
-15 10 1 * * /path/to/redmine/scripts/send_monthly_aix_report.sh >> /var/log/redmine/audit_reports.log 2>&1
-```
-
-**Cron Schedule Examples:**
-- `0 8 * * 1-5` - 8:00 AM Monday through Friday
-- `0 9 * * 1` - 9:00 AM every Monday
-- `0 10 1 * *` - 10:00 AM on the 1st day of every month
-- `0 7 * * *` - 7:00 AM every day
-
-#### Step 3: Verify Setup
-
-Test your scripts manually before relying on cron:
-```bash
-/path/to/redmine/scripts/send_daily_audit_report.sh
-```
-
-Check the log file for any errors:
-```bash
-tail -f /var/log/redmine/audit_reports.log
-```
+**Options:**
+- `project_id` (required): Project identifier or numeric ID
+- `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
+- `mode` (optional): "current" (live snapshot) or "monthly" (end-of-month snapshot, default: "monthly")
+- `month` (optional): Month number 1-12 (for monthly mode, default: current month)
+- `year` (optional): Year (for monthly mode, default: current year)
 
 ### Email Configuration
 
