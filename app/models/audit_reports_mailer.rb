@@ -5,7 +5,7 @@ class AuditReportsMailer < ActionMailer::Base
   layout 'mailer'
 
   def default_url_options
-    Mailer.default_url_options
+    ::Mailer.default_url_options
   end
 
 
@@ -15,11 +15,23 @@ class AuditReportsMailer < ActionMailer::Base
   # @param report_data [Array<Hash>] Daily report data
   # @param from_date [Time] Start date for the report
   # @param to_date [Time] End date for the report
-  def daily_report(recipients, report_data, from_date, to_date)
+  def daily_report(recipients, report_data, from_date, to_date, project_id = nil, use_range_url: false)
     @report_data = report_data
     @from_date = from_date
     @to_date = to_date
     @employee_count = report_data.size
+    if project_id
+      @report_url = if use_range_url
+                      daily_project_audit_reports_url(
+                        project_id,
+                        mode: 'range',
+                        start_date: from_date.to_date.to_s,
+                        end_date: to_date.to_date.to_s
+                      )
+                    else
+                      daily_project_audit_reports_url(project_id, end_date: to_date.to_date.to_s)
+                    end
+    end
 
     # Generate and attach CSV
     csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv(report_data)
@@ -38,11 +50,16 @@ class AuditReportsMailer < ActionMailer::Base
   # @param report_data [Array<Hash>] Weekly report data
   # @param from_date [Date] Start date for the report (Monday)
   # @param to_date [Time] End date for the report (current time)
-  def weekly_report(recipients, report_data, from_date, to_date)
+  def weekly_report(recipients, report_data, from_date, to_date, project_id = nil)
     @report_data = report_data
     @from_date = from_date
     @to_date = to_date
     @ticket_count = report_data.size
+    @report_url = weekly_project_audit_reports_url(
+      project_id,
+      start_date: from_date.to_date.to_s,
+      end_date: to_date.to_date.to_s
+    ) if project_id
 
     # Generate and attach CSV
     csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(report_data)
@@ -64,7 +81,7 @@ class AuditReportsMailer < ActionMailer::Base
   # @param as_of_time [Time] Time snapshot for the report
   # @param selected_month_num [Integer, nil] Month number (for monthly mode)
   # @param selected_year [Integer, nil] Year (for monthly mode)
-  def monthly_report(recipients, report_data, target_system, mode, as_of_time, selected_month_num = nil, selected_year = nil)
+  def monthly_report(recipients, report_data, target_system, mode, as_of_time, selected_month_num = nil, selected_year = nil, project_id = nil, status_filter = nil)
     @report_data = report_data
     @target_system = target_system
     @mode = mode
@@ -72,6 +89,12 @@ class AuditReportsMailer < ActionMailer::Base
     @selected_month_num = selected_month_num
     @selected_year = selected_year
     @account_count = report_data.size
+    if project_id
+      url_params = { target_system: target_system, mode: mode }
+      url_params[:status_filter] = status_filter if status_filter
+      url_params.merge!(month: selected_month_num, year: selected_year) if mode != 'current'
+      @report_url = monthly_project_audit_reports_url(project_id, url_params)
+    end
 
     # Generate and attach CSV with appropriate filename
     csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(report_data)
@@ -102,8 +125,8 @@ class AuditReportsMailer < ActionMailer::Base
   # @param report_data [Array<Hash>] Report data
   # @param from_date [Time] Start date
   # @param to_date [Time] End date
-  def self.deliver_daily_report(recipients, report_data, from_date, to_date)
-    daily_report(recipients, report_data, from_date, to_date).deliver_later
+  def self.deliver_daily_report(recipients, report_data, from_date, to_date, project_id = nil, use_range_url: false)
+    daily_report(recipients, report_data, from_date, to_date, project_id, use_range_url: use_range_url).deliver_later
   end
 
   # Class method to deliver weekly report
@@ -112,8 +135,8 @@ class AuditReportsMailer < ActionMailer::Base
   # @param report_data [Array<Hash>] Report data
   # @param from_date [Date] Start date
   # @param to_date [Time] End date
-  def self.deliver_weekly_report(recipients, report_data, from_date, to_date)
-    weekly_report(recipients, report_data, from_date, to_date).deliver_later
+  def self.deliver_weekly_report(recipients, report_data, from_date, to_date, project_id = nil)
+    weekly_report(recipients, report_data, from_date, to_date, project_id).deliver_later
   end
 
   # Class method to deliver monthly report
@@ -125,8 +148,8 @@ class AuditReportsMailer < ActionMailer::Base
   # @param as_of_time [Time] Time snapshot
   # @param selected_month_num [Integer, nil] Month number
   # @param selected_year [Integer, nil] Year
-  def self.deliver_monthly_report(recipients, report_data, target_system, mode, as_of_time, selected_month_num = nil, selected_year = nil)
-    monthly_report(recipients, report_data, target_system, mode, as_of_time, selected_month_num, selected_year).deliver_later
+  def self.deliver_monthly_report(recipients, report_data, target_system, mode, as_of_time, selected_month_num = nil, selected_year = nil, project_id = nil, status_filter = nil)
+    monthly_report(recipients, report_data, target_system, mode, as_of_time, selected_month_num, selected_year, project_id, status_filter).deliver_later
   end
 
   # Send all-systems monthly report email with ZIP attachment
@@ -137,13 +160,19 @@ class AuditReportsMailer < ActionMailer::Base
   # @param as_of_time [Time] Time snapshot for the report
   # @param selected_month_num [Integer, nil] Month number (for monthly mode)
   # @param selected_year [Integer, nil] Year (for monthly mode)
-  def all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time, selected_month_num = nil, selected_year = nil)
+  def all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time, selected_month_num = nil, selected_year = nil, project_id = nil, status_filter = nil)
     @reports_by_system = reports_by_system
     @mode = mode
     @as_of_time = as_of_time
     @selected_month_num = selected_month_num
     @selected_year = selected_year
     @system_counts = reports_by_system.transform_values(&:size)
+    if project_id
+      url_params = { mode: mode }
+      url_params[:status_filter] = status_filter if status_filter
+      url_params.merge!(month: selected_month_num, year: selected_year) if mode != 'current'
+      @report_url = monthly_project_audit_reports_url(project_id, url_params)
+    end
 
     filename_suffix = if mode == 'current'
                         'current'
@@ -175,7 +204,7 @@ class AuditReportsMailer < ActionMailer::Base
   # @param as_of_time [Time] Time snapshot
   # @param selected_month_num [Integer, nil] Month number
   # @param selected_year [Integer, nil] Year
-  def self.deliver_all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time, selected_month_num = nil, selected_year = nil)
-    all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time, selected_month_num, selected_year).deliver_later
+  def self.deliver_all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time, selected_month_num = nil, selected_year = nil, project_id = nil, status_filter = nil)
+    all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time, selected_month_num, selected_year, project_id, status_filter).deliver_later
   end
 end

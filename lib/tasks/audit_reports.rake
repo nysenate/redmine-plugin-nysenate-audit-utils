@@ -75,7 +75,9 @@ END_DESC
         recipient_list,
         report_data,
         service.from_date,
-        service.to_date
+        service.to_date,
+        project.identifier,
+        use_range_url: ENV['start_date'].present?
       )
     end
 
@@ -149,7 +151,8 @@ END_DESC
         recipient_list,
         report_data,
         service.from_date,
-        service.to_date
+        service.to_date,
+        project.identifier
       )
     end
 
@@ -250,7 +253,9 @@ END_DESC
         mode,
         as_of_time,
         selected_month_num,
-        selected_year
+        selected_year,
+        project.identifier,
+        status_filter
       )
     end
 
@@ -350,7 +355,9 @@ END_DESC
         mode,
         as_of_time,
         selected_month_num,
-        selected_year
+        selected_year,
+        project.identifier,
+        status_filter
       )
     end
 
