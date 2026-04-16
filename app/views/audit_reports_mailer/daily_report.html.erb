@@ -18,6 +18,10 @@
 <p>No employees had status changes during this time period.</p>
 <% end %>
 
+<% if @report_url %>
+<p><a href="<%= @report_url %>">View this report online</a></p>
+<% end %>
+
 <hr>
 <p style="font-size: 0.9em; color: #666;">
   This is an automated report from the NY Senate Audit Utils system.

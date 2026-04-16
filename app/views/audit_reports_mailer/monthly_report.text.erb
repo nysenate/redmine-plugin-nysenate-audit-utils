@@ -34,5 +34,10 @@ Report generated: <%= Time.now.strftime('%Y-%m-%d %H:%M:%S %Z') %>
 No accounts found for <%= @target_system %>.
 <% end %>
 
+<% if @report_url %>
+View this report online:
+<%= @report_url %>
+
+<% end %>
 ---
 This is an automated report from the NY Senate Audit Utils system.
