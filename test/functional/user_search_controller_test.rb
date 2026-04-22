@@ -25,7 +25,7 @@ class UserSearchControllerTest < ActionController::TestCase
 
     # Mock data for vendor
     @mock_vendor_data = {
-      user_id: 'V1',
+      user_id: 500_001,
       user_type: 'Vendor',
       name: 'Acme Corp',
       email: 'contact@acme.com',
@@ -107,7 +107,7 @@ class UserSearchControllerTest < ActionController::TestCase
     response_data = JSON.parse(@response.body)
     assert_equal 1, response_data['users'].length
     assert_equal 'Acme Corp', response_data['users'][0]['name']
-    assert_equal 'V1', response_data['users'][0]['user_id']
+    assert_equal 500_001, response_data['users'][0]['user_id']
     assert_equal 'Vendor', response_data['type']
   end
 

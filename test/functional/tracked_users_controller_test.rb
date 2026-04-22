@@ -18,7 +18,7 @@ class TrackedUsersControllerTest < ActionController::TestCase
     # Create test tracked users
     @vendor1 = TrackedUser.create!(
       user_type: 'Vendor',
-      user_id: 'V1',
+      user_id: 500_001,
       name: 'Test Vendor 1',
       email: 'vendor1@example.com',
       status: 'Active'
@@ -26,7 +26,7 @@ class TrackedUsersControllerTest < ActionController::TestCase
 
     @vendor2 = TrackedUser.create!(
       user_type: 'Vendor',
-      user_id: 'V2',
+      user_id: 500_002,
       name: 'Test Vendor 2',
       email: 'vendor2@example.com',
       status: 'Inactive'
@@ -76,14 +76,14 @@ class TrackedUsersControllerTest < ActionController::TestCase
     assert_select 'input[name=?]', 'tracked_user[user_id]'
   end
 
-  def test_new_auto_generates_next_vendor_id
+  def test_new_auto_generates_next_tracked_user_id
     @request.session[:user_id] = @user.id
 
     get :new, params: { project_id: @project.id }
 
     assert_response :success
-    # Check that the form has the auto-generated vendor ID (V3 after V1 and V2)
-    assert_select 'input[name=?][value=?]', 'tracked_user[user_id]', 'V3'
+    # Check that the form has the auto-generated ID (500003 after 500001 and 500002)
+    assert_select 'input[name=?][value=?]', 'tracked_user[user_id]', '500003'
     assert_select 'select[name=?]', 'tracked_user[user_type]' do
       assert_select 'option[selected][value=?]', 'Vendor'
     end
@@ -110,7 +110,7 @@ class TrackedUsersControllerTest < ActionController::TestCase
         project_id: @project.id,
         tracked_user: {
           user_type: 'Vendor',
-          user_id: 'V10',
+          user_id: 500_010,
           name: 'New Test Vendor',
           email: 'newvendor@example.com',
           phone: '555-1234',
@@ -124,30 +124,10 @@ class TrackedUsersControllerTest < ActionController::TestCase
     assert_redirected_to project_tracked_users_path(@project)
     assert_equal 'Successful creation.', flash[:notice]
 
-    new_tracked_user = TrackedUser.find_by(user_id: 'V10')
+    new_tracked_user = TrackedUser.find_by(user_id: 500_010)
     assert_not_nil new_tracked_user
     assert_equal 'New Test Vendor', new_tracked_user.name
     assert_equal 'newvendor@example.com', new_tracked_user.email
-  end
-
-  def test_create_with_invalid_vendor_id_format
-    @request.session[:user_id] = @user.id
-
-    assert_no_difference 'TrackedUser.count' do
-      post :create, params: {
-        project_id: @project.id,
-        tracked_user: {
-          user_type: 'Vendor',
-          user_id: '123',  # Invalid: missing "V" prefix
-          name: 'Invalid Vendor',
-          email: 'invalid@example.com',
-          status: 'Active'
-        }
-      }
-    end
-
-    assert_response :success  # Renders form again
-    assert_select 'div#errorExplanation'
   end
 
   def test_create_with_missing_required_fields
@@ -158,7 +138,7 @@ class TrackedUsersControllerTest < ActionController::TestCase
         project_id: @project.id,
         tracked_user: {
           user_type: 'Vendor',
-          user_id: 'V20',
+          user_id: 500_020,
           name: '',  # Required field missing
           status: 'Active'
         }
@@ -180,7 +160,7 @@ class TrackedUsersControllerTest < ActionController::TestCase
         project_id: @project.id,
         tracked_user: {
           user_type: 'Vendor',
-          user_id: 'V30',
+          user_id: 500_030,
           name: 'Unauthorized Vendor',
           status: 'Active'
         }

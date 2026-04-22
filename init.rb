@@ -77,6 +77,8 @@ Redmine::Plugin.register :nysenate_audit_utils do
     # Request Code Mapping settings (stored in DB via migration 006)
     'request_code_system_prefixes' => {}, # System to prefix mappings (managed via migration)
     'request_code_action_suffixes' => {}, # Action to suffix mappings (managed via migration)
+    # Tracked User ID settings
+    'tracked_user_id_offset' => 500_000, # Minimum starting point for auto-generated tracked user IDs
     # Email Reporting settings
     'report_recipients' => ''            # Comma-separated email addresses for all reports
   }, partial: 'settings/audit_utils_settings'

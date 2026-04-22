@@ -19,11 +19,7 @@ class TrackedUsersController < ApplicationController
   # GET /projects/:project_id/tracked_users/new
   def new
     @tracked_user = TrackedUser.new(status: 'Active', user_type: 'Vendor')
-
-    # Auto-generate next vendor ID if type is Vendor
-    if @tracked_user.user_type == 'Vendor'
-      @tracked_user.user_id = TrackedUser.next_vendor_id
-    end
+    @tracked_user.user_id = TrackedUser.next_tracked_user_id
   end
 
   # POST /projects/:project_id/tracked_users

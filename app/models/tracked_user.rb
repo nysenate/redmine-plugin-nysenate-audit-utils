@@ -8,10 +8,9 @@ class TrackedUser < ActiveRecord::Base
 
   # Validations
   validates :user_type, presence: true, inclusion: { in: VALID_TYPES }
-  validates :user_id, presence: true, uniqueness: { scope: :user_type }
+  validates :user_id, presence: true, uniqueness: true
   validates :name, presence: true
   validates :status, presence: true, inclusion: { in: VALID_STATUSES }
-  validate :user_id_format
 
   # Scopes
   scope :vendors, -> { where(user_type: 'Vendor') }
@@ -28,26 +27,16 @@ class TrackedUser < ActiveRecord::Base
   end
 
   # Class methods
-  def self.next_vendor_id
-    last_vendor = where(user_type: 'Vendor')
-                    .order(Arel.sql("CAST(SUBSTRING(user_id, 2) AS UNSIGNED) DESC"))
-                    .first
-    if last_vendor && last_vendor.user_id =~ /\AV(\d+)\z/
-      next_num = ::Regexp.last_match(1).to_i + 1
-    else
-      next_num = 1
+  def self.next_tracked_user_id
+    offset = begin
+      Setting.plugin_nysenate_audit_utils['tracked_user_id_offset'].to_i
+    rescue StandardError
+      500_000
     end
-    "V#{next_num}"
-  end
+    offset = 500_000 if offset <= 0
 
-  private
+    max_id = maximum(:user_id).to_i  # nil.to_i => 0
 
-  def user_id_format
-    case user_type
-    when 'Vendor'
-      unless user_id =~ /\AV\d+\z/
-        errors.add(:user_id, "must start with 'V' followed by numbers (e.g., V1, V23)")
-      end
-    end
+    [max_id, offset].max + 1
   end
 end
