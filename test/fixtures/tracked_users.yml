@@ -1,7 +1,7 @@
 # Test fixtures for TrackedUser model
 vendor_one:
   user_type: Vendor
-  user_id: V1
+  user_id: 500001
   name: Fixture Vendor One
   email: vendor1@example.com
   phone: '555-1001'
@@ -12,7 +12,7 @@ vendor_one:
 
 vendor_two:
   user_type: Vendor
-  user_id: V2
+  user_id: 500002
   name: Fixture Vendor Two
   email: vendor2@example.com
   phone: '555-1002'
@@ -23,7 +23,7 @@ vendor_two:
 
 vendor_inactive:
   user_type: Vendor
-  user_id: V3
+  user_id: 500003
   name: Fixture Vendor Inactive
   email: vendor3@example.com
   status: Inactive

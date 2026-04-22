@@ -44,7 +44,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
     # Create test vendor
     @test_vendor = TrackedUser.create!(
       user_type: 'Vendor',
-      user_id: 'V1',
+      user_id: 500_001,
       name: 'Test Vendor Corp',
       email: 'vendor@test.com',
       phone: '555-1234',
@@ -56,7 +56,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
     # Create second vendor for search tests
     @test_vendor_2 = TrackedUser.create!(
       user_type: 'Vendor',
-      user_id: 'V2',
+      user_id: 500_002,
       name: 'Acme Industries',
       email: 'acme@test.com',
       status: 'Active'
@@ -68,7 +68,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
     # Step 1: Create vendor directly (bypassing UI permissions for integration test)
     new_vendor = TrackedUser.create!(
       user_type: 'Vendor',
-      user_id: 'V3',
+      user_id: 500_003,
       name: 'New Workflow Vendor',
       email: 'workflow@test.com',
       status: 'Active'
@@ -87,7 +87,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
     assert json['users'].present?, "Expected users array, got: #{json.inspect}"
     assert_equal 1, json['users'].size, "Expected 1 user, got #{json['users'].size}: #{json['users'].inspect}"
     assert_equal 'Vendor', json['type']
-    assert_equal 'V3', json['users'].first['user_id']
+    assert_equal 500_003, json['users'].first['user_id']
     assert_equal 'New Workflow Vendor', json['users'].first['name']
 
     # Step 3: Create issue with vendor user
@@ -96,9 +96,9 @@ class UserWorkflowTest < Redmine::IntegrationTest
       project: @project,
       tracker: tracker,
       author: @user_with_permission,
-      subject: 'Test Issue for Vendor V3',
+      subject: 'Test Issue for Vendor 500003',
       custom_field_values: {
-        @cf_user_id.id => 'V3',
+        @cf_user_id.id => '500003',
         @cf_user_name.id => 'New Workflow Vendor',
         @cf_user_type.id => 'Vendor',
         @cf_user_email.id => 'workflow@test.com',
@@ -108,7 +108,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
     )
 
     assert issue.persisted?
-    assert_equal 'V3', issue.custom_value_for(@cf_user_id)&.value
+    assert_equal '500003', issue.custom_value_for(@cf_user_id)&.value
     assert_equal 'Vendor', issue.custom_value_for(@cf_user_type)&.value
 
     # Step 4: Verify vendor appears in account tracking
@@ -119,9 +119,9 @@ class UserWorkflowTest < Redmine::IntegrationTest
     issue.status = IssueStatus.where(is_closed: true).first
     issue.save!
 
-    statuses = service.get_account_statuses('V3')
-    assert statuses.any?, "Expected account statuses for V3, got: #{statuses.inspect}"
-    assert_equal 'V3', statuses.first[:user_id]
+    statuses = service.get_account_statuses('500003')
+    assert statuses.any?, "Expected account statuses for 500003, got: #{statuses.inspect}"
+    assert_equal '500003', statuses.first[:user_id]
     assert_equal 'Oracle / SFMS', statuses.first[:account_type]
   end
 
@@ -163,7 +163,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
       author: @user_with_permission,
       subject: 'Vendor Access Request',
       custom_field_values: {
-        @cf_user_id.id => 'V1',
+        @cf_user_id.id => '500001',
         @cf_user_name.id => 'Test Vendor Corp',
         @cf_user_type.id => 'Vendor'
       }
@@ -219,44 +219,13 @@ class UserWorkflowTest < Redmine::IntegrationTest
   test "vendor ID uniqueness is enforced" do
     duplicate_vendor = TrackedUser.new(
       user_type: 'Vendor',
-      user_id: 'V1', # Same as @test_vendor
+      user_id: 500_001, # Same as @test_vendor
       name: 'Duplicate Vendor',
       status: 'Active'
     )
 
     assert_not duplicate_vendor.valid?
     assert_includes duplicate_vendor.errors[:user_id], "has already been taken"
-  end
-
-  test "vendor ID prefix validation works" do
-    # Valid vendor ID
-    vendor = TrackedUser.new(
-      user_type: 'Vendor',
-      user_id: 'V999',
-      name: 'Valid Vendor',
-      status: 'Active'
-    )
-    assert vendor.valid?
-
-    # Invalid vendor ID (no V prefix)
-    invalid_vendor = TrackedUser.new(
-      user_type: 'Vendor',
-      user_id: '999',
-      name: 'Invalid Vendor',
-      status: 'Active'
-    )
-    assert_not invalid_vendor.valid?
-    assert invalid_vendor.errors[:user_id].any? { |msg| msg.include?("must start with 'V' followed by numbers") }
-
-    # Invalid vendor ID (letters after V)
-    invalid_vendor_2 = TrackedUser.new(
-      user_type: 'Vendor',
-      user_id: 'VA1',
-      name: 'Invalid Vendor 2',
-      status: 'Active'
-    )
-    assert_not invalid_vendor_2.valid?
-    assert invalid_vendor_2.errors[:user_id].any? { |msg| msg.include?("must start with 'V' followed by numbers") }
   end
 
   test "custom field autofill preserves all data" do
@@ -269,7 +238,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
     result = json['users'].first
 
     # Verify all fields are present
-    assert_equal 'V1', result['user_id']
+    assert_equal 500_001, result['user_id']
     assert_equal 'Test Vendor Corp', result['name']
     assert_equal 'vendor@test.com', result['email']
     assert_equal '555-1234', result['phone']
@@ -306,7 +275,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
         author: @user_with_permission,
         subject: "Vendor Issue #{i}",
         custom_field_values: {
-          @cf_user_id.id => "V#{10 + i}",
+          @cf_user_id.id => (500_010 + i).to_s,
           @cf_user_name.id => "Vendor #{i}",
           @cf_user_type.id => 'Vendor',
           @cf_target_system.id => 'Oracle / SFMS',
@@ -330,31 +299,31 @@ class UserWorkflowTest < Redmine::IntegrationTest
     end
   end
 
-  test "next vendor ID generation works correctly" do
-    # Current max is V2, so next should be V3
-    assert_equal 'V3', TrackedUser.next_vendor_id
+  test "next tracked user ID generation works correctly" do
+    # Current max is 500002, so next should be 500003
+    assert_equal 500_003, TrackedUser.next_tracked_user_id
 
-    # Create V3
+    # Create 500003
     TrackedUser.create!(
       user_type: 'Vendor',
-      user_id: 'V3',
+      user_id: 500_003,
       name: 'Vendor 3',
       status: 'Active'
     )
 
-    # Next should be V4
-    assert_equal 'V4', TrackedUser.next_vendor_id
+    # Next should be 500004
+    assert_equal 500_004, TrackedUser.next_tracked_user_id
 
-    # Create V10 (skip ahead)
+    # Create 500010 (skip ahead)
     TrackedUser.create!(
       user_type: 'Vendor',
-      user_id: 'V10',
+      user_id: 500_010,
       name: 'Vendor 10',
       status: 'Active'
     )
 
-    # Next should be V11 (based on highest existing)
-    assert_equal 'V11', TrackedUser.next_vendor_id
+    # Next should be 500011 (based on highest existing)
+    assert_equal 500_011, TrackedUser.next_tracked_user_id
   end
 
   test "user type field is properly saved in issues" do
@@ -366,7 +335,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
       author: @user_with_permission,
       subject: 'Test User Type Persistence',
       custom_field_values: {
-        @cf_user_id.id => 'V1',
+        @cf_user_id.id => '500001',
         @cf_user_name.id => 'Test Vendor Corp',
         @cf_user_type.id => 'Vendor'
       }

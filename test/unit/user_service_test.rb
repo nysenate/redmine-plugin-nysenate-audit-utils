@@ -58,41 +58,41 @@ class UserServiceTest < ActiveSupport::TestCase
       limit: 20,
       offset: 0
     ).returns([
-      { user_type: 'Vendor', user_id: 'V1', name: 'Acme Corp' }
+      { user_type: 'Vendor', user_id: 500_001, name: 'Acme Corp' }
     ])
 
     results = @service.search('acme', type: 'Vendor')
 
     assert_equal 1, results.length
     assert_equal 'Vendor', results.first[:user_type]
-    assert_equal 'V1', results.first[:user_id]
+    assert_equal 500_001, results.first[:user_id]
   end
 
   def test_find_by_id_with_vendor_type_uses_database_data_source
     NysenateAuditUtils::Users::DatabaseDataSource.any_instance.stubs(:find_by_id).with(
-      'V1',
+      500_001,
       user_type: 'Vendor'
     ).returns(
-      { user_type: 'Vendor', user_id: 'V1', name: 'Acme Corp' }
+      { user_type: 'Vendor', user_id: 500_001, name: 'Acme Corp' }
     )
 
-    result = @service.find_by_id('V1', type: 'Vendor')
+    result = @service.find_by_id(500_001, type: 'Vendor')
 
     assert_equal 'Vendor', result[:user_type]
-    assert_equal 'V1', result[:user_id]
+    assert_equal 500_001, result[:user_id]
   end
 
   # Test create operations
 
   def test_create_vendor_succeeds
     NysenateAuditUtils::Users::DatabaseDataSource.any_instance.stubs(:create).returns(
-      { user_type: 'Vendor', user_id: 'V1', name: 'New Vendor' }
+      { user_type: 'Vendor', user_id: 500_001, name: 'New Vendor' }
     )
 
-    result = @service.create(user_type: 'Vendor', user_id: 'V1', name: 'New Vendor')
+    result = @service.create(user_type: 'Vendor', user_id: 500_001, name: 'New Vendor')
 
     assert_equal 'Vendor', result[:user_type]
-    assert_equal 'V1', result[:user_id]
+    assert_equal 500_001, result[:user_id]
   end
 
   def test_create_employee_raises_error
@@ -113,10 +113,10 @@ class UserServiceTest < ActiveSupport::TestCase
 
   def test_update_vendor_succeeds
     NysenateAuditUtils::Users::DatabaseDataSource.any_instance.stubs(:update).returns(
-      { user_type: 'Vendor', user_id: 'V1', name: 'Updated Vendor' }
+      { user_type: 'Vendor', user_id: 500_001, name: 'Updated Vendor' }
     )
 
-    result = @service.update('V1', type: 'Vendor', attributes: { name: 'Updated Vendor' })
+    result = @service.update(500_001, type: 'Vendor', attributes: { name: 'Updated Vendor' })
 
     assert_equal 'Updated Vendor', result[:name]
   end
@@ -133,7 +133,7 @@ class UserServiceTest < ActiveSupport::TestCase
   def test_delete_vendor_succeeds
     NysenateAuditUtils::Users::DatabaseDataSource.any_instance.stubs(:delete).returns(true)
 
-    result = @service.delete('V1', type: 'Vendor')
+    result = @service.delete(500_001, type: 'Vendor')
 
     assert_equal true, result
   end
