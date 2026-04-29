@@ -24,11 +24,12 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     assert_equal to, service.to_date
   end
 
-  test 'default from_date uses query_start_date' do
+  test 'default from_date is yesterday at beginning of day' do
     service = NysenateAuditUtils::Reporting::DailyReportService.new
-    expected_date = NysenateAuditUtils::Reporting::BusinessDayHelper.query_start_date
 
-    assert_equal expected_date.to_date, service.from_date.to_date
+    assert_equal Date.yesterday, service.from_date.to_date
+    assert_equal 0, service.from_date.hour
+    assert_equal 0, service.from_date.min
   end
 
   test 'generate returns empty array when no status changes' do

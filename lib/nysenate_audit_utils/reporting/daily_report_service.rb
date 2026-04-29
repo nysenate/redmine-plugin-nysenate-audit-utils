@@ -32,7 +32,7 @@ module NysenateAuditUtils
       private
 
       def calculate_default_from_date
-        BusinessDayHelper.query_start_date
+        Date.yesterday.in_time_zone.beginning_of_day
       end
 
       def fetch_status_changes

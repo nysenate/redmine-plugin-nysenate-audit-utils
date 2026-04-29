@@ -12,28 +12,12 @@ class AuditReportsController < ApplicationController
   end
 
   def daily
-    # Handle day mode vs range mode
-    if params[:mode] != "range"
-      # Day mode (default): use end_date parameter for the selected date
-      selected_date = params[:end_date].present? ? Date.parse(params[:end_date]) : nil
-      if selected_date
-        from_date = (selected_date - 1.day).beginning_of_day
-        to_date = selected_date.beginning_of_day
-      else
-        from_date = nil
-        to_date = nil
-      end
-    else
-      # Range mode: parse date parameters from the date pickers (only when explicitly selected)
-      from_date = parse_date_param(params[:start_date])
-      to_date = parse_date_param(params[:end_date])
-      to_date = to_date.end_of_day if to_date
-    end
+    from_date = parse_date_param(params[:start_date]) ||
+                Date.yesterday.in_time_zone.beginning_of_day
+    to_date = parse_date_param(params[:end_date])
+    to_date = to_date ? to_date.end_of_day : Date.current.in_time_zone.end_of_day
 
-    # Validate date range (must be within 7 days)
-    if from_date && to_date
-      validate_date_range!(from_date, to_date)
-    end
+    validate_date_range!(from_date, to_date)
 
     service = NysenateAuditUtils::Reporting::DailyReportService.new(
       from_date: from_date,
@@ -81,8 +65,8 @@ class AuditReportsController < ApplicationController
   rescue ArgumentError => e
     # Handle validation errors
     flash.now[:error] = e.message
-    @from_date = Time.zone.now.beginning_of_day.yesterday
-    @to_date = Time.zone.now
+    @from_date = Date.yesterday.in_time_zone.beginning_of_day
+    @to_date = Date.current.in_time_zone.end_of_day
     @report_data = []
     render :daily
   rescue => e
