@@ -71,7 +71,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     mail = AuditReportsMailer.daily_report('user@example.com', report_data, from_date, to_date)
 
     csv_content = mail.attachments.first.body.to_s
-    assert_match /User Name/, csv_content
+    assert_match /Account Holder Name/, csv_content
     assert_match /Jane Smith/, csv_content
     assert_match /67890/, csv_content
   end
@@ -123,7 +123,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     mail = AuditReportsMailer.weekly_report('user@example.com', report_data, from_date, to_date)
 
     csv_content = mail.attachments.first.body.to_s
-    assert_match /User UID/, csv_content
+    assert_match /Account Holder Username/, csv_content
     assert_match /test_user/, csv_content
     assert_match /11111/, csv_content
     assert_match /Account Request/, csv_content
@@ -236,7 +236,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     )
 
     csv_content = mail.attachments.first.body.to_s
-    assert_match /User Name/, csv_content
+    assert_match /Account Holder Name/, csv_content
     assert_match /Test User/, csv_content
     assert_match /99999/, csv_content
     assert_match /testuser/, csv_content

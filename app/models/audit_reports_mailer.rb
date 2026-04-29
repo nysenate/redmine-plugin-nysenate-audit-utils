@@ -29,7 +29,9 @@ class AuditReportsMailer < ActionMailer::Base
     end
 
     # Generate and attach CSV
-    csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv(report_data)
+    csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv(
+      report_data, from_date: from_date, to_date: to_date
+    )
     attachments["daily_report_#{Date.today.strftime('%Y%m%d')}.csv"] = csv_data
 
     mail(
@@ -57,7 +59,9 @@ class AuditReportsMailer < ActionMailer::Base
     ) if project_id
 
     # Generate and attach CSV
-    csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(report_data)
+    csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(
+      report_data, from_date: from_date, to_date: to_date
+    )
     attachments["weekly_report_#{Date.current.strftime('%Y%m%d')}.csv"] = csv_data
 
     mail(
@@ -92,7 +96,9 @@ class AuditReportsMailer < ActionMailer::Base
     end
 
     # Generate and attach CSV with appropriate filename
-    csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(report_data)
+    csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
+      report_data, as_of_time: as_of_time, target_system: target_system
+    )
     filename_suffix = if mode == 'current'
                         'current'
                       else
@@ -175,7 +181,9 @@ class AuditReportsMailer < ActionMailer::Base
                         "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
                       end
 
-    zip_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(reports_by_system, filename_suffix)
+    zip_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(
+      reports_by_system, filename_suffix, as_of_time: as_of_time
+    )
     attachments["monthly_reports_all_systems_#{filename_suffix}.zip"] = { mime_type: 'application/zip', content: zip_data }
 
     email_subject = if mode == 'current'

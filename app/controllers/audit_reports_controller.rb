@@ -53,7 +53,9 @@ class AuditReportsController < ApplicationController
     respond_to do |format|
       format.html
       format.csv do
-        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv(@report_data)
+        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv(
+          @report_data, from_date: @from_date, to_date: @to_date
+        )
         send_data csv_data,
                   filename: "daily_report_#{Date.today.strftime('%Y%m%d')}.csv",
                   type: 'text/csv',
@@ -117,7 +119,9 @@ class AuditReportsController < ApplicationController
     respond_to do |format|
       format.html
       format.csv do
-        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(@report_data)
+        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(
+          @report_data, from_date: @from_date, to_date: @to_date
+        )
         send_data csv_data,
                   type: 'text/csv; header=present',
                   filename: "weekly_report_#{Date.current.strftime('%Y%m%d')}.csv"
@@ -213,7 +217,9 @@ class AuditReportsController < ApplicationController
     respond_to do |format|
       format.html
       format.csv do
-        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(@report_data)
+        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
+          @report_data, as_of_time: @as_of_time, target_system: target_system
+        )
         filename_suffix = if mode == 'current'
                             'current'
                           else
@@ -265,7 +271,9 @@ class AuditReportsController < ApplicationController
       end
     end
 
-    zip_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(reports_by_system, filename_suffix)
+    zip_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(
+      reports_by_system, filename_suffix, as_of_time: as_of_time
+    )
     send_data zip_data,
               filename: "monthly_reports_all_systems_#{filename_suffix}.zip",
               type: 'application/zip',
