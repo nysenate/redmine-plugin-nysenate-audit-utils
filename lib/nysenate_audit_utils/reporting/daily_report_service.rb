@@ -74,10 +74,10 @@ module NysenateAuditUtils
             account_statuses: account_statuses,
             open_requests: open_requests,
             transaction_codes: transaction_codes,
-            phone_number: employee.work_phone,
             office: employee.resp_center_display_name,
             office_location: employee.location&.display_name,
             user_id: employee_id,
+            user_uid: employee.uid,
             post_date: latest_post_date
           }
         end

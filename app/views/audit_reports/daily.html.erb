@@ -48,14 +48,14 @@
   <table class="list issues <%= sort_css_classes %>">
     <thead>
       <tr>
-        <%= sort_header_tag('user_name', caption: 'User Name') %>
+        <%= sort_header_tag('user_name', caption: 'Account Holder Name') %>
         <th>Current Status</th>
         <th>Open Tickets</th>
         <%= sort_header_tag('transaction_codes', caption: 'Transaction Codes') %>
-        <th>Phone Number</th>
-        <%= sort_header_tag('office', caption: 'Office') %>
-        <%= sort_header_tag('office_location', caption: 'Office Location') %>
-        <%= sort_header_tag('user_id', caption: 'User ID') %>
+        <%= sort_header_tag('office', caption: 'Account Holder Office') %>
+        <%= sort_header_tag('office_location', caption: 'Account Holder Location') %>
+        <%= sort_header_tag('user_id', caption: 'Account Holder ID') %>
+        <%= sort_header_tag('user_uid', caption: 'Account Holder Username') %>
         <%= sort_header_tag('post_date', caption: 'Post Date', default_order: 'asc') %>
       </tr>
     </thead>
@@ -104,10 +104,10 @@
             <% end %>
           </td>
           <td><%= row[:transaction_codes] %></td>
-          <td><%= row[:phone_number] %></td>
           <td><%= row[:office] %></td>
           <td><%= row[:office_location] || '—' %></td>
           <td><%= row[:user_id] %></td>
+          <td><%= row[:user_uid] %></td>
           <td><%= row[:post_date] %></td>
         </tr>
       <% end %>

@@ -15,14 +15,14 @@ module NysenateAuditUtils
         CSV.generate do |csv|
           # Header row
           csv << [
-            'User Name',
+            'Account Holder Name',
             'Account Status',
             'Open Tickets',
             'Transaction Codes',
-            'Phone Number',
-            'Office',
-            'Office Location',
-            'User ID',
+            'Account Holder Office',
+            'Account Holder Location',
+            'Account Holder ID',
+            'Account Holder Username',
             'Post Date'
           ]
 
@@ -47,10 +47,10 @@ module NysenateAuditUtils
               account_status_str,
               open_tickets_str,
               row[:transaction_codes],
-              row[:phone_number],
               row[:office],
               row[:office_location],
               row[:user_id],
+              row[:user_uid],
               row[:post_date]
             ]
           end
@@ -67,10 +67,10 @@ module NysenateAuditUtils
           # Header row
           csv << [
             'Ticket #',
-            'User Name',
-            'User UID',
-            'User Number',
-            'Office',
+            'Account Holder Name',
+            'Account Holder Username',
+            'Account Holder ID',
+            'Account Holder Office',
             'Request Code',
             'Ticket Description',
             'Status',
@@ -107,10 +107,10 @@ module NysenateAuditUtils
         CSV.generate do |csv|
           # Header row (matches web view layout with user_type and request_code added)
           csv << [
-            'User Name',
-            'User ID',
-            'User Type',
-            'User UID',
+            'Account Holder Name',
+            'Account Holder ID',
+            'Account Holder Type',
+            'Account Holder Username',
             'Account Status',
             'Last Updated',
             'Last Issue',
