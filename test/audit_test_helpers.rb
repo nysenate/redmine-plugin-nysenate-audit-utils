@@ -10,7 +10,7 @@ module AuditTestHelpers
   # @option options [Integer] :user_name_field_id User Name field ID
   # @option options [Integer] :user_email_field_id User Email field ID
   # @option options [Integer] :user_phone_field_id User Phone field ID
-  # @option options [Integer] :user_location_field_id User Location field ID
+  # @option options [Integer] :user_location_field_id User Office field ID
   # @option options [Integer] :user_status_field_id User Status field ID
   # @option options [Integer] :user_uid_field_id User UID field ID
   # @option options [Integer] :account_action_field_id Account Action field ID
@@ -85,7 +85,7 @@ module AuditTestHelpers
       user_name: create_or_find_field('User Name', 'string', [], tracker),
       user_email: create_or_find_field('User Email', 'string', [], tracker),
       user_phone: create_or_find_field('User Phone', 'string', [], tracker),
-      user_location: create_or_find_field('User Location', 'string', [], tracker),
+      user_location: create_or_find_field('User Office', 'string', [], tracker),
       user_status: create_or_find_field('User Status', 'string', [], tracker),
       user_uid: create_or_find_field('User UID', 'string', [], tracker),
       account_action: create_or_find_field('Account Action', 'list',

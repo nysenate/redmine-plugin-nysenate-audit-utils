@@ -50,8 +50,8 @@ module NysenateAuditUtils
         category: :autofill
       },
       'user_location_field_id' => {
-        name: 'User Location',
-        description: 'User location field for autofill',
+        name: 'User Office',
+        description: 'User office field for autofill',
         required: true,
         category: :autofill
       },

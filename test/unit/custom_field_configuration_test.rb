@@ -85,7 +85,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:find_by).with(id: 5, type: 'IssueCustomField').returns(CustomField.new(id: 5, name: 'User Phone'))
     CustomField.stubs(:find_by).with(id: 6, type: 'IssueCustomField').returns(CustomField.new(id: 6, name: 'User Status'))
     CustomField.stubs(:find_by).with(id: 7, type: 'IssueCustomField').returns(CustomField.new(id: 7, name: 'User UID'))
-    CustomField.stubs(:find_by).with(id: 8, type: 'IssueCustomField').returns(CustomField.new(id: 8, name: 'User Location'))
+    CustomField.stubs(:find_by).with(id: 8, type: 'IssueCustomField').returns(CustomField.new(id: 8, name: 'User Office'))
     CustomField.stubs(:find_by).with(id: 9, type: 'IssueCustomField').returns(CustomField.new(id: 9, name: 'Account Action'))
     CustomField.stubs(:find_by).with(id: 10, type: 'IssueCustomField').returns(CustomField.new(id: 10, name: 'Target System'))
 
@@ -127,7 +127,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:find_by).with(id: 5, type: 'IssueCustomField').returns(CustomField.new(id: 5, name: 'User Phone'))
     CustomField.stubs(:find_by).with(id: 6, type: 'IssueCustomField').returns(CustomField.new(id: 6, name: 'User Status'))
     CustomField.stubs(:find_by).with(id: 7, type: 'IssueCustomField').returns(CustomField.new(id: 7, name: 'User UID'))
-    CustomField.stubs(:find_by).with(id: 8, type: 'IssueCustomField').returns(CustomField.new(id: 8, name: 'User Location'))
+    CustomField.stubs(:find_by).with(id: 8, type: 'IssueCustomField').returns(CustomField.new(id: 8, name: 'User Office'))
     CustomField.stubs(:find_by).with(id: 9, type: 'IssueCustomField').returns(CustomField.new(id: 9, name: 'Account Action'))
     CustomField.stubs(:find_by).with(id: 10, type: 'IssueCustomField').returns(CustomField.new(id: 10, name: 'Target System'))
 
@@ -181,7 +181,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Phone').returns([])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Status').returns([])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User UID').returns([])
-    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Location').returns([])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Office').returns([])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Account Action').returns([account_action_field])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Target System').returns([])
 

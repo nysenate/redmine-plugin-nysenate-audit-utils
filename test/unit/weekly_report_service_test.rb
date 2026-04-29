@@ -258,7 +258,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
 
   test "should include office in report data when configured" do
     location_field = IssueCustomField.create!(
-      name: 'User Location',
+      name: 'User Office',
       field_format: 'string',
       is_for_all: true,
       trackers: Tracker.all

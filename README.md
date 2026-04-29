@@ -71,7 +71,7 @@ Ensure that the following fields exist and are included in desired projects/trac
 - `User Phone` - Text
 - `User Status` - List (Active/Inactive)
 - `User UID` - Text
-- `User Location` - Text
+- `User Office` - Text
 
 **Request Fields:**
 - `Account Action` - List
