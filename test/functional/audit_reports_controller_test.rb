@@ -142,7 +142,7 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_match /daily_report_.*\.csv/, response.headers['Content-Disposition']
 
     csv_content = response.body
-    assert_match /User Name/, csv_content
+    assert_match /Account Holder Name/, csv_content
     assert_match /John Doe/, csv_content
     assert_match /12345/, csv_content
   end
@@ -222,8 +222,8 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_response :success
     assert_select 'td', text: 'John Doe'
     assert_select 'td', text: 'Senate Office A'
-    assert_select 'th a', text: 'User Name'
-    assert_select 'th a', text: 'Office'
+    assert_select 'th a', text: 'Account Holder Name'
+    assert_select 'th a', text: 'Account Holder Office'
     assert_select 'th a', text: 'Open Date'
     assert_select 'th a', text: 'Close Date'
   end
@@ -289,10 +289,10 @@ class AuditReportsControllerTest < ActionController::TestCase
 
     csv_content = response.body
     assert_match /Ticket #/, csv_content
-    assert_match /User Name/, csv_content
-    assert_match /User UID/, csv_content
-    assert_match /User Number/, csv_content
-    assert_match /Office/, csv_content
+    assert_match /Account Holder Name/, csv_content
+    assert_match /Account Holder Username/, csv_content
+    assert_match /Account Holder ID/, csv_content
+    assert_match /Account Holder Office/, csv_content
     assert_match /Open Date/, csv_content
     assert_match /Close Date/, csv_content
     assert_match /Request Code/, csv_content
@@ -422,8 +422,8 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_match /monthly_report_oracle-sfms_.*\.csv/, response.headers['Content-Disposition']
 
     csv_content = response.body
-    assert_match /User ID/, csv_content
-    assert_match /User Name/, csv_content
+    assert_match /Account Holder ID/, csv_content
+    assert_match /Account Holder Name/, csv_content
     assert_match /John Doe/, csv_content
     assert_match /12345/, csv_content
     assert_match /active/, csv_content

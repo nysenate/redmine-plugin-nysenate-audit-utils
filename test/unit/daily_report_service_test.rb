@@ -96,7 +96,6 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     assert row.key?(:account_statuses)
     assert row.key?(:open_requests)
     assert row.key?(:transaction_codes)
-    assert row.key?(:phone_number)
     assert row.key?(:office)
     assert row.key?(:office_location)
     assert row.key?(:user_id)
@@ -113,14 +112,13 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     assert_equal 'APP', result.first[:transaction_codes]
   end
 
-  test 'generate includes employee contact and office info' do
+  test 'generate includes employee office info' do
     changes = [create_mock_status_change]
     mock_ess_api(changes)
     mock_account_tracking('12345', [], [])
 
     result = @service.generate
 
-    assert_equal '555-1234', result.first[:phone_number]
     assert_equal 'Test Office', result.first[:office]
   end
 
