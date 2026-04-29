@@ -15,22 +15,17 @@ class AuditReportsMailer < ActionMailer::Base
   # @param report_data [Array<Hash>] Daily report data
   # @param from_date [Time] Start date for the report
   # @param to_date [Time] End date for the report
-  def daily_report(recipients, report_data, from_date, to_date, project_id = nil, use_range_url: false)
+  def daily_report(recipients, report_data, from_date, to_date, project_id = nil)
     @report_data = report_data
     @from_date = from_date
     @to_date = to_date
     @employee_count = report_data.size
     if project_id
-      @report_url = if use_range_url
-                      daily_project_audit_reports_url(
-                        project_id,
-                        mode: 'range',
-                        start_date: from_date.to_date.to_s,
-                        end_date: to_date.to_date.to_s
-                      )
-                    else
-                      daily_project_audit_reports_url(project_id, end_date: to_date.to_date.to_s)
-                    end
+      @report_url = daily_project_audit_reports_url(
+        project_id,
+        start_date: from_date.to_date.to_s,
+        end_date: to_date.to_date.to_s
+      )
     end
 
     # Generate and attach CSV
@@ -125,8 +120,8 @@ class AuditReportsMailer < ActionMailer::Base
   # @param report_data [Array<Hash>] Report data
   # @param from_date [Time] Start date
   # @param to_date [Time] End date
-  def self.deliver_daily_report(recipients, report_data, from_date, to_date, project_id = nil, use_range_url: false)
-    daily_report(recipients, report_data, from_date, to_date, project_id, use_range_url: use_range_url).deliver_later
+  def self.deliver_daily_report(recipients, report_data, from_date, to_date, project_id = nil)
+    daily_report(recipients, report_data, from_date, to_date, project_id).deliver_later
   end
 
   # Class method to deliver weekly report

@@ -134,7 +134,7 @@ Configure default recipients for automated email delivery of audit reports:
 
 Access via project menu: **Reports → Audit Utils**
 
-- **Daily Reports**: Account status of employees with status changes; defaults to the previous business day
+- **Daily Reports**: Account status of employees with status changes over a configurable date range; defaults to yesterday through today
 - **Weekly Reports**: Closed tickets from the previous full week (Sunday–Sunday), ordered by close date
 - **Monthly Reports**: Account status snapshot; defaults to the last complete month, active accounts only
 
@@ -211,8 +211,8 @@ rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV=pro
 **Options:**
 - `project_id` (required): Project identifier or numeric ID
 - `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
-- `start_date` (optional): Start date in YYYY-MM-DD format (defaults to previous business day midnight)
-- `end_date` (optional): End date in YYYY-MM-DD format (defaults to today midnight)
+- `start_date` (optional): Start date in YYYY-MM-DD format (defaults to yesterday)
+- `end_date` (optional): End date in YYYY-MM-DD format (defaults to today)
 
 #### Send Weekly Report
 

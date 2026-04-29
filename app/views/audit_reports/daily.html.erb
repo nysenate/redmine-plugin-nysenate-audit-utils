@@ -11,72 +11,27 @@
   <fieldset class="box tabular">
     <legend>Query Period</legend>
 
-    <p class="mode-selector">
-      <label class="mode-label">Mode</label>
-      <span class="mode-options">
-        <label class="mode-option floating">
-          <%= radio_button_tag :mode, "day", params[:mode] != "range", id: "mode-day" %>
-          Single Day
-        </label>
-        <label class="mode-option floating">
-          <%= radio_button_tag :mode, "range", params[:mode] == "range", id: "mode-range" %>
-          Date Range
-        </label>
-      </span>
+    <p>
+      <%= label_tag :start_date, "Start Date" %>
+      <%= date_field_tag :start_date, @from_date.strftime('%Y-%m-%d'),
+          min: 7.days.ago.to_date.strftime('%Y-%m-%d'),
+          max: 1.day.from_now.to_date.strftime('%Y-%m-%d'),
+          class: "date-picker auto-submit" %>
+      <span class="info-text">Range runs from 12AM of start date to 12AM of end date.</span>
     </p>
-
-    <div id="range-mode-fields" style="<%= 'display: none;' if params[:mode] != 'range' %>">
-      <p>
-        <%= label_tag :start_date, "Start Date" %>
-        <%= date_field_tag :start_date, @from_date.strftime('%Y-%m-%d'),
-            min: 7.days.ago.to_date.strftime('%Y-%m-%d'),
-            max: 1.day.from_now.to_date.strftime('%Y-%m-%d'),
-            class: "date-picker auto-submit" %>
-      </p>
-      <p>
-        <%= label_tag :end_date, "End Date" %>
-        <%= date_field_tag :end_date, @to_date.strftime('%Y-%m-%d'),
-            min: 7.days.ago.to_date.strftime('%Y-%m-%d'),
-            max: 1.day.from_now.to_date.strftime('%Y-%m-%d'),
-            class: "date-picker auto-submit" %>
-      </p>
-      <p>
-        <label></label>
-        <button type="button" id="full-week-btn" class="button-small">
-          Set to Full Week
-        </button>
-      </p>
-    </div>
-
-    <div id="day-mode-fields" style="<%= 'display: none;' if params[:mode] == 'range' %>">
-      <p>
-        <%= label_tag :end_date, "Select Date" %>
-        <%= date_field_tag :end_date,
-            params[:end_date] || (@to_date.to_date if params[:mode] != 'range'),
-            min: 7.days.ago.to_date,
-            max: 1.day.from_now.to_date,
-            class: "date-picker auto-submit" %>
-        <span class="info-text">(Midnight to midnight)</span>
-      </p>
-      <p>
-        <label></label>
-        <button type="button" id="prev-day-btn" class="button-small">
-          ← Previous Day
-        </button>
-        <button type="button" id="next-day-btn" class="button-small">
-          Next Day →
-        </button>
-      </p>
-    </div>
-
-    <% daily_at_default = params[:mode] != 'range' && params[:end_date].blank? %>
+    <p>
+      <%= label_tag :end_date, "End Date" %>
+      <%= date_field_tag :end_date, @to_date.strftime('%Y-%m-%d'),
+          min: 7.days.ago.to_date.strftime('%Y-%m-%d'),
+          max: 1.day.from_now.to_date.strftime('%Y-%m-%d'),
+          class: "date-picker auto-submit" %>
+    </p>
     <p>
       <label></label>
-      <% if daily_at_default %>
-        <span class="button-small disabled-link">Reset to Default</span>
-      <% else %>
-        <%= link_to "Reset to Default", daily_project_audit_reports_path(@project), class: "button-small" %>
-      <% end %>
+      <button type="button" id="full-week-btn" class="button-small">
+        Set to Full Week
+      </button>
+      <%= link_to "Reset to Default", daily_project_audit_reports_path(@project), class: "button-small" %>
     </p>
   </fieldset>
 <% end %>
@@ -163,26 +118,10 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('date-filter-form');
-    const modeRange = document.getElementById('mode-range');
-    const modeDay = document.getElementById('mode-day');
-    const rangeFields = document.getElementById('range-mode-fields');
-    const dayFields = document.getElementById('day-mode-fields');
     const fullWeekBtn = document.getElementById('full-week-btn');
     const startDateInput = document.getElementById('start_date');
     const endDateInput = document.getElementById('end_date');
-    const prevDayBtn = document.getElementById('prev-day-btn');
-    const nextDayBtn = document.getElementById('next-day-btn');
-    const dayEndDateInput = document.querySelector('#day-mode-fields input[type="date"]');
 
-    // Format dates as YYYY-MM-DD
-    function formatDateTime(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-
-    // Format dates as YYYY-MM-DD
     function formatDate(date) {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -190,44 +129,8 @@
       return `${year}-${month}-${day}`;
     }
 
-    // Toggle between range and day mode
-    function toggleMode() {
-      if (modeDay.checked) {
-        rangeFields.style.display = 'none';
-        dayFields.style.display = 'block';
-        // Disable range fields so they don't submit
-        startDateInput.disabled = true;
-        document.querySelectorAll('#range-mode-fields input[type="date"]').forEach(input => {
-          input.disabled = true;
-        });
-      } else {
-        rangeFields.style.display = 'block';
-        dayFields.style.display = 'none';
-        // Enable range fields and disable day field
-        startDateInput.disabled = false;
-        document.querySelectorAll('#range-mode-fields input[type="date"]').forEach(input => {
-          input.disabled = false;
-        });
-        document.querySelectorAll('#day-mode-fields input[type="date"]').forEach(input => {
-          input.disabled = true;
-        });
-      }
-    }
-
-    // Auto-submit form when mode changes
-    modeRange.addEventListener('change', function() {
-      toggleMode();
-      form.submit();
-    });
-
-    modeDay.addEventListener('change', function() {
-      toggleMode();
-      form.submit();
-    });
-
     // Auto-submit form when date inputs change
-    const autoSubmitInputs = document.querySelectorAll('.auto-submit');
-    autoSubmitInputs.forEach(function(input) {
+    document.querySelectorAll('.auto-submit').forEach(function(input) {
       input.addEventListener('change', function() {
         form.submit();
       });
@@ -236,97 +139,12 @@
     // Set to full week (6 days ago to today)
     fullWeekBtn.addEventListener('click', function() {
       const now = new Date();
-      const sixDaysAgo = new Date(now.getTime() - (6 * 24 * 60 * 60 * 1000)); // 6 days ago
+      const sixDaysAgo = new Date(now.getTime() - (6 * 24 * 60 * 60 * 1000));
 
       startDateInput.value = formatDate(sixDaysAgo);
       endDateInput.value = formatDate(now);
       form.submit();
     });
-
-    // Parse date string in local timezone (YYYY-MM-DD)
-    function parseLocalDate(dateString) {
-      const parts = dateString.split('-');
-      return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-    }
-
-    // Update button states based on current date (for day mode)
-    function updateButtonStates() {
-      // Only update buttons in day mode
-      if (!modeDay.checked || !dayEndDateInput.value) return;
-
-      const currentDate = parseLocalDate(dayEndDateInput.value);
-      const prevDate = new Date(currentDate);
-      prevDate.setDate(prevDate.getDate() - 1);
-
-      const nextDate = new Date(currentDate);
-      nextDate.setDate(nextDate.getDate() + 1);
-
-      // Check if previous day midnight would be <= 7 days ago from now
-      const now = new Date();
-      const sevenDaysAgo = new Date(now);
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      sevenDaysAgo.setHours(0, 0, 0, 0);
-
-      // Check if next day would be more than tomorrow
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      // Disable/enable Previous Day button
-      // prevDate should not be allowed if it's before 7 days ago from now
-      if (prevDate.getTime() < sevenDaysAgo.getTime()) {
-        prevDayBtn.disabled = true;
-        prevDayBtn.style.opacity = '0.5';
-        prevDayBtn.style.cursor = 'not-allowed';
-      } else {
-        prevDayBtn.disabled = false;
-        prevDayBtn.style.opacity = '1';
-        prevDayBtn.style.cursor = 'pointer';
-      }
-
-      // Disable/enable Next Day button - allow up to tomorrow
-      if (nextDate > tomorrow) {
-        nextDayBtn.disabled = true;
-        nextDayBtn.style.opacity = '0.5';
-        nextDayBtn.style.cursor = 'not-allowed';
-      } else {
-        nextDayBtn.disabled = false;
-        nextDayBtn.style.opacity = '1';
-        nextDayBtn.style.cursor = 'pointer';
-      }
-    }
-
-    // Previous day button
-    prevDayBtn.addEventListener('click', function() {
-      if (this.disabled) return;
-
-      const currentDate = parseLocalDate(dayEndDateInput.value);
-      const prevDate = new Date(currentDate);
-      prevDate.setDate(prevDate.getDate() - 1);
-
-      dayEndDateInput.value = formatDate(prevDate);
-      form.submit();
-    });
-
-    // Next day button
-    nextDayBtn.addEventListener('click', function() {
-      if (this.disabled) return;
-
-      const currentDate = parseLocalDate(dayEndDateInput.value);
-      const nextDate = new Date(currentDate);
-      nextDate.setDate(nextDate.getDate() + 1);
-
-      dayEndDateInput.value = formatDate(nextDate);
-      form.submit();
-    });
-
-    // Update button states when date changes (in day mode)
-    dayEndDateInput.addEventListener('change', updateButtonStates);
-
-    // Initialize on page load
-    toggleMode();
-    updateButtonStates();
   });
 </script>
 
@@ -351,28 +169,6 @@
     font-weight: bold;
   }
 
-  #date-filter-form .mode-options {
-    display: flex;
-    align-items: center;
-    gap: 2em;
-  }
-
-  #date-filter-form .mode-option.floating {
-    font-weight: normal;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4em;
-    white-space: nowrap;
-    cursor: pointer;
-    float: none !important;
-    margin-left: 0 !important;
-    width: auto !important;
-  }
-
-  #date-filter-form .mode-option input[type="radio"] {
-    margin: 0;
-  }
-
   #date-filter-form .date-picker {
     padding: 0.4em;
     border: 1px solid #ccc;
@@ -382,12 +178,6 @@
 
   #date-filter-form .button-small {
     margin-right: 0.5em;
-  }
-
-  .disabled-link {
-    opacity: 0.4;
-    cursor: default;
-    pointer-events: none;
   }
 
   #date-filter-form .info-text {

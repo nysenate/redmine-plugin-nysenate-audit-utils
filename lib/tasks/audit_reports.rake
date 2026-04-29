@@ -7,8 +7,8 @@ Send daily audit report via email.
 Available options:
   * project_id => project identifier (required)
   * recipients => comma-separated list of email addresses (optional, uses plugin settings if not provided)
-  * start_date => start date in YYYY-MM-DD format (optional, defaults to yesterday midnight)
-  * end_date   => end date in YYYY-MM-DD format (optional, defaults to today midnight)
+  * start_date => start date in YYYY-MM-DD format (optional, defaults to yesterday)
+  * end_date   => end date in YYYY-MM-DD format (optional, defaults to today)
 
 Example:
   rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" recipients="user@example.com,admin@example.com" RAILS_ENV="production"
@@ -53,7 +53,7 @@ END_DESC
     to_date = if ENV['end_date'].presence
                 Date.parse(ENV['end_date']).in_time_zone.end_of_day
               else
-                Date.current.in_time_zone.beginning_of_day
+                Date.current.in_time_zone.end_of_day
               end
 
     # Generate report
@@ -76,8 +76,7 @@ END_DESC
         report_data,
         service.from_date,
         service.to_date,
-        project.identifier,
-        use_range_url: ENV['start_date'].present?
+        project.identifier
       )
     end
 
