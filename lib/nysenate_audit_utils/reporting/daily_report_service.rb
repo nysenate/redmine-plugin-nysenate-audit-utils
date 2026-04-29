@@ -7,7 +7,7 @@ module NysenateAuditUtils
 
       def initialize(from_date: nil, to_date: nil, project: nil)
         @from_date = from_date || calculate_default_from_date
-        @to_date = to_date || Time.zone.now
+        @to_date = to_date || Time.now
         @project = project
         @status_changes = []
         @errors = []
@@ -32,7 +32,7 @@ module NysenateAuditUtils
       private
 
       def calculate_default_from_date
-        Date.yesterday.in_time_zone.beginning_of_day
+        Date.yesterday.to_time
       end
 
       def fetch_status_changes

@@ -12,8 +12,8 @@ module NysenateAuditUtils
           @from_date = from_date
           @to_date = to_date
         else
-          # Default: previous full week from Sunday 00:00 to Sunday 00:00
-          most_recent_sunday = Date.current.beginning_of_week(:sunday).in_time_zone
+          # Default: previous full week from Sunday 00:00 to Sunday 00:00 (server local time)
+          most_recent_sunday = Date.current.beginning_of_week(:sunday).to_time
           @from_date = most_recent_sunday - 7.days
           @to_date = most_recent_sunday
         end

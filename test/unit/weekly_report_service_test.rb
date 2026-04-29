@@ -21,7 +21,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     travel_to Time.zone.parse('2026-04-07 12:00:00') do # Tuesday
       service = NysenateAuditUtils::Reporting::WeeklyReportService.new(project: @project)
 
-      expected_to = Date.parse('2026-04-05').beginning_of_week(:sunday).in_time_zone
+      expected_to = Date.parse('2026-04-05').beginning_of_week(:sunday).to_time
       expected_from = expected_to - 7.days
 
       assert_equal expected_from, service.from_date
@@ -33,7 +33,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     travel_to Time.zone.parse('2026-04-05 10:00:00') do # Sunday
       service = NysenateAuditUtils::Reporting::WeeklyReportService.new(project: @project)
 
-      expected_to = Date.parse('2026-04-05').beginning_of_week(:sunday).in_time_zone
+      expected_to = Date.parse('2026-04-05').beginning_of_week(:sunday).to_time
       expected_from = expected_to - 7.days
 
       assert_equal expected_from, service.from_date
