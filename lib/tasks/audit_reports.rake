@@ -7,8 +7,8 @@ Send daily audit report via email.
 Available options:
   * project_id => project identifier (required)
   * recipients => comma-separated list of email addresses (optional, uses plugin settings if not provided)
-  * start_date => start date in YYYY-MM-DD format (optional, defaults to yesterday)
-  * end_date   => end date in YYYY-MM-DD format (optional, defaults to today)
+  * start_date => start date in YYYY-MM-DD format (optional, defaults to yesterday; range starts at 00:00 server local time)
+  * end_date   => end date in YYYY-MM-DD format (optional, defaults to today; range ends at 00:00 server local time, exclusive)
 
 Example:
   rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" recipients="user@example.com,admin@example.com" RAILS_ENV="production"
@@ -43,17 +43,17 @@ END_DESC
 
     recipient_list = recipients.split(',').map(&:strip)
 
-    # Parse optional date parameters
+    # Parse optional date parameters (system local time, midnight)
     from_date = if ENV['start_date'].presence
-                  Date.parse(ENV['start_date']).in_time_zone.beginning_of_day
+                  Date.parse(ENV['start_date']).to_time
                 else
-                  Date.yesterday.in_time_zone.beginning_of_day
+                  Date.yesterday.to_time
                 end
 
     to_date = if ENV['end_date'].presence
-                Date.parse(ENV['end_date']).in_time_zone.end_of_day
+                Date.parse(ENV['end_date']).to_time
               else
-                Date.current.in_time_zone.end_of_day
+                Date.current.to_time
               end
 
     # Generate report
@@ -127,9 +127,9 @@ END_DESC
 
     recipient_list = recipients.split(',').map(&:strip)
 
-    # Parse optional date range
-    from_date = ENV['start_date'].present? ? Date.parse(ENV['start_date']).in_time_zone : nil
-    to_date = ENV['end_date'].present? ? Date.parse(ENV['end_date']).end_of_day : nil
+    # Parse optional date range (system local time)
+    from_date = ENV['start_date'].present? ? Date.parse(ENV['start_date']).to_time : nil
+    to_date = ENV['end_date'].present? ? Date.parse(ENV['end_date']).to_time.end_of_day : nil
 
     # Generate report
     service = NysenateAuditUtils::Reporting::WeeklyReportService.new(
@@ -226,7 +226,7 @@ END_DESC
     else
       selected_month_num = (ENV['month'].presence || Date.current.month).to_i
       selected_year = (ENV['year'].presence || Date.current.year).to_i
-      as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.in_time_zone
+      as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.to_time
     end
 
     # Generate report
@@ -319,7 +319,7 @@ END_DESC
     else
       selected_month_num = (ENV['month'].presence || Date.current.month).to_i
       selected_year = (ENV['year'].presence || Date.current.year).to_i
-      as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.in_time_zone
+      as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.to_time
     end
 
     # Generate reports for each system

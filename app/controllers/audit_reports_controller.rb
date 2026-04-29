@@ -12,10 +12,8 @@ class AuditReportsController < ApplicationController
   end
 
   def daily
-    from_date = parse_date_param(params[:start_date]) ||
-                Date.yesterday.in_time_zone.beginning_of_day
-    to_date = parse_date_param(params[:end_date])
-    to_date = to_date ? to_date.end_of_day : Date.current.in_time_zone.end_of_day
+    from_date = parse_date_param(params[:start_date]) || Date.yesterday.to_time
+    to_date   = parse_date_param(params[:end_date])   || Date.current.to_time
 
     validate_date_range!(from_date, to_date)
 
@@ -65,8 +63,8 @@ class AuditReportsController < ApplicationController
   rescue ArgumentError => e
     # Handle validation errors
     flash.now[:error] = e.message
-    @from_date = Date.yesterday.in_time_zone.beginning_of_day
-    @to_date = Date.current.in_time_zone.end_of_day
+    @from_date = Date.yesterday.to_time
+    @to_date = Date.current.to_time
     @report_data = []
     render :daily
   rescue => e
@@ -169,7 +167,7 @@ class AuditReportsController < ApplicationController
       # Monthly mode: show snapshot at beginning of selected month
       selected_month_num = (params[:month].presence || Date.current.month).to_i
       selected_year = (params[:year].presence || Date.current.year).to_i
-      as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.in_time_zone
+      as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.to_time
     end
 
     # Generate report
@@ -247,7 +245,7 @@ class AuditReportsController < ApplicationController
     else
       selected_month_num = (params[:month].presence || Date.current.month).to_i
       selected_year = (params[:year].presence || Date.current.year).to_i
-      as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.in_time_zone
+      as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.to_time
       filename_suffix = "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
     end
 
@@ -284,8 +282,7 @@ class AuditReportsController < ApplicationController
   def parse_date_param(date_string)
     return nil if date_string.blank?
 
-    # Parse date format: YYYY-MM-DD
-    Date.parse(date_string).in_time_zone
+    Date.parse(date_string).to_time
   rescue ArgumentError => e
     Rails.logger.error "Failed to parse date parameter '#{date_string}': #{e.message}"
     nil
