@@ -61,7 +61,7 @@ module NysenateAuditUtils
           email: employee.email,
           phone: employee.work_phone,
           uid: employee.uid,
-          location: employee.location&.display_name,
+          location: employee.resp_center_head&.code,
           status: employee.active ? 'Active' : 'Inactive'
         }
       end

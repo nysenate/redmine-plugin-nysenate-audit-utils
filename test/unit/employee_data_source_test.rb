@@ -50,9 +50,15 @@ class EmployeeDataSourceTest < ActiveSupport::TestCase
   end
 
   def test_search_handles_location_office
+    resp_center_head = EssResponsibilityCenterHead.new(
+      code: 'PARKER',
+      short_name: 'SEN PARKER',
+      name: 'Senator Parker'
+    )
     location = EssLocation.new(
       code: 'LOC123',
-      location_description: 'Albany Office'
+      location_description: 'Albany Office',
+      resp_center_head: resp_center_head
     )
 
     ess_employee = EssEmployee.new(
@@ -66,7 +72,7 @@ class EmployeeDataSourceTest < ActiveSupport::TestCase
 
     results = @data_source.search('john')
 
-    assert_equal 'Albany Office', results.first[:location]
+    assert_equal 'PARKER', results.first[:location]
   end
 
   def test_search_passes_limit_and_offset

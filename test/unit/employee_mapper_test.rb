@@ -39,7 +39,7 @@ class EmployeeMapperTest < ActiveSupport::TestCase
     assert_equal '(518) 555-1234', result[:phone]
     assert_equal 'Active', result[:status]
     assert_equal 'jdoe', result[:uid]
-    assert_equal 'Personnel', result[:location]
+    assert_equal 'PERSONNEL', result[:location]
     assert_equal resp_center_head, result[:resp_center_head]
   end
 
