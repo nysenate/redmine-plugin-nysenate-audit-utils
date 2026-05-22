@@ -138,6 +138,8 @@ function initializeUserSearch() {
         searchInput.placeholder = 'Search for employee by name';
       } else if (userSearchState.selectedType === 'Vendor') {
         searchInput.placeholder = 'Search for vendor by name';
+      } else if (userSearchState.selectedType === 'Volunteer') {
+        searchInput.placeholder = 'Search for volunteer by name';
       } else {
         searchInput.placeholder = 'Search for user by name';
       }

@@ -111,6 +111,33 @@ class UserSearchControllerTest < ActionController::TestCase
     assert_equal 'Vendor', response_data['type']
   end
 
+  # Volunteer search tests
+
+  def test_search_volunteers_with_valid_query
+    @admin.stubs(:allowed_to?).with(:use_user_autofill, @project).returns(true)
+    @request.session[:user_id] = @admin.id
+    mock_volunteer_data = {
+      user_id: 500_101,
+      user_type: 'Volunteer',
+      name: 'Jane Volunteer',
+      email: 'jane@example.com',
+      phone: '(555) 222-3333',
+      status: 'Active',
+      uid: nil,
+      location: nil
+    }
+    @mock_service.stubs(:search).with('Jane', type: 'Volunteer', limit: 20, offset: 0).returns([mock_volunteer_data])
+
+    get :search, params: { q: 'Jane', type: 'Volunteer', project_id: @project.id }
+
+    assert_response :success
+    response_data = JSON.parse(@response.body)
+    assert_equal 1, response_data['users'].length
+    assert_equal 'Jane Volunteer', response_data['users'][0]['name']
+    assert_equal 500_101, response_data['users'][0]['user_id']
+    assert_equal 'Volunteer', response_data['type']
+  end
+
   # Invalid type tests
 
   def test_search_with_invalid_type

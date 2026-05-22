@@ -4,7 +4,7 @@ class UserSearchController < ApplicationController
   before_action :require_login
   before_action :check_permission
 
-  VALID_TYPES = %w[Employee Vendor].freeze
+  VALID_TYPES = %w[Employee Vendor Volunteer].freeze
   DEFAULT_TYPE = 'Employee'
 
   def search

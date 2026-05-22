@@ -6,7 +6,7 @@ module NysenateAuditUtils
     # Routes requests to appropriate data source based on user type
     class UserService
       # Valid user types
-      VALID_TYPES = %w[Employee Vendor].freeze
+      VALID_TYPES = %w[Employee Vendor Volunteer].freeze
 
       # Search for tracked users matching the query
       # @param query [String] The search term
@@ -109,7 +109,7 @@ module NysenateAuditUtils
         case type
         when 'Employee'
           @employee_data_source ||= EmployeeDataSource.new
-        when 'Vendor'
+        when 'Vendor', 'Volunteer'
           @database_data_source ||= DatabaseDataSource.new
         else
           raise ArgumentError, "Unknown user type: #{type}"

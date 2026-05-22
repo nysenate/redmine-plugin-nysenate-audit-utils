@@ -68,6 +68,23 @@ class UserServiceTest < ActiveSupport::TestCase
     assert_equal 500_001, results.first[:user_id]
   end
 
+  def test_search_with_volunteer_type_uses_database_data_source
+    NysenateAuditUtils::Users::DatabaseDataSource.any_instance.stubs(:search).with(
+      'jane',
+      user_type: 'Volunteer',
+      limit: 20,
+      offset: 0
+    ).returns([
+      { user_type: 'Volunteer', user_id: 500_101, name: 'Jane Volunteer' }
+    ])
+
+    results = @service.search('jane', type: 'Volunteer')
+
+    assert_equal 1, results.length
+    assert_equal 'Volunteer', results.first[:user_type]
+    assert_equal 500_101, results.first[:user_id]
+  end
+
   def test_find_by_id_with_vendor_type_uses_database_data_source
     NysenateAuditUtils::Users::DatabaseDataSource.any_instance.stubs(:find_by_id).with(
       500_001,
