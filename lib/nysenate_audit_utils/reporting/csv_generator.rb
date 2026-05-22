@@ -198,7 +198,7 @@ module NysenateAuditUtils
         csv << ['Report Description', description]
         csv << ['Start time', format_metadata_time(start_time)]
         csv << ['End time', format_metadata_time(end_time)]
-        csv << ['Generated at', format_metadata_time(Time.current)]
+        csv << ['Generated at', format_metadata_time(Time.now)]
         csv << []
       end
 
