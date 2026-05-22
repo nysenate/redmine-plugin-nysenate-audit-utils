@@ -92,6 +92,7 @@ module NysenateAuditUtils
           # Header row
           csv << [
             'Ticket #',
+            'Account Holder Type',
             'Account Holder Name',
             'Account Holder Username',
             'Account Holder ID',
@@ -108,6 +109,7 @@ module NysenateAuditUtils
           data.each do |row|
             csv << [
               row[:issue_id],
+              row[:user_type],
               row[:user_name],
               row[:user_uid],
               row[:user_id],

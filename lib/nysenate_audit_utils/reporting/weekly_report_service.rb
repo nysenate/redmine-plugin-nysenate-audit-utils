@@ -44,6 +44,7 @@ module NysenateAuditUtils
         user_uid_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_uid_field_id')
         user_name_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_name_field_id')
         user_location_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_location_field_id')
+        user_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_type_field_id')
         account_action_field_id = NysenateAuditUtils::CustomFieldConfiguration.account_action_field_id
         target_system_field_id = NysenateAuditUtils::CustomFieldConfiguration.target_system_field_id
 
@@ -83,6 +84,9 @@ module NysenateAuditUtils
           # Get office/location from custom field (if configured)
           office = user_location_field_id ? get_custom_field_value(issue, user_location_field_id) : nil
 
+          # Get user type from custom field (if configured)
+          user_type = user_type_field_id ? get_custom_field_value(issue, user_type_field_id) : nil
+
           # Get request code from Account Action and Target System
           request_code = nil
           if account_action_field_id && target_system_field_id
@@ -99,6 +103,7 @@ module NysenateAuditUtils
             user_uid: user_uid,
             user_name: user_name,
             office: office,
+            user_type: user_type,
             request_code: request_code,
             updated_on: issue.updated_on,
             created_on: issue.created_on,
