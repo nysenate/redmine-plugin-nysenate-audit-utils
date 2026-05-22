@@ -29,6 +29,15 @@ module NysenateAuditUtils
         @errors.empty?
       end
 
+      # Returns [from_time, to_time] for "Last Business Day" mode given a selected date.
+      # Monday → previous Friday midnight → selected day midnight (covers Fri/Sat/Sun activity).
+      # Otherwise → previous day midnight → selected day midnight.
+      def self.business_day_range(selected_date)
+        selected_date = selected_date.to_date
+        from_date = selected_date.monday? ? (selected_date - 3) : (selected_date - 1)
+        [from_date.to_time, selected_date.to_time]
+      end
+
       private
 
       def calculate_default_from_date
