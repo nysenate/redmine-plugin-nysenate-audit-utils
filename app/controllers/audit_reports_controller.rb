@@ -114,6 +114,7 @@ class AuditReportsController < ApplicationController
       'user_uid' => 'user_uid',
       'user_name' => 'user_name',
       'office' => 'office',
+      'user_type' => 'user_type',
       'request_code' => 'request_code',
       'updated_on' => 'updated_on',
       'created_on' => 'created_on',

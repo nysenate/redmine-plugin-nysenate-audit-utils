@@ -292,6 +292,42 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     Setting.plugin_nysenate_audit_utils = { 'user_id_field_id' => '2' }
   end
 
+  test "should include user_type in report data when configured" do
+    user_type_field = IssueCustomField.create!(
+      name: 'User Type',
+      field_format: 'string',
+      is_for_all: true,
+      trackers: Tracker.all
+    )
+    Setting.plugin_nysenate_audit_utils = {
+      'user_id_field_id' => '2',
+      'user_type_field_id' => user_type_field.id.to_s
+    }
+
+    close_time = 2.days.ago
+    issue = Issue.create!(project: @project, tracker_id: 1, author_id: 1, status_id: 5, subject: 'Issue with User Type')
+    Issue.where(id: issue.id).update_all(created_on: 1.week.ago, updated_on: close_time, closed_on: close_time)
+
+    issue.reload
+    issue.custom_field_values = { user_type_field.id => 'Vendor' }
+    issue.save!
+
+    service = NysenateAuditUtils::Reporting::WeeklyReportService.new(
+      project: @project,
+      from_date: 1.week.ago,
+      to_date: Time.zone.now
+    )
+    report_data = service.generate
+
+    assert service.success?
+    issue_report = report_data.find { |r| r[:issue_id] == issue.id }
+    assert_not_nil issue_report
+    assert_equal 'Vendor', issue_report[:user_type]
+  ensure
+    user_type_field&.destroy
+    Setting.plugin_nysenate_audit_utils = { 'user_id_field_id' => '2' }
+  end
+
   test "should include closed_on in report data" do
     close_time = 2.days.ago
     issue = Issue.create!(project: @project, tracker_id: 1, author_id: 1, status_id: 5, subject: 'Issue with Close Date')
