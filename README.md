@@ -134,7 +134,9 @@ Configure default recipients for automated email delivery of audit reports:
 
 Access via project menu: **Reports → Audit Utils**
 
-- **Daily Reports**: Account status of employees with status changes over a configurable date range; defaults to yesterday through today
+- **Daily Reports**: Account status of employees with status changes. Two modes:
+  - **Last Business Day** (default): single date picker, defaults to today. Covers the previous business day at 00:00 → selected date at 00:00. If the selected date is a Monday, the range starts at the previous Friday at 00:00 so the prior weekend is included.
+  - **Date Range**: explicit start/end date pickers (range runs 00:00 → 00:00).
 - **Weekly Reports**: Closed tickets from the previous full week (Sunday–Sunday), ordered by close date
 - **Monthly Reports**: Account status snapshot; defaults to the last complete month, active accounts only
 
@@ -205,13 +207,23 @@ The plugin provides rake tasks for generating and emailing audit reports. Run th
 Generates and emails the daily report showing employees with status changes.
 
 ```bash
+# Default: Last Business Day mode for today (covers yesterday → today; Mondays cover Fri → Mon)
 rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV=production
+
+# Last Business Day mode for a specific date
+rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" mode="business_day" end_date="2026-05-18" RAILS_ENV=production
+
+# Explicit date range
+rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" mode="range" start_date="2026-05-15" end_date="2026-05-17" RAILS_ENV=production
 ```
 
 **Options:**
 - `project_id` (required): Project identifier or numeric ID
 - `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
-- `start_date` (optional): Start date in YYYY-MM-DD format (defaults to yesterday)
+- `mode` (optional): `business_day` (default) or `range`
+  - `business_day`: uses `end_date` only (default today). Range = previous business day 00:00 → `end_date` 00:00. Monday `end_date` extends back to the previous Friday.
+  - `range`: uses `start_date` and `end_date` explicitly.
+- `start_date` (optional, range mode only): Start date in YYYY-MM-DD format (defaults to yesterday)
 - `end_date` (optional): End date in YYYY-MM-DD format (defaults to today)
 
 #### Send Weekly Report

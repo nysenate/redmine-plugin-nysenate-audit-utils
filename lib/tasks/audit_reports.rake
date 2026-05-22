@@ -7,12 +7,18 @@ Send daily audit report via email.
 Available options:
   * project_id => project identifier (required)
   * recipients => comma-separated list of email addresses (optional, uses plugin settings if not provided)
-  * start_date => start date in YYYY-MM-DD format (optional, defaults to yesterday; range starts at 00:00 server local time)
-  * end_date   => end date in YYYY-MM-DD format (optional, defaults to today; range ends at 00:00 server local time, exclusive)
+  * mode       => 'business_day' (default) or 'range'
+                  - business_day: single-day mode. Uses end_date (default: today); range = previous
+                    business day 00:00 → end_date 00:00. If end_date is a Monday, range starts at
+                    the previous Friday 00:00. start_date is ignored in this mode.
+                  - range: uses start_date and end_date explicitly.
+  * start_date => start date in YYYY-MM-DD format (range mode only, defaults to yesterday)
+  * end_date   => end date in YYYY-MM-DD format (defaults to today; range ends at 00:00 server local time, exclusive)
 
 Example:
-  rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" recipients="user@example.com,admin@example.com" RAILS_ENV="production"
-  rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV="production"  # Uses configured recipients
+  rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV="production"  # business_day mode, today
+  rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" mode="business_day" end_date="2026-05-18" RAILS_ENV="production"
+  rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" mode="range" start_date="2026-05-15" end_date="2026-05-17" RAILS_ENV="production"
 END_DESC
 
   task send_daily_report: :environment do
@@ -43,18 +49,26 @@ END_DESC
 
     recipient_list = recipients.split(',').map(&:strip)
 
-    # Parse optional date parameters (system local time, midnight)
-    from_date = if ENV['start_date'].presence
-                  Date.parse(ENV['start_date']).to_time
-                else
-                  Date.yesterday.to_time
-                end
+    # Determine mode (default: business_day)
+    mode = ENV['mode'].presence == 'range' ? 'range' : 'business_day'
 
-    to_date = if ENV['end_date'].presence
-                Date.parse(ENV['end_date']).to_time
-              else
-                Date.current.to_time
-              end
+    # Parse optional date parameters (system local time, midnight)
+    if mode == 'business_day'
+      selected_date = ENV['end_date'].presence ? Date.parse(ENV['end_date']) : Date.current
+      from_date, to_date = NysenateAuditUtils::Reporting::DailyReportService.business_day_range(selected_date)
+    else
+      from_date = if ENV['start_date'].presence
+                    Date.parse(ENV['start_date']).to_time
+                  else
+                    Date.yesterday.to_time
+                  end
+
+      to_date = if ENV['end_date'].presence
+                  Date.parse(ENV['end_date']).to_time
+                else
+                  Date.current.to_time
+                end
+    end
 
     # Generate report
     service = NysenateAuditUtils::Reporting::DailyReportService.new(
@@ -81,6 +95,7 @@ END_DESC
     end
 
     puts "Daily report sent to: #{recipient_list.join(', ')}"
+    puts "Mode: #{mode}"
     puts "Report period: #{service.from_date.strftime('%Y-%m-%d %H:%M')} to #{service.to_date.strftime('%Y-%m-%d %H:%M')}"
     puts "Employees with status changes: #{report_data.size}"
   end

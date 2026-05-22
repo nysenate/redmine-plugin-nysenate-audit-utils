@@ -12,8 +12,15 @@ class AuditReportsController < ApplicationController
   end
 
   def daily
-    from_date = parse_date_param(params[:start_date]) || Date.yesterday.to_time
-    to_date   = parse_date_param(params[:end_date])   || Date.current.to_time
+    @mode = params[:mode] == 'range' ? 'range' : 'business_day'
+
+    if @mode == 'business_day'
+      selected_date = parse_date_param(params[:end_date])&.to_date || Date.current
+      from_date, to_date = NysenateAuditUtils::Reporting::DailyReportService.business_day_range(selected_date)
+    else
+      from_date = parse_date_param(params[:start_date]) || Date.yesterday.to_time
+      to_date   = parse_date_param(params[:end_date])   || Date.current.to_time
+    end
 
     validate_date_range!(from_date, to_date)
 
@@ -65,8 +72,8 @@ class AuditReportsController < ApplicationController
   rescue ArgumentError => e
     # Handle validation errors
     flash.now[:error] = e.message
-    @from_date = Date.yesterday.to_time
-    @to_date = Date.current.to_time
+    @mode ||= 'business_day'
+    @from_date, @to_date = NysenateAuditUtils::Reporting::DailyReportService.business_day_range(Date.current)
     @report_data = []
     render :daily
   rescue => e
