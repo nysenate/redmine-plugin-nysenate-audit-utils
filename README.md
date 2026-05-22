@@ -64,7 +64,7 @@ The plugin uses custom fields to store user and request data.
 Ensure that the following fields exist and are included in desired projects/trackers:
 
 **User Fields:**
-- `User Type` - List (Employee/Vendor)
+- `User Type` - List (Employee/Vendor/Volunteer)
 - `User ID` - Integer
 - `User Name` - Text
 - `User Email` - Text
@@ -101,9 +101,9 @@ Enable the Audit Utils module per-project:
 1. Go to **Projects → \*your project name\* → Settings** and scroll to the **Modules** section.
 2. Enable the **Audit Utils** module to activate all audit utilities features:
    - Daily/weekly/monthly report generation and viewing
-   - User search and autofill functionality (employees, vendors, etc.)
+   - User search and autofill functionality (employees, vendors, volunteers, etc.)
    - Ticket packet creation (PDF + attachments in zip format)
-   - Tracked user management (vendors, contractors, etc.)
+   - Tracked user management (vendors, volunteers, contractors, etc.)
 
 ### 4. Permissions
 
@@ -114,7 +114,7 @@ Edit the desired role(s) so that they grant the following permissions under **Au
 - **Export audit reports** - Export reports to CSV
 - **Use user autofill** - User search and autofill functionality
 - **Create ticket packets** - Generate ticket packets (PDF + attachments)
-- **Manage tracked users** - Create/edit/delete vendor and contractor records
+- **Manage tracked users** - Create/edit/delete vendor, volunteer, and contractor records
 
 Assign the role(s) to the applicable user(s) in project member settings:  **Projects → \*your project name\* → Settings → Members**
 
@@ -163,7 +163,7 @@ Generate audit-ready zip packages containing:
 
 ### Tracked User Management
 
-Manage non-employee tracked users (vendors, contractors, etc.) through the admin interface:
+Manage non-employee tracked users (vendors, volunteers, contractors, etc.) through the admin interface:
 
 **Access:** **Administration → Manage Tracked Users** (admin-only)
 
@@ -177,8 +177,8 @@ Manage non-employee tracked users (vendors, contractors, etc.) through the admin
 
 ### User Autofill
 
-- Real-time user search widget on issue pages with type selection (Employee, Vendor)
-- Employee data sourced from ESS API; vendor data managed locally
+- Real-time user search widget on issue pages with type selection (Employee, Vendor, Volunteer)
+- Employee data sourced from ESS API; vendor and volunteer data managed locally
 - Automatic population of configured custom fields
 - AJAX-based search interface
 

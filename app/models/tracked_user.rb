@@ -3,7 +3,7 @@
 class TrackedUser < ActiveRecord::Base
   self.table_name = 'tracked_users'
 
-  VALID_TYPES = %w[Vendor].freeze
+  VALID_TYPES = %w[Vendor Volunteer].freeze
   VALID_STATUSES = %w[Active Inactive].freeze
 
   # Validations
@@ -14,6 +14,7 @@ class TrackedUser < ActiveRecord::Base
 
   # Scopes
   scope :vendors, -> { where(user_type: 'Vendor') }
+  scope :volunteers, -> { where(user_type: 'Volunteer') }
   scope :active, -> { where(status: 'Active') }
   scope :inactive, -> { where(status: 'Inactive') }
 

@@ -79,11 +79,30 @@ class TrackedUserTest < ActiveSupport::TestCase
   test 'vendors scope should return only vendors' do
     vendor1 = TrackedUser.create!(user_type: 'Vendor', user_id: 500_100, name: 'Vendor 1', status: 'Active')
     vendor2 = TrackedUser.create!(user_type: 'Vendor', user_id: 500_101, name: 'Vendor 2', status: 'Inactive')
+    volunteer = TrackedUser.create!(user_type: 'Volunteer', user_id: 500_150, name: 'Volunteer 1', status: 'Active')
 
     vendors = TrackedUser.vendors
     assert_includes vendors, vendor1
     assert_includes vendors, vendor2
+    assert_not_includes vendors, volunteer
     assert_equal 'Vendor', vendors.first.user_type
+  end
+
+  test 'should allow Volunteer user_type' do
+    volunteer = TrackedUser.new(user_type: 'Volunteer', user_id: 500_400, name: 'Test Volunteer', status: 'Active')
+    assert volunteer.valid?
+  end
+
+  test 'volunteers scope should return only volunteers' do
+    vendor = TrackedUser.create!(user_type: 'Vendor', user_id: 500_500, name: 'Vendor X', status: 'Active')
+    volunteer1 = TrackedUser.create!(user_type: 'Volunteer', user_id: 500_501, name: 'Volunteer 1', status: 'Active')
+    volunteer2 = TrackedUser.create!(user_type: 'Volunteer', user_id: 500_502, name: 'Volunteer 2', status: 'Inactive')
+
+    volunteers = TrackedUser.volunteers
+    assert_includes volunteers, volunteer1
+    assert_includes volunteers, volunteer2
+    assert_not_includes volunteers, vendor
+    assert_equal 'Volunteer', volunteers.first.user_type
   end
 
   test 'active scope should return only active tracked users' do

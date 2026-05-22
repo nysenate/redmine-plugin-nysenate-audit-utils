@@ -29,3 +29,23 @@ vendor_inactive:
   status: Inactive
   created_at: <%= 5.days.ago.to_s(:db) %>
   updated_at: <%= 4.days.ago.to_s(:db) %>
+
+volunteer_one:
+  user_type: Volunteer
+  user_id: 500101
+  name: Fixture Volunteer One
+  email: volunteer1@example.com
+  phone: '555-2001'
+  location:Building C
+  status: Active
+  created_at: <%= 2.days.ago.to_s(:db) %>
+  updated_at: <%= 1.day.ago.to_s(:db) %>
+
+volunteer_inactive:
+  user_type: Volunteer
+  user_id: 500102
+  name: Fixture Volunteer Inactive
+  email: volunteer2@example.com
+  status: Inactive
+  created_at: <%= 5.days.ago.to_s(:db) %>
+  updated_at: <%= 4.days.ago.to_s(:db) %>

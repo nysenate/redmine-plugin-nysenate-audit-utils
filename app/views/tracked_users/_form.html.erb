@@ -4,7 +4,7 @@
   <div class="box tabular">
     <p>
       <%= f.select :user_type,
-          options_for_select([['Vendor', 'Vendor']], @tracked_user.user_type),
+          options_for_select([['Vendor', 'Vendor'], ['Volunteer', 'Volunteer']], @tracked_user.user_type),
           {},
           { required: true, label: 'User Type' } %>
     </p>

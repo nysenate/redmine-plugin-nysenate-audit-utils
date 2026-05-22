@@ -130,6 +130,29 @@ class TrackedUsersControllerTest < ActionController::TestCase
     assert_equal 'newvendor@example.com', new_tracked_user.email
   end
 
+  def test_create_volunteer_with_valid_data
+    @request.session[:user_id] = @user.id
+
+    assert_difference 'TrackedUser.count', 1 do
+      post :create, params: {
+        project_id: @project.id,
+        tracked_user: {
+          user_type: 'Volunteer',
+          user_id: 500_011,
+          name: 'New Test Volunteer',
+          email: 'volunteer@example.com',
+          status: 'Active'
+        }
+      }
+    end
+
+    assert_redirected_to project_tracked_users_path(@project)
+    new_tracked_user = TrackedUser.find_by(user_id: 500_011)
+    assert_not_nil new_tracked_user
+    assert_equal 'Volunteer', new_tracked_user.user_type
+    assert_equal 'New Test Volunteer', new_tracked_user.name
+  end
+
   def test_create_with_missing_required_fields
     @request.session[:user_id] = @user.id
 
