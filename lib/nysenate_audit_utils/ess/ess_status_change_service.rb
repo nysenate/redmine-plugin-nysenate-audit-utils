@@ -5,7 +5,7 @@ module NysenateAuditUtils
         def changes_for_date_range(from_date = 1.day.ago, to_date = nil)
           params = build_params(from_date, to_date)
 
-          response = api_client.get('/api/v1/bachelp/statusChanges', params)
+          response = api_client.get('/api/v1/redmine/statusChanges', params)
           return [] unless response && response['success']
 
           changes = response['result'] || []

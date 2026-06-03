@@ -15,7 +15,7 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
       ]
     }
 
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/statusChanges', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
       from: '2023-08-15'
     }).returns(api_response)
 
@@ -28,7 +28,7 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
   end
 
   def test_changes_for_date_range_with_date_range
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/statusChanges', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
       from: '2023-08-15',
       to: '2023-08-16'
     }).returns({'success' => true, 'result' => []})
@@ -42,7 +42,7 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
     travel_to(frozen_time) do
       expected_from = 1.day.ago.strftime('%Y-%m-%d')
 
-      @api_client_mock.expects(:get).with('/api/v1/bachelp/statusChanges', {
+      @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
         from: expected_from
       }).returns({'success' => true, 'result' => []})
 
@@ -52,7 +52,7 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
 
   def test_changes_for_date_range_formats_date_objects
     date = Date.parse('2023-08-15')
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/statusChanges', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
       from: '2023-08-15'
     }).returns({'success' => true, 'result' => []})
 
@@ -61,7 +61,7 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
 
   def test_changes_for_date_range_formats_time_objects
     time = Time.zone.parse('2023-08-15 14:30:45')
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/statusChanges', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
       from: '2023-08-15'
     }).returns({'success' => true, 'result' => []})
 
@@ -80,7 +80,7 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
   end
 
   def test_changes_for_date_range_passes_string_dates_unchanged
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/statusChanges', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
       from: '2023-08-15'
     }).returns({'success' => true, 'result' => []})
 
@@ -88,7 +88,7 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
   end
 
   def test_changes_for_date_range_omits_nil_dates
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/statusChanges', {}).returns({'success' => true, 'result' => []})
+    @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {}).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssStatusChangeService.changes_for_date_range(nil, nil)
   end

@@ -5,7 +5,7 @@ module NysenateAuditUtils
         def search(term = '', limit: 20, offset: 0)
           params = build_search_params(term, limit, offset)
 
-          response = api_client.get('/api/v1/bachelp/employee/search', params)
+          response = api_client.get('/api/v1/redmine/employee/search', params)
           return [] unless response && response['success']
 
           employees = response['result'] || []
@@ -15,7 +15,7 @@ module NysenateAuditUtils
         def find_by_id(employee_id)
           return nil unless employee_id.present?
 
-          response = api_client.get("/api/v1/bachelp/employee/#{employee_id}")
+          response = api_client.get("/api/v1/redmine/employee/#{employee_id}")
           return nil unless response && response['success']
 
           employee_data = response['employee']

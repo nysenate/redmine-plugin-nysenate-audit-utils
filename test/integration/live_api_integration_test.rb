@@ -132,7 +132,7 @@ class LiveApiIntegrationTest < ActiveSupport::TestCase
         settings['ess_base_url'], 
         'invalid-key-12345'
       )
-      result = invalid_client.get('/api/v1/bachelp/employee/search', {term: "test", limit: 5})
+      result = invalid_client.get('/api/v1/redmine/employee/search', {term: "test", limit: 5})
       
       if result.is_a?(Hash) && result['success']
         puts "⚠️  Unexpected success with invalid key"

@@ -15,7 +15,7 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
       ]
     }
 
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/employee/search', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
       term: 'smith',
       limit: 20,
       offset: 0
@@ -36,7 +36,7 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
     }
 
     # Plugin uses 0-based offset=100, which translates to ESS 1-based offset=101
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/employee/search', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
       term: 'test',
       limit: 50,
       offset: 101
@@ -48,7 +48,7 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
   end
 
   def test_search_validates_limit_bounds
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/employee/search', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
       term: 'test',
       limit: 20,
       offset: 0
@@ -56,7 +56,7 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
 
     NysenateAuditUtils::Ess::EssEmployeeService.search('test', limit: 0)
 
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/employee/search', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
       term: 'test',
       limit: 1000,
       offset: 0
@@ -66,7 +66,7 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
   end
 
   def test_search_validates_offset_bounds
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/employee/search', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
       term: 'test',
       limit: 20,
       offset: 0
@@ -76,7 +76,7 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
   end
 
   def test_search_omits_empty_term_param
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/employee/search', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
       limit: 20,
       offset: 0
     }).returns({'success' => true, 'result' => []})
@@ -106,7 +106,7 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
       'employee' => sample_employee_data(12345, 'jsmith', 'John', 'Smith')
     }
 
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/employee/12345').returns(api_response)
+    @api_client_mock.expects(:get).with('/api/v1/redmine/employee/12345').returns(api_response)
 
     employee = NysenateAuditUtils::Ess::EssEmployeeService.find_by_id(12345)
 
@@ -152,7 +152,7 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
 
   def test_offset_translation_zero_offset_stays_zero
     # Special case: offset=0 maps to ESS offset=0 (positions 1-20)
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/employee/search', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
       term: 'test',
       limit: 20,
       offset: 0
@@ -163,7 +163,7 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
 
   def test_offset_translation_first_page_to_second_page
     # Plugin offset=20 (records 20-39) → ESS offset=21 (positions 21-40)
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/employee/search', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
       term: 'test',
       limit: 20,
       offset: 21
@@ -174,7 +174,7 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
 
   def test_offset_translation_second_page_to_third_page
     # Plugin offset=40 (records 40-59) → ESS offset=41 (positions 41-60)
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/employee/search', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
       term: 'test',
       limit: 20,
       offset: 41
@@ -187,7 +187,7 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
     # This test verifies the fix for the pagination bug
     # Without translation: plugin offset=20 → ESS offset=20 → duplicate at position 20
     # With translation: plugin offset=20 → ESS offset=21 → no duplicate
-    @api_client_mock.expects(:get).with('/api/v1/bachelp/employee/search', {
+    @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
       term: 'richard',
       limit: 20,
       offset: 21

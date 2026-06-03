@@ -92,7 +92,7 @@ class AuditUtilsSettingsController < ApplicationController
 
     test_term = 'fdsafsda'
     client = NysenateAuditUtils::Ess::EssApiClient.new(base_url, api_key)
-    response = client.get('/api/v1/bachelp/employee/search', term: test_term, limit: 1, offset: 0)
+    response = client.get('/api/v1/redmine/employee/search', term: test_term, limit: 1, offset: 0)
     count = (response && response['result'].is_a?(Array)) ? response['result'].size : 0
 
     render json: {
