@@ -16,7 +16,7 @@ class EssApiClientTest < ActiveSupport::TestCase
   end
 
   def test_get_successful_request
-    stub_request(:get, "https://api.test.com/bachelp/employee/search")
+    stub_request(:get, "https://api.test.com/redmine/employee/search")
       .with(headers: {
         'X-API-Key' => 'test-key-123',
         'Content-Type' => 'application/json',
@@ -24,7 +24,7 @@ class EssApiClientTest < ActiveSupport::TestCase
       })
       .to_return(status: 200, body: @employee_search_fixture, headers: {})
 
-    result = @client.get('/bachelp/employee/search')
+    result = @client.get('/redmine/employee/search')
 
     assert_not_nil result
     assert_equal true, result['success']
@@ -33,66 +33,66 @@ class EssApiClientTest < ActiveSupport::TestCase
   end
 
   def test_get_with_params
-    stub_request(:get, "https://api.test.com/bachelp/employee/search?term=smith&limit=10")
+    stub_request(:get, "https://api.test.com/redmine/employee/search?term=smith&limit=10")
       .with(headers: { 'X-API-Key' => 'test-key-123' })
       .to_return(status: 200, body: @employee_search_fixture, headers: {})
 
-    result = @client.get('/bachelp/employee/search', { term: 'smith', limit: 10 })
+    result = @client.get('/redmine/employee/search', { term: 'smith', limit: 10 })
 
     assert_not_nil result
     assert_equal 14379, result['total']
   end
 
   def test_authentication_error
-    stub_request(:get, "https://api.test.com/bachelp/employee/search")
+    stub_request(:get, "https://api.test.com/redmine/employee/search")
       .to_return(status: 401, body: '{"error": "Invalid API key"}', headers: {})
 
     assert_raises NysenateAuditUtils::Ess::EssApiClient::AuthenticationError do
-      @client.get('/bachelp/employee/search')
+      @client.get('/redmine/employee/search')
     end
   end
 
   def test_not_found_returns_nil
-    stub_request(:get, "https://api.test.com/bachelp/employee/999999")
+    stub_request(:get, "https://api.test.com/redmine/employee/999999")
       .to_return(status: 404, body: '{"error": "Employee not found"}', headers: {})
 
-    result = @client.get('/bachelp/employee/999999')
+    result = @client.get('/redmine/employee/999999')
     assert_nil result
   end
 
   def test_server_error
-    stub_request(:get, "https://api.test.com/bachelp/employee/search")
+    stub_request(:get, "https://api.test.com/redmine/employee/search")
       .to_return(status: 500, body: '{"error": "Internal server error"}', headers: {})
 
     assert_raises NysenateAuditUtils::Ess::EssApiClient::ApiError do
-      @client.get('/bachelp/employee/search')
+      @client.get('/redmine/employee/search')
     end
   end
 
   def test_network_timeout
-    stub_request(:get, "https://api.test.com/bachelp/employee/search")
+    stub_request(:get, "https://api.test.com/redmine/employee/search")
       .to_timeout
 
     assert_raises NysenateAuditUtils::Ess::EssApiClient::NetworkError do
-      @client.get('/bachelp/employee/search')
+      @client.get('/redmine/employee/search')
     end
   end
 
   def test_connection_refused
-    stub_request(:get, "https://api.test.com/bachelp/employee/search")
+    stub_request(:get, "https://api.test.com/redmine/employee/search")
       .to_raise(Errno::ECONNREFUSED)
 
     assert_raises NysenateAuditUtils::Ess::EssApiClient::NetworkError do
-      @client.get('/bachelp/employee/search')
+      @client.get('/redmine/employee/search')
     end
   end
 
   def test_invalid_json_response
-    stub_request(:get, "https://api.test.com/bachelp/employee/search")
+    stub_request(:get, "https://api.test.com/redmine/employee/search")
       .to_return(status: 200, body: 'invalid json{', headers: {})
 
     assert_raises NysenateAuditUtils::Ess::EssApiClient::ApiError do
-      @client.get('/bachelp/employee/search')
+      @client.get('/redmine/employee/search')
     end
   end
 
