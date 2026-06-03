@@ -26,6 +26,7 @@ Rails.application.routes.draw do
       post :autoconfigure_all
       post :autoconfigure_field
       get :configuration_status
+      post :test_ess_connection
       delete :delete_dangling_mapping
       delete :delete_all_dangling_mappings
     end

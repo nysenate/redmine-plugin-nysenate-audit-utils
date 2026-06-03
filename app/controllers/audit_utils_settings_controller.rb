@@ -75,6 +75,42 @@ class AuditUtilsSettingsController < ApplicationController
     render json: { error: e.message }, status: :internal_server_error
   end
 
+  # Test the ESS API connection by performing a search expected to return no results.
+  # Verifies that base URL, API key, and network connectivity all work.
+  # Uses base_url/api_key from params when provided (to test unsaved form values),
+  # otherwise falls back to saved settings.
+  # POST /audit_utils_settings/test_ess_connection
+  def test_ess_connection
+    base_url = params[:ess_base_url].presence || NysenateAuditUtils::Ess::EssConfiguration.base_url
+    api_key = params[:ess_api_key].presence || NysenateAuditUtils::Ess::EssConfiguration.api_key
+
+    # Persist the submitted values so the test reflects what will be saved.
+    settings = Setting.plugin_nysenate_audit_utils || {}
+    settings['ess_base_url'] = base_url
+    settings['ess_api_key'] = api_key
+    Setting.plugin_nysenate_audit_utils = settings
+
+    test_term = 'fdsafsda'
+    client = NysenateAuditUtils::Ess::EssApiClient.new(base_url, api_key)
+    response = client.get('/api/v1/bachelp/employee/search', term: test_term, limit: 1, offset: 0)
+    count = (response && response['result'].is_a?(Array)) ? response['result'].size : 0
+
+    render json: {
+      success: true,
+      message: "ESS API connection successful. Search for '#{test_term}' returned #{count} result(s)."
+    }
+  rescue NysenateAuditUtils::Ess::EssApiClient::AuthenticationError => e
+    render json: { success: false, message: "Authentication failed: #{e.message}" }, status: :ok
+  rescue NysenateAuditUtils::Ess::EssApiClient::NetworkError => e
+    render json: { success: false, message: "Network error: #{e.message}" }, status: :ok
+  rescue NysenateAuditUtils::Ess::EssApiClient::ApiError => e
+    render json: { success: false, message: "API error: #{e.message}" }, status: :ok
+  rescue => e
+    logger.error "ESS connection test error: #{e.message}"
+    logger.error e.backtrace.join("\n")
+    render json: { success: false, message: "Unexpected error: #{e.message}" }, status: :ok
+  end
+
   # Delete a dangling request code mapping
   # DELETE /nysenate_audit_utils_settings/delete_dangling_mapping
   # Params: type - 'system' or 'action', value - the mapping key to delete
