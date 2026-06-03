@@ -45,7 +45,7 @@ class AuditReportsController < ApplicationController
     sort_init 'post_date', 'asc'
     sort_update({
       'employee_name' => 'employee_name',
-      'transaction_codes' => 'transaction_codes',
+      'status_changes' => 'status_changes',
       'office' => 'office',
       'office_location' => 'office_location',
       'employee_id' => 'employee_id',
@@ -363,6 +363,12 @@ class AuditReportsController < ApplicationController
     data.sort do |a, b|
       a_val = a[sort_key.to_sym]
       b_val = b[sort_key.to_sym]
+
+      # status_changes is an array of {code:, note:}; sort by joined codes
+      if sort_key.to_sym == :status_changes
+        a_val = a_val.is_a?(Array) ? a_val.map { |c| c[:code] }.join(',') : a_val
+        b_val = b_val.is_a?(Array) ? b_val.map { |c| c[:code] }.join(',') : b_val
+      end
 
       # Handle nil values - push them to the end
       if a_val.nil? && b_val.nil?

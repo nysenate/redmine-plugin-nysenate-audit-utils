@@ -32,7 +32,7 @@ module NysenateAuditUtils
             'Account Holder Name',
             'Account Status',
             'Open Tickets',
-            'Transaction Codes',
+            'Status Changes',
             'Account Holder Office',
             'Account Holder Location',
             'Account Holder ID',
@@ -56,11 +56,19 @@ module NysenateAuditUtils
               ''
             end
 
+            status_changes_str = if row[:status_changes].present?
+              row[:status_changes].map { |sc|
+                sc[:notes].present? ? "#{sc[:code]} - #{sc[:notes]}" : sc[:code]
+              }.join("\n")
+            else
+              ''
+            end
+
             csv << [
               row[:user_name],
               account_status_str,
               open_tickets_str,
-              row[:transaction_codes],
+              status_changes_str,
               row[:office],
               row[:office_location],
               row[:user_id],

@@ -12,13 +12,15 @@ class EssStatusChangeTest < ActiveSupport::TestCase
       'workPhone' => '(518) 555-0123',
       'active' => true,
       'transactionCode' => 'APP',
-      'postDateTime' => '2023-08-15T10:30:00Z'
+      'postDateTime' => '2023-08-15T10:30:00Z',
+      'notes' => 'newly hired'
     }
 
     status_change = EssStatusChange.new(api_data)
 
     assert_equal 'APP', status_change.transaction_code
     assert_not_nil status_change.post_date_time
+    assert_equal 'newly hired', status_change.notes
     assert_equal 12345, status_change.employee.employee_id
     assert_equal 'jsmith', status_change.employee.uid
   end
@@ -73,7 +75,8 @@ class EssStatusChangeTest < ActiveSupport::TestCase
       'workPhone' => '(518) 555-0123',
       'active' => true,
       'transactionCode' => 'APP',
-      'postDateTime' => '2023-08-15T10:30:00Z'
+      'postDateTime' => '2023-08-15T10:30:00Z',
+      'notes' => 'newly hired'
     }
 
     status_change = EssStatusChange.new(api_data)
@@ -83,6 +86,7 @@ class EssStatusChangeTest < ActiveSupport::TestCase
     assert_equal 'jsmith', hash[:uid]
     assert_equal 'APP', hash[:transaction_code]
     assert_equal 'Employee appointment/hiring', hash[:transaction_description]
+    assert_equal 'newly hired', hash[:notes]
     assert_not_nil hash[:post_date_time]
   end
 

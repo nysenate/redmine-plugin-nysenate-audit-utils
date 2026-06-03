@@ -92,7 +92,7 @@
         <%= sort_header_tag('user_name', caption: 'Account Holder Name') %>
         <th>Current Status</th>
         <th>Open Tickets</th>
-        <%= sort_header_tag('transaction_codes', caption: 'Transaction Codes') %>
+        <%= sort_header_tag('status_changes', caption: 'Status Changes') %>
         <%= sort_header_tag('office', caption: 'Account Holder Office') %>
         <%= sort_header_tag('office_location', caption: 'Account Holder Location') %>
         <%= sort_header_tag('user_id', caption: 'Account Holder ID') %>
@@ -144,7 +144,17 @@
               <span class="no-data">—</span>
             <% end %>
           </td>
-          <td><%= row[:transaction_codes] %></td>
+          <td class="status-changes-cell">
+            <% if row[:status_changes].present? %>
+              <% row[:status_changes].each do |sc| %>
+                <div class="status-change-line">
+                  <span class="status-change-code"><%= sc[:code] %></span><% if sc[:notes].present? %><span class="status-change-notes"><%= sc[:notes] %></span><% end %>
+                </div>
+              <% end %>
+            <% else %>
+              <span class="no-data">—</span>
+            <% end %>
+          </td>
           <td><%= row[:office] %></td>
           <td><%= row[:office_location] || '—' %></td>
           <td><%= row[:user_id] %></td>
@@ -392,5 +402,40 @@
   .small {
     font-size: 0.85em;
     color: #666;
+  }
+
+  /* Multi-line Status Changes column: anchor all cells to the top so rows of
+     varying heights stay readable, and allow wrapping inside the cell. */
+  table.list.issues td,
+  table.list.issues th {
+    vertical-align: top;
+  }
+
+  table.list.issues td.status-changes-cell {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.4;
+    text-align: left;
+    padding-left: 1em;
+  }
+
+  table.list.issues td.status-changes-cell .status-change-line {
+    white-space: normal;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  table.list.issues td.status-changes-cell .status-change-code {
+    flex: 0 0 3em;
+    font-weight: 700;
+  }
+
+  table.list.issues td.status-changes-cell .status-change-notes {
+    flex: 1 1 auto;
+  }
+
+  table.list.issues td.status-changes-cell .status-change-notes {
+    font-weight: 400;
+    color: #777;
   }
 </style>

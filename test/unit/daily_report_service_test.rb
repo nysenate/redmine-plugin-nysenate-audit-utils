@@ -62,7 +62,7 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     assert_equal 'John Doe', result.first[:user_name]
     assert_equal [], result.first[:account_statuses]
     assert_equal [], result.first[:open_requests]
-    assert_equal 'APP', result.first[:transaction_codes]
+    assert_equal [{ code: 'APP', notes: nil }], result.first[:status_changes]
     assert_equal 12345, result.first[:user_id]
   end
 
@@ -95,21 +95,39 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     assert row.key?(:user_name)
     assert row.key?(:account_statuses)
     assert row.key?(:open_requests)
-    assert row.key?(:transaction_codes)
+    assert row.key?(:status_changes)
     assert row.key?(:office)
     assert row.key?(:office_location)
     assert row.key?(:user_id)
     assert row.key?(:post_date)
   end
 
-  test 'generate includes transaction codes' do
-    changes = [create_mock_status_change(transaction_code: 'APP')]
+  test 'generate includes status changes with notes' do
+    changes = [create_mock_status_change(transaction_code: 'APP', notes: 'hired today')]
     mock_ess_api(changes)
     mock_account_tracking('12345', [], [])
 
     result = @service.generate
 
-    assert_equal 'APP', result.first[:transaction_codes]
+    assert_equal [{ code: 'APP', notes: 'hired today' }], result.first[:status_changes]
+  end
+
+  test 'generate orders status changes chronologically' do
+    early = DateTime.new(2025, 1, 10, 9, 0, 0)
+    late  = DateTime.new(2025, 1, 15, 9, 0, 0)
+    changes = [
+      create_mock_status_change(employee_id: 12345, transaction_code: 'PHO', post_date_time: late, notes: 'new phone'),
+      create_mock_status_change(employee_id: 12345, transaction_code: 'APP', post_date_time: early, notes: 'hired')
+    ]
+    NysenateAuditUtils::Ess::EssStatusChangeService.stubs(:changes_for_date_range).returns(changes)
+    mock_account_tracking('12345', [], [])
+
+    result = @service.generate
+
+    assert_equal [
+      { code: 'APP', notes: 'hired' },
+      { code: 'PHO', notes: 'new phone' }
+    ], result.first[:status_changes]
   end
 
   test 'generate includes employee office info' do
@@ -193,10 +211,13 @@ class DailyReportServiceTest < ActiveSupport::TestCase
 
     result = @service.generate
 
-    # Should return only one row for the employee with combined transaction codes
+    # Should return only one row for the employee with combined status changes
     assert_equal 1, result.size
     assert_equal 12345, result.first[:user_id]
-    assert_equal 'APP, PHO', result.first[:transaction_codes]
+    assert_equal [
+      { code: 'APP', notes: nil },
+      { code: 'PHO', notes: nil }
+    ], result.first[:status_changes]
   end
 
   test 'generate uses latest post date for grouped transactions' do
@@ -243,7 +264,8 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     transaction_code: 'APP',
     post_date_time: DateTime.now,
     work_phone: '555-1234',
-    office_short_name: 'Test Office'
+    office_short_name: 'Test Office',
+    notes: nil
   )
     employee_data = {
       employee_id: employee_id,
@@ -265,6 +287,7 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     EssStatusChange.new(
       transaction_code: transaction_code,
       post_date_time: post_date_time,
+      notes: notes,
       employee_data: employee_data
     )
   end
