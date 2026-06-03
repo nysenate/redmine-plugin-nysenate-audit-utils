@@ -29,7 +29,6 @@
         <button type="button" id="prev-day-btn" class="button-small" title="Previous day">&laquo; Prev</button>
         <%= date_field_tag :end_date, @to_date.strftime('%Y-%m-%d'),
             id: 'business_day_date',
-            min: 7.days.ago.to_date.strftime('%Y-%m-%d'),
             max: 1.day.from_now.to_date.strftime('%Y-%m-%d'),
             class: "date-picker auto-submit",
             disabled: @mode != 'business_day' %>
@@ -42,7 +41,6 @@
       <p>
         <%= label_tag :start_date, "Start Date" %>
         <%= date_field_tag :start_date, @from_date.strftime('%Y-%m-%d'),
-            min: 7.days.ago.to_date.strftime('%Y-%m-%d'),
             max: 1.day.from_now.to_date.strftime('%Y-%m-%d'),
             class: "date-picker auto-submit",
             disabled: @mode != 'range' %>
@@ -52,7 +50,6 @@
         <%= label_tag :end_date, "End Date" %>
         <%= date_field_tag :end_date, @to_date.strftime('%Y-%m-%d'),
             id: 'range_end_date',
-            min: 7.days.ago.to_date.strftime('%Y-%m-%d'),
             max: 1.day.from_now.to_date.strftime('%Y-%m-%d'),
             class: "date-picker auto-submit",
             disabled: @mode != 'range' %>
@@ -72,6 +69,11 @@
   </fieldset>
 <% end %>
 
+<p id="range-too-wide-msg" class="range-warning nodata" style="display:none;">
+  Date range exceeds 2 months. Please narrow the range to run the report.
+</p>
+
+<div id="report-results">
 <% if @report_data.nil? || @report_data.empty? %>
   <p class="nodata">No user status changes found for the query period.</p>
 <% else %>
@@ -165,6 +167,7 @@
     </tbody>
   </table>
 <% end %>
+</div>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -236,12 +239,51 @@
       });
     });
 
-    // Auto-submit form when date inputs change
+    // Validate range mode date span; show warning when > 2 months apart
+    const MAX_RANGE_MONTHS = 2;
+    const rangeWarning = document.getElementById('range-too-wide-msg');
+
+    function rangeExceedsLimit() {
+      if (!startDateInput || !rangeEndDateInput) return false;
+      if (!startDateInput.value || !rangeEndDateInput.value) return false;
+      const start = parseLocal(startDateInput.value);
+      const end = parseLocal(rangeEndDateInput.value);
+      const limit = new Date(start.getFullYear(), start.getMonth() + MAX_RANGE_MONTHS, start.getDate());
+      return end > limit;
+    }
+
+    function isRangeMode() {
+      const selected = document.querySelector('.mode-toggle:checked');
+      return selected && selected.value === 'range';
+    }
+
+    const resultsContainer = document.getElementById('report-results');
+
+    function updateRangeWarning() {
+      if (!rangeWarning) return;
+      const exceeds = isRangeMode() && rangeExceedsLimit();
+      rangeWarning.style.display = exceeds ? '' : 'none';
+      if (resultsContainer) resultsContainer.style.display = exceeds ? 'none' : '';
+      return exceeds;
+    }
+
+    // Auto-submit form when date inputs change (unless range exceeds limit)
     document.querySelectorAll('.auto-submit').forEach(function(input) {
       input.addEventListener('change', function() {
+        if (updateRangeWarning()) return;
         form.submit();
       });
     });
+
+    // Block any other submit path (mode toggle, full-week, prev/next) when range too wide
+    form.addEventListener('submit', function(e) {
+      if (updateRangeWarning()) {
+        e.preventDefault();
+      }
+    });
+
+    // Show warning on initial load if URL params produced a too-wide range
+    updateRangeWarning();
 
     // Set to full week (6 days ago to today) — range mode only
     if (fullWeekBtn) {
@@ -270,11 +312,9 @@
       const prev = new Date(current); prev.setDate(prev.getDate() - 1);
       const next = new Date(current); next.setDate(next.getDate() + 1);
 
-      const now = new Date();
-      const sevenDaysAgo = new Date(now); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7); sevenDaysAgo.setHours(0,0,0,0);
       const tomorrow = new Date(); tomorrow.setHours(0,0,0,0); tomorrow.setDate(tomorrow.getDate() + 1);
 
-      setBtnDisabled(prevDayBtn, prev.getTime() <= sevenDaysAgo.getTime());
+      setBtnDisabled(prevDayBtn, false);
       setBtnDisabled(nextDayBtn, next.getTime() > tomorrow.getTime());
     }
 
@@ -397,6 +437,15 @@
 
   .no-data {
     color: #999;
+  }
+
+  .range-warning {
+    color: #a00;
+    font-weight: bold;
+    background-color: #fff4f4;
+    border: 1px solid #f3c8c8;
+    text-align: center;
+    padding: 2em;
   }
 
   .small {

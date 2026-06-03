@@ -310,17 +310,10 @@ class AuditReportsController < ApplicationController
       raise ArgumentError, "Start date must be before end date"
     end
 
-    # Calculate the earliest allowed date (7 days ago from today)
+    # Allow dates up to tomorrow
     today = Date.current
     tomorrow = today + 1.day
-    earliest_allowed = today - 7.days
 
-    # Check if start date is before the earliest allowed date
-    if from_date.to_date < earliest_allowed
-      raise ArgumentError, "Start date cannot be more than 7 days in the past"
-    end
-
-    # Allow dates up to tomorrow
     if from_date.to_date > tomorrow
       raise ArgumentError, "Start date cannot be more than 1 day in the future"
     end
