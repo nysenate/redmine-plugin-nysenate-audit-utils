@@ -5,6 +5,7 @@ class EssStatusChange
 
   attribute :transaction_code, :string
   attribute :post_date_time, :datetime
+  attribute :notes, :string
   
   attr_reader :employee
 
@@ -15,7 +16,8 @@ class EssStatusChange
     'PHO' => 'Phone number change',
     'RTP' => 'Re-appointment',
     'LIN' => 'Line number',
-    'EMP' => 'Termination'
+    'EMP' => 'Termination',
+    'RSH' => 'Responsibility center change'
   }.freeze
 
   validates :transaction_code, presence: true, inclusion: { in: TRANSACTION_CODES.keys }
@@ -43,7 +45,8 @@ class EssStatusChange
     employee.to_hash.merge({
       transaction_code: transaction_code,
       transaction_description: transaction_description,
-      post_date_time: post_date_time
+      post_date_time: post_date_time,
+      notes: notes
     })
   end
 
@@ -57,6 +60,7 @@ class EssStatusChange
     {
       transaction_code: api_response['transactionCode'],
       post_date_time: parse_datetime(api_response['postDateTime']),
+      notes: api_response['notes'],
       employee_data: api_response
     }
   end

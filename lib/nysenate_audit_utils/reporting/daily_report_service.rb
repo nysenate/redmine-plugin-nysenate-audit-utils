@@ -69,8 +69,14 @@ module NysenateAuditUtils
           # Use the first change for employee data (all should be the same employee)
           employee = changes.first.employee
 
-          # Collect all transaction codes and find latest post date
-          transaction_codes = changes.map(&:transaction_code).uniq.join(', ')
+          # Build chronologically ordered list of status changes with notes.
+          # Entries lacking a post_date_time sort last but otherwise preserve input order.
+          ordered_changes = changes.each_with_index.sort_by do |change, idx|
+            [change.post_date_time ? 0 : 1, change.post_date_time || Time.at(0), idx]
+          end.map(&:first)
+          status_changes = ordered_changes.map do |change|
+            { code: change.transaction_code, notes: change.notes }
+          end
           latest_post_date = changes.map { |c| c.post_date_time }.compact.max&.to_date
 
           # Get account statuses and open requests for this employee (filtered by project if provided)
@@ -82,7 +88,7 @@ module NysenateAuditUtils
             user_name: employee.display_name,
             account_statuses: account_statuses,
             open_requests: open_requests,
-            transaction_codes: transaction_codes,
+            status_changes: status_changes,
             office: employee.resp_center_display_name,
             office_location: employee.location&.display_name,
             user_id: employee_id,

@@ -93,7 +93,7 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     user_uid: 'jdoe',
     office: 'STS',
     office_location: 'Albany',
-    transaction_codes: 'TC1',
+    status_changes: [{ code: 'TC1', notes: 'sample note' }],
     post_date: '2026-04-28',
     account_statuses: [{ request_code: 'OAA' }],
     open_requests: []
