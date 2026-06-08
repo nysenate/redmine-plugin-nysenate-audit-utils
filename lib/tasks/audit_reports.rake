@@ -1,6 +1,27 @@
 # frozen_string_literal: true
 
 namespace :nysenate_audit_utils do
+  # Archive a generated report to the project's Files repository.
+  # Prints operator-visible status to stdout; ProjectFileArchiver handles logging.
+  def archive_report_to_project_files(project:, filename:, content:, content_type:, description: nil)
+    unless project.module_enabled?(:files)
+      puts "Skipped archiving to project Files (Files module not enabled on '#{project.identifier}')"
+      return
+    end
+
+    if NysenateAuditUtils::Reporting::ProjectFileArchiver.archive(
+      project: project,
+      filename: filename,
+      content: content,
+      content_type: content_type,
+      description: description
+    )
+      puts "Archived report to project Files: #{filename}"
+    else
+      puts "Warning: failed to archive report to project Files (see log)"
+    end
+  end
+
   desc <<-END_DESC
 Send daily audit report via email.
 
@@ -94,6 +115,17 @@ END_DESC
       )
     end
 
+    # Archive CSV to project Files
+    archive_report_to_project_files(
+      project: project,
+      filename: "daily_report_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv",
+      content: NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv(
+        report_data, from_date: service.from_date, to_date: service.to_date
+      ),
+      content_type: 'text/csv',
+      description: "Daily audit report #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
+    )
+
     puts "Daily report sent to: #{recipient_list.join(', ')}"
     puts "Mode: #{mode}"
     puts "Report period: #{service.from_date.strftime('%Y-%m-%d %H:%M')} to #{service.to_date.strftime('%Y-%m-%d %H:%M')}"
@@ -169,6 +201,17 @@ END_DESC
         project.identifier
       )
     end
+
+    # Archive CSV to project Files
+    archive_report_to_project_files(
+      project: project,
+      filename: "weekly_report_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv",
+      content: NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(
+        report_data, from_date: service.from_date, to_date: service.to_date
+      ),
+      content_type: 'text/csv',
+      description: "Weekly audit report #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
+    )
 
     puts "Weekly report sent to: #{recipient_list.join(', ')}"
     puts "Report period: #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
@@ -273,6 +316,18 @@ END_DESC
       )
     end
 
+    # Archive CSV to project Files
+    filename_suffix = mode == 'current' ? 'current' : "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
+    archive_report_to_project_files(
+      project: project,
+      filename: "monthly_report_#{target_system.parameterize}_#{filename_suffix}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv",
+      content: NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
+        report_data, as_of_time: as_of_time, target_system: target_system
+      ),
+      content_type: 'text/csv',
+      description: "Monthly audit report - #{target_system} - #{filename_suffix}"
+    )
+
     puts "Monthly report sent to: #{recipient_list.join(', ')}"
     puts "Target system: #{target_system}"
     puts "Mode: #{mode}"
@@ -374,6 +429,18 @@ END_DESC
         status_filter
       )
     end
+
+    # Archive ZIP to project Files
+    filename_suffix = mode == 'current' ? 'current' : "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
+    archive_report_to_project_files(
+      project: project,
+      filename: "monthly_reports_all_systems_#{filename_suffix}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.zip",
+      content: NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(
+        reports_by_system, filename_suffix, as_of_time: as_of_time
+      ),
+      content_type: 'application/zip',
+      description: "Monthly audit report - All Systems - #{filename_suffix}"
+    )
 
     total = reports_by_system.values.sum(&:size)
     puts "All-systems monthly report sent to: #{recipient_list.join(', ')}"

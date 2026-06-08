@@ -200,6 +200,8 @@ The plugin provides rake tasks for generating and emailing audit reports. Run th
 
 **Important**: All rake tasks must be run from the Redmine root directory.
 
+Each successful rake run also archives a copy of the generated CSV/ZIP to the selected project's **Files** repository (with a timestamped filename) for audit trail. If the project does not have the Files module enabled, archiving is skipped with a warning and the email is still sent.
+
 ### Available Tasks
 
 #### Send Daily Report
