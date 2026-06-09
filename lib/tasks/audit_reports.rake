@@ -22,6 +22,11 @@ namespace :nysenate_audit_utils do
     end
   end
 
+  # Parse a truthy flag from an ENV value ('1', 'true', or 'yes').
+  def truthy_env?(value)
+    %w[1 true yes].include?(value.to_s.downcase)
+  end
+
   desc <<-END_DESC
 Send daily audit report via email.
 
@@ -35,6 +40,8 @@ Available options:
                   - range: uses start_date and end_date explicitly.
   * start_date => start date in YYYY-MM-DD format (range mode only, defaults to yesterday)
   * end_date   => end date in YYYY-MM-DD format (defaults to today; range ends at 00:00 server local time, exclusive)
+  * no_email   => '1', 'true', or 'yes' to skip sending the email (the CSV is still
+                  archived to project Files); recipients are not required in this mode
 
 Example:
   rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV="production"  # business_day mode, today
@@ -58,17 +65,19 @@ END_DESC
       exit 1
     end
 
+    no_email = truthy_env?(ENV['no_email'])
+
     # Parse recipients - use configured default if not provided
     recipients = ENV['recipients'].presence || Setting.plugin_nysenate_audit_utils['report_recipients']
 
-    unless recipients.present?
+    if !no_email && recipients.blank?
       puts "Error: No recipients configured"
       puts "Either provide recipients parameter or configure default recipients in plugin settings"
       puts "Usage: rake nysenate_audit_utils:send_daily_report project_id=\"#{project_id}\" recipients=\"email1,email2\" RAILS_ENV=production"
       exit 1
     end
 
-    recipient_list = recipients.split(',').map(&:strip)
+    recipient_list = recipients.to_s.split(',').map(&:strip)
 
     # Determine mode (default: business_day)
     mode = ENV['mode'].presence == 'range' ? 'range' : 'business_day'
@@ -104,15 +113,17 @@ END_DESC
       exit 1
     end
 
-    # Send email with CSV attachment
-    Mailer.with_synched_deliveries do
-      AuditReportsMailer.deliver_daily_report(
-        recipient_list,
-        report_data,
-        service.from_date,
-        service.to_date,
-        project.identifier
-      )
+    # Send email with CSV attachment (unless suppressed)
+    unless no_email
+      Mailer.with_synched_deliveries do
+        AuditReportsMailer.deliver_daily_report(
+          recipient_list,
+          report_data,
+          service.from_date,
+          service.to_date,
+          project.identifier
+        )
+      end
     end
 
     # Archive CSV to project Files
@@ -126,7 +137,11 @@ END_DESC
       description: "Daily audit report #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
     )
 
-    puts "Daily report sent to: #{recipient_list.join(', ')}"
+    if no_email
+      puts "Daily report email skipped (no_email set)"
+    else
+      puts "Daily report sent to: #{recipient_list.join(', ')}"
+    end
     puts "Mode: #{mode}"
     puts "Report period: #{service.from_date.strftime('%Y-%m-%d %H:%M')} to #{service.to_date.strftime('%Y-%m-%d %H:%M')}"
     puts "Employees with status changes: #{report_data.size}"
@@ -140,6 +155,8 @@ Available options:
   * recipients => comma-separated list of email addresses (optional, uses plugin settings if not provided)
   * start_date => report start date YYYY-MM-DD (optional, defaults to previous Sunday)
   * end_date   => report end date YYYY-MM-DD (optional, defaults to most recent Sunday)
+  * no_email   => '1', 'true', or 'yes' to skip sending the email (the CSV is still
+                  archived to project Files); recipients are not required in this mode
 
 Example:
   rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV="production"
@@ -162,17 +179,19 @@ END_DESC
       exit 1
     end
 
+    no_email = truthy_env?(ENV['no_email'])
+
     # Parse recipients - use configured default if not provided
     recipients = ENV['recipients'].presence || Setting.plugin_nysenate_audit_utils['report_recipients']
 
-    unless recipients.present?
+    if !no_email && recipients.blank?
       puts "Error: No recipients configured"
       puts "Either provide recipients parameter or configure default recipients in plugin settings"
       puts "Usage: rake nysenate_audit_utils:send_weekly_report project_id=\"#{project_id}\" recipients=\"email1,email2\" RAILS_ENV=production"
       exit 1
     end
 
-    recipient_list = recipients.split(',').map(&:strip)
+    recipient_list = recipients.to_s.split(',').map(&:strip)
 
     # Parse optional date range (system local time)
     from_date = ENV['start_date'].present? ? Date.parse(ENV['start_date']).to_time : nil
@@ -191,15 +210,17 @@ END_DESC
       exit 1
     end
 
-    # Send email with CSV attachment
-    Mailer.with_synched_deliveries do
-      AuditReportsMailer.deliver_weekly_report(
-        recipient_list,
-        report_data,
-        service.from_date,
-        service.to_date,
-        project.identifier
-      )
+    # Send email with CSV attachment (unless suppressed)
+    unless no_email
+      Mailer.with_synched_deliveries do
+        AuditReportsMailer.deliver_weekly_report(
+          recipient_list,
+          report_data,
+          service.from_date,
+          service.to_date,
+          project.identifier
+        )
+      end
     end
 
     # Archive CSV to project Files
@@ -213,7 +234,11 @@ END_DESC
       description: "Weekly audit report #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
     )
 
-    puts "Weekly report sent to: #{recipient_list.join(', ')}"
+    if no_email
+      puts "Weekly report email skipped (no_email set)"
+    else
+      puts "Weekly report sent to: #{recipient_list.join(', ')}"
+    end
     puts "Report period: #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
     puts "Closed tickets: #{report_data.size}"
   end
@@ -228,6 +253,8 @@ Available options:
   * mode           => report mode: "current" or "monthly" (default: "current")
   * month          => month number 1-12 (for monthly mode, default: current month)
   * year           => year (for monthly mode, default: current year)
+  * no_email       => '1', 'true', or 'yes' to skip sending the email (the CSV is still
+                      archived to project Files); recipients are not required in this mode
 
 Example:
   rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_system="AIX" RAILS_ENV="production"
@@ -260,17 +287,19 @@ END_DESC
       exit 1
     end
 
+    no_email = truthy_env?(ENV['no_email'])
+
     # Parse recipients - use configured default if not provided
     recipients = ENV['recipients'].presence || Setting.plugin_nysenate_audit_utils['report_recipients']
 
-    unless recipients.present?
+    if !no_email && recipients.blank?
       puts "Error: No recipients configured"
       puts "Either provide recipients parameter or configure default recipients in plugin settings"
       puts "Usage: rake nysenate_audit_utils:send_monthly_report project_id=\"#{project_id}\" target_system=\"System\" recipients=\"email1,email2\" RAILS_ENV=production"
       exit 1
     end
 
-    recipient_list = recipients.split(',').map(&:strip)
+    recipient_list = recipients.to_s.split(',').map(&:strip)
 
     # Parse optional parameters
     mode = ENV['mode'].presence || 'monthly'
@@ -301,19 +330,21 @@ END_DESC
       exit 1
     end
 
-    # Send email with CSV attachment
-    Mailer.with_synched_deliveries do
-      AuditReportsMailer.deliver_monthly_report(
-        recipient_list,
-        report_data,
-        target_system,
-        mode,
-        as_of_time,
-        selected_month_num,
-        selected_year,
-        project.identifier,
-        status_filter
-      )
+    # Send email with CSV attachment (unless suppressed)
+    unless no_email
+      Mailer.with_synched_deliveries do
+        AuditReportsMailer.deliver_monthly_report(
+          recipient_list,
+          report_data,
+          target_system,
+          mode,
+          as_of_time,
+          selected_month_num,
+          selected_year,
+          project.identifier,
+          status_filter
+        )
+      end
     end
 
     # Archive CSV to project Files
@@ -328,7 +359,11 @@ END_DESC
       description: "Monthly audit report - #{target_system} - #{filename_suffix}"
     )
 
-    puts "Monthly report sent to: #{recipient_list.join(', ')}"
+    if no_email
+      puts "Monthly report email skipped (no_email set)"
+    else
+      puts "Monthly report sent to: #{recipient_list.join(', ')}"
+    end
     puts "Target system: #{target_system}"
     puts "Mode: #{mode}"
     if mode == 'current'
@@ -356,17 +391,19 @@ END_DESC
       exit 1
     end
 
+    no_email = truthy_env?(ENV['no_email'])
+
     # Parse recipients - use configured default if not provided
     recipients = ENV['recipients'].presence || Setting.plugin_nysenate_audit_utils['report_recipients']
 
-    unless recipients.present?
+    if !no_email && recipients.blank?
       puts "Error: No recipients configured"
       puts "Either provide recipients parameter or configure default recipients in plugin settings"
       puts "Usage: rake nysenate_audit_utils:send_all_systems_monthly_report project_id=\"#{project_id}\" recipients=\"email1,email2\" RAILS_ENV=production"
       exit 1
     end
 
-    recipient_list = recipients.split(',').map(&:strip)
+    recipient_list = recipients.to_s.split(',').map(&:strip)
 
     # Get all target systems from configuration
     target_system_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
@@ -416,18 +453,20 @@ END_DESC
       exit 1
     end
 
-    # Send email with ZIP attachment
-    Mailer.with_synched_deliveries do
-      AuditReportsMailer.deliver_all_systems_monthly_report(
-        recipient_list,
-        reports_by_system,
-        mode,
-        as_of_time,
-        selected_month_num,
-        selected_year,
-        project.identifier,
-        status_filter
-      )
+    # Send email with ZIP attachment (unless suppressed)
+    unless no_email
+      Mailer.with_synched_deliveries do
+        AuditReportsMailer.deliver_all_systems_monthly_report(
+          recipient_list,
+          reports_by_system,
+          mode,
+          as_of_time,
+          selected_month_num,
+          selected_year,
+          project.identifier,
+          status_filter
+        )
+      end
     end
 
     # Archive ZIP to project Files
@@ -443,7 +482,11 @@ END_DESC
     )
 
     total = reports_by_system.values.sum(&:size)
-    puts "All-systems monthly report sent to: #{recipient_list.join(', ')}"
+    if no_email
+      puts "All-systems monthly report email skipped (no_email set)"
+    else
+      puts "All-systems monthly report sent to: #{recipient_list.join(', ')}"
+    end
     puts "Systems included: #{reports_by_system.keys.join(', ')}"
     puts "Mode: #{mode}"
     if mode == 'current'
@@ -472,10 +515,13 @@ Available options:
   * dry_run    => '1', 'true', or 'yes' to skip writes and only report drift
   * force_email => '1', 'true', or 'yes' to always send the email even when
                   there are no changes or exceptions
+  * no_email   => '1', 'true', or 'yes' to never send the email (the CSV is still
+                  archived to project Files); takes precedence over force_email and
+                  recipients are not required in this mode
 
 By default no email is sent when the audit finds no changes and no exceptions
 (the CSV is still archived to project Files); this applies to dry runs too.
-Use force_email=1 to always send the email.
+Use force_email=1 to always send the email, or no_email=1 to never send it.
 
 Example:
   rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" RAILS_ENV=production
@@ -497,16 +543,18 @@ END_DESC
       exit 1
     end
 
+    no_email = truthy_env?(ENV['no_email'])
+
     recipients = ENV['recipients'].presence || Setting.plugin_nysenate_audit_utils['report_recipients']
-    unless recipients.present?
+    if !no_email && recipients.blank?
       puts 'Error: No recipients configured'
       puts 'Either provide recipients parameter or configure default recipients in plugin settings'
       exit 1
     end
-    recipient_list = recipients.split(',').map(&:strip)
+    recipient_list = recipients.to_s.split(',').map(&:strip)
 
-    dry_run = %w[1 true yes].include?(ENV['dry_run'].to_s.downcase)
-    force_email = %w[1 true yes].include?(ENV['force_email'].to_s.downcase)
+    dry_run = truthy_env?(ENV['dry_run'])
+    force_email = truthy_env?(ENV['force_email'])
 
     service = NysenateAuditUtils::Reporting::UserInfoAuditService.new(
       project: project,
@@ -525,9 +573,10 @@ END_DESC
 
     # Decide whether to email. By default, skip the email when the audit found
     # nothing actionable (no changes and no exceptions); force_email overrides
-    # the skip. This applies to dry runs too.
+    # the skip. no_email suppresses the email unconditionally and takes
+    # precedence over force_email. This applies to dry runs too.
     has_findings = result.changes.any? || result.exceptions.any?
-    should_email = force_email || has_findings
+    should_email = !no_email && (force_email || has_findings)
 
     email_error = nil
     if should_email
@@ -560,6 +609,8 @@ END_DESC
     summary = result.summary
     if email_error
       puts "Account Holder info audit NOT emailed (#{email_error})"
+    elsif no_email
+      puts 'Account Holder info audit email skipped (no_email set)'
     elsif !should_email
       puts 'Account Holder info audit email skipped (no changes or exceptions; use force_email=1 to override)'
     else
