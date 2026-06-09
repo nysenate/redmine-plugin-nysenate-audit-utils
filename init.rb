@@ -55,7 +55,7 @@ Redmine::Plugin.register :nysenate_audit_utils do
 
   menu :project_menu, :tracked_users,
        { controller: 'tracked_users', action: 'index' },
-       caption: 'Manage Tracked Users',
+       caption: 'Manage Vendors/Volunteers',
        param: :project_id,
        if: Proc.new { |p| p.module_enabled?(:audit_utils) }
 

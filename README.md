@@ -114,7 +114,7 @@ Edit the desired role(s) so that they grant the following permissions under **Au
 - **Export audit reports** - Export reports to CSV
 - **Use user autofill** - User search and autofill functionality
 - **Create ticket packets** - Generate ticket packets (PDF + attachments)
-- **Manage tracked users** - Create/edit/delete vendor, volunteer, and contractor records
+- **Manage Vendors/Volunteers** - Create/edit/delete vendor, volunteer, and contractor records
 
 Assign the role(s) to the applicable user(s) in project member settings:  **Projects → \*your project name\* → Settings → Members**
 
@@ -167,7 +167,7 @@ Generate audit-ready zip packages containing:
 
 Manage non-employee tracked users (vendors, volunteers, contractors, etc.) through the admin interface:
 
-**Access:** **Administration → Manage Tracked Users** (admin-only)
+**Access:** **Administration → Manage Vendors/Volunteers** (admin-only)
 
 **Features:**
 - Create, edit, and delete vendor records

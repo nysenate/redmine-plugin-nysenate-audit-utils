@@ -35,7 +35,7 @@ class TrackedUsersController < ApplicationController
   rescue => e
     logger.error "Error creating tracked user: #{e.message}"
     logger.error e.backtrace.join("\n")
-    flash.now[:error] = "An error occurred while creating the tracked user: #{e.message}"
+    flash.now[:error] = "An error occurred while creating the Vendor/Volunteer: #{e.message}"
     render :new
   end
 
@@ -55,7 +55,7 @@ class TrackedUsersController < ApplicationController
   rescue => e
     logger.error "Error updating tracked user: #{e.message}"
     logger.error e.backtrace.join("\n")
-    flash.now[:error] = "An error occurred while updating the tracked user: #{e.message}"
+    flash.now[:error] = "An error occurred while updating the Vendor/Volunteer: #{e.message}"
     render :edit
   end
 
@@ -64,13 +64,13 @@ class TrackedUsersController < ApplicationController
     if @tracked_user.destroy
       flash[:notice] = l(:notice_successful_delete)
     else
-      flash[:error] = "Failed to delete tracked user: #{@tracked_user.errors.full_messages.join(', ')}"
+      flash[:error] = "Failed to delete Vendor/Volunteer: #{@tracked_user.errors.full_messages.join(', ')}"
     end
     redirect_to project_tracked_users_path(@project)
   rescue => e
     logger.error "Error deleting tracked user: #{e.message}"
     logger.error e.backtrace.join("\n")
-    flash[:error] = "An error occurred while deleting the tracked user: #{e.message}"
+    flash[:error] = "An error occurred while deleting the Vendor/Volunteer: #{e.message}"
     redirect_to project_tracked_users_path(@project)
   end
 

@@ -1,4 +1,4 @@
-<% html_title('Edit Tracked User') %>
+<% html_title('Edit Vendor/Volunteer') %>
 
 <div class="contextual">
   <%= link_to 'Delete', project_tracked_user_path(@project, @tracked_user),
@@ -7,6 +7,6 @@
       class: 'icon icon-del' %>
 </div>
 
-<h2>Edit Tracked User: <%= @tracked_user.name %></h2>
+<h2>Edit Vendor/Volunteer: <%= @tracked_user.name %></h2>
 
 <%= render 'form' %>
