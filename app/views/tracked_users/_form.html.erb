@@ -6,11 +6,11 @@
       <%= f.select :user_type,
           options_for_select([['Vendor', 'Vendor'], ['Volunteer', 'Volunteer']], @tracked_user.user_type),
           {},
-          { required: true, label: 'User Type' } %>
+          { required: true, label: 'Type' } %>
     </p>
 
     <p>
-      <%= f.text_field :user_id, readonly: true, class: 'readonly', required: true, label: 'User ID' %>
+      <%= f.text_field :user_id, readonly: true, class: 'readonly', required: true, label: 'ID' %>
       <em class="info">Auto-generated numeric ID (e.g., 500001, 500002)</em>
     </p>
 
@@ -43,7 +43,7 @@
     </p>
   </div>
 
-  <%= submit_tag(@tracked_user.new_record? ? 'Create User' : 'Save User') %>
+  <%= submit_tag(@tracked_user.new_record? ? 'Create Vendor/Volunteer' : 'Save Vendor/Volunteer') %>
   <%= link_to 'Cancel', project_tracked_users_path(@project), class: 'button' %>
 <% end %>
 

@@ -1,16 +1,16 @@
-<% html_title('Manage Tracked Users') %>
+<% html_title('Manage Vendors/Volunteers') %>
 
 <div class="contextual">
-  <%= link_to 'New Tracked User', new_project_tracked_user_path(@project), class: 'icon icon-add' %>
+  <%= link_to 'New Vendor/Volunteer', new_project_tracked_user_path(@project), class: 'icon icon-add' %>
 </div>
 
-<h2>Manage Tracked Users</h2>
+<h2>Manage Vendors/Volunteers</h2>
 
 <% if @tracked_users.empty? %>
-  <p class="nodata">No tracked users found. Create a new tracked user to get started.</p>
+  <p class="nodata">No Vendors/Volunteers found. Create a new Vendor/Volunteer to get started.</p>
 <% else %>
   <p class="info">
-    Showing <%= @tracked_users.count %> of <%= @tracked_users_count %> <%= pluralize(@tracked_users_count, 'tracked user') %>
+    Showing <%= @tracked_users.count %> of <%= @tracked_users_count %> Vendors/Volunteers
   </p>
 
   <table class="list tracked-users">
