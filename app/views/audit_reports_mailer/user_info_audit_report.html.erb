@@ -1,0 +1,28 @@
+<h2>Account Holder Info Audit<% if @dry_run %> &mdash; Dry Run<% end %></h2>
+
+<p><strong>Project:</strong> <%= @project_identifier %></p>
+<p><strong>Mode:</strong> <%= @dry_run ? 'Dry run (no changes applied)' : 'Apply' %></p>
+
+<h3>Summary</h3>
+<ul>
+  <li>Account Holders scanned: <%= @summary[:pairs_scanned].to_i %></li>
+  <li>Account Holders with exceptions: <%= @summary[:pairs_with_exceptions].to_i %></li>
+  <li>Account Holders with changes: <%= @summary[:pairs_with_changes].to_i %></li>
+  <li>Field updates<%= @dry_run ? ' (would apply)' : ' applied' %>: <%= @summary[:field_updates].to_i %></li>
+</ul>
+
+<% if @summary[:exceptions_by_category].present? %>
+<h3>Tickets with exceptions by category</h3>
+<ul>
+  <% @summary[:exceptions_by_category].each do |category, count| %>
+    <li><%= category %>: <%= count %></li>
+  <% end %>
+</ul>
+<% end %>
+
+<p>Full details are in the attached CSV.</p>
+
+<hr>
+<p style="font-size: 0.9em; color: #666;">
+  This is an automated report from the NY Senate Audit Utils system.
+</p>
