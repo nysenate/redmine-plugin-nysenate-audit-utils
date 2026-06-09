@@ -210,4 +210,33 @@ class AuditReportsMailer < ActionMailer::Base
   def self.deliver_all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time, selected_month_num = nil, selected_year = nil, project_id = nil, status_filter = nil)
     all_systems_monthly_report(recipients, reports_by_system, mode, as_of_time, selected_month_num, selected_year, project_id, status_filter).deliver_later
   end
+
+  # Send Account Holder info audit email with CSV attachment.
+  #
+  # @param recipients     [Array<String>, String] Email address(es)
+  # @param summary        [Hash] Result summary counters
+  # @param csv_data       [String] CSV body to attach
+  # @param project_id     [String] Project identifier (passed by id, not the
+  #                       AR object, so ActiveJob can serialize it)
+  # @param dry_run        [Boolean]
+  def user_info_audit_report(recipients, summary, csv_data, project_id, dry_run)
+    @project_identifier = project_id
+    @dry_run = dry_run
+    @summary = (summary || {}).deep_symbolize_keys
+
+    filename_stem = dry_run ? 'account_holder_audit_dryrun' : 'account_holder_audit'
+    attachments["#{filename_stem}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv"] = csv_data
+
+    mode_tag = dry_run ? ' [DRY RUN]' : ''
+    mail(
+      from: Setting.mail_from,
+      to: recipients,
+      subject: "Account Holder Info Audit#{mode_tag} - #{project_id}"
+    )
+  end
+
+  # Class method to deliver Account Holder info audit report.
+  def self.deliver_user_info_audit_report(recipients, summary, csv_data, project_id, dry_run)
+    user_info_audit_report(recipients, summary, csv_data, project_id, dry_run).deliver_later
+  end
 end

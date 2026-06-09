@@ -258,6 +258,49 @@ rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_syst
 - `month` (optional): Month number 1-12 (for monthly mode, default: current month)
 - `year` (optional): Year (for monthly mode, default: current year)
 
+#### Audit Account Holder Info
+
+Reconciles cached **Account Holder** custom field values on tickets
+(Account Holder Name, Email, Phone, Status, UID, Office) against the
+authoritative data source for each Account Holder:
+
+- ESS API for Employees
+- `tracked_users` table for Vendors and Volunteers
+
+For each distinct (Account Holder Type, Account Holder ID) appearing on
+issues in the project the task fetches the current authoritative record,
+diffs it against the cached custom field values, and writes back any
+drifted fields. Changes are recorded in the ticket's **History / Property
+Changes** view (with watcher email notifications suppressed). Exceptions
+— unknown Account Holders, invalid types, ESS errors, save failures —
+are collected and listed for every affected ticket.
+
+Produces a single CSV which is:
+1. Emailed to the configured recipients (see email behavior below).
+2. Archived to the project's Files repository.
+
+The email is only sent when the audit finds changes or exceptions. When a
+run turns up nothing actionable, no email is sent (the CSV is still
+archived); pass `force_email=1` to send the email regardless. This applies
+to dry runs too.
+
+If email delivery fails the archive still runs and the operator is
+warned, so the audit record is never lost.
+
+```bash
+# Apply mode (default): writes corrections to tickets
+rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" RAILS_ENV=production
+
+# Dry run: report drift without changing any tickets
+rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" dry_run=1 RAILS_ENV=production
+```
+
+**Options:**
+- `project_id` (required): Project identifier or numeric ID
+- `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
+- `dry_run` (optional): `1`, `true`, or `yes` to skip writes and only report drift
+- `force_email` (optional): `1`, `true`, or `yes` to always send the email even when there are no changes or exceptions
+
 #### Send All-Systems Monthly Report
 
 Generates and emails the monthly report for **all configured target systems** as a single ZIP attachment containing one CSV per system.

@@ -1,0 +1,25 @@
+Account Holder Info Audit<% if @dry_run %> -- Dry Run<% end %>
+=========================================
+
+Project: <%= @project_identifier %>
+Mode: <%= @dry_run ? 'Dry run (no changes applied)' : 'Apply' %>
+
+Summary
+-------
+Account Holders scanned:          <%= @summary[:pairs_scanned].to_i %>
+Account Holders with exceptions:  <%= @summary[:pairs_with_exceptions].to_i %>
+Account Holders with changes:     <%= @summary[:pairs_with_changes].to_i %>
+Field updates<%= @dry_run ? ' (would apply)' : ' applied' %>: <%= @summary[:field_updates].to_i %>
+
+<% if @summary[:exceptions_by_category].present? %>
+Tickets with exceptions by category
+-----------------------------------
+<% @summary[:exceptions_by_category].each do |category, count| %>
+  <%= category %>: <%= count %>
+<% end %>
+<% end %>
+
+Full details are in the attached CSV.
+
+---
+This is an automated report from the NY Senate Audit Utils system.

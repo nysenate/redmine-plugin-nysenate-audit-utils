@@ -453,4 +453,126 @@ END_DESC
     end
     puts "Total accounts across all systems: #{total}"
   end
+
+  desc <<-END_DESC
+Audit and reconcile Account Holder info on tickets.
+
+For each distinct (Account Holder Type, Account Holder ID) pair appearing on
+issues in the given project, re-fetch authoritative data (ESS API for
+Employees, tracked_users table for Vendor/Volunteer) and update any drifted
+Account Holder custom fields (Name, Email, Phone, Status, UID, Office).
+
+Produces a CSV report and emails it to the
+configured recipients, and archives it to the project's Files repository.
+
+Available options:
+  * project_id => project identifier (required)
+  * recipients => comma-separated email addresses (optional, uses plugin
+                  settings if not provided)
+  * dry_run    => '1', 'true', or 'yes' to skip writes and only report drift
+  * force_email => '1', 'true', or 'yes' to always send the email even when
+                  there are no changes or exceptions
+
+By default no email is sent when the audit finds no changes and no exceptions
+(the CSV is still archived to project Files); this applies to dry runs too.
+Use force_email=1 to always send the email.
+
+Example:
+  rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" RAILS_ENV=production
+  rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" dry_run=1 RAILS_ENV=production
+  rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" force_email=1 RAILS_ENV=production
+END_DESC
+
+  task audit_account_holder_info: :environment do
+    project_id = ENV['project_id'].presence
+    unless project_id
+      puts 'Error: project_id parameter is required'
+      puts 'Usage: rake nysenate_audit_utils:audit_account_holder_info project_id="project_identifier" RAILS_ENV=production'
+      exit 1
+    end
+
+    project = Project.find_by(identifier: project_id) || Project.find_by(id: project_id)
+    unless project
+      puts "Error: Project not found with identifier or id: #{project_id}"
+      exit 1
+    end
+
+    recipients = ENV['recipients'].presence || Setting.plugin_nysenate_audit_utils['report_recipients']
+    unless recipients.present?
+      puts 'Error: No recipients configured'
+      puts 'Either provide recipients parameter or configure default recipients in plugin settings'
+      exit 1
+    end
+    recipient_list = recipients.split(',').map(&:strip)
+
+    dry_run = %w[1 true yes].include?(ENV['dry_run'].to_s.downcase)
+    force_email = %w[1 true yes].include?(ENV['force_email'].to_s.downcase)
+
+    service = NysenateAuditUtils::Reporting::UserInfoAuditService.new(
+      project: project,
+      dry_run: dry_run
+    )
+    result = service.run
+
+    unless result.success?
+      puts "Error running Account Holder info audit: #{result.errors.join('; ')}"
+      exit 1
+    end
+
+    csv_data = NysenateAuditUtils::Reporting::UserInfoAuditCsvGenerator.generate(
+      result, project: project, dry_run: dry_run
+    )
+
+    # Decide whether to email. By default, skip the email when the audit found
+    # nothing actionable (no changes and no exceptions); force_email overrides
+    # the skip. This applies to dry runs too.
+    has_findings = result.changes.any? || result.exceptions.any?
+    should_email = force_email || has_findings
+
+    email_error = nil
+    if should_email
+      begin
+        Mailer.with_synched_deliveries do
+          AuditReportsMailer.deliver_user_info_audit_report(
+            recipient_list, result.summary, csv_data, project.identifier, dry_run
+          )
+        end
+      rescue StandardError => e
+        email_error = "#{e.class}: #{e.message}"
+        Rails.logger.error(
+          "[nysenate_audit_utils] Account Holder audit email delivery failed: #{email_error}\n" \
+          "#{e.backtrace&.first(10)&.join("\n")}"
+        )
+        puts "Warning: failed to send Account Holder audit email: #{email_error}"
+        puts 'Continuing to archive CSV so the run is not lost.'
+      end
+    end
+
+    filename_stem = dry_run ? 'account_holder_audit_dryrun' : 'account_holder_audit'
+    archive_report_to_project_files(
+      project: project,
+      filename: "#{filename_stem}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv",
+      content: csv_data,
+      content_type: 'text/csv',
+      description: "Account Holder info audit#{dry_run ? ' (dry run)' : ''} for project #{project.identifier}"
+    )
+
+    summary = result.summary
+    if email_error
+      puts "Account Holder info audit NOT emailed (#{email_error})"
+    elsif !should_email
+      puts 'Account Holder info audit email skipped (no changes or exceptions; use force_email=1 to override)'
+    else
+      puts "Account Holder info audit sent to: #{recipient_list.join(', ')}"
+    end
+    puts "Mode: #{dry_run ? 'dry run (no changes applied)' : 'apply'}"
+    puts "Account Holders scanned: #{summary[:pairs_scanned]}"
+    puts "Account Holders with exceptions: #{summary[:pairs_with_exceptions]}"
+    puts "Account Holders with changes: #{summary[:pairs_with_changes]}"
+    puts "Field updates#{dry_run ? ' (would apply)' : ' applied'}: #{summary[:field_updates]}"
+    if summary[:exceptions_by_category].present?
+      puts 'Exceptions by category:'
+      summary[:exceptions_by_category].each { |cat, n| puts "  #{cat}: #{n}" }
+    end
+  end
 end
