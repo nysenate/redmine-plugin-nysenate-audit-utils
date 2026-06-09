@@ -202,6 +202,8 @@ The plugin provides rake tasks for generating and emailing audit reports. Run th
 
 Each successful rake run also archives a copy of the generated CSV/ZIP to the selected project's **Files** repository (with a timestamped filename) for audit trail. If the project does not have the Files module enabled, archiving is skipped with a warning and the email is still sent.
 
+Every email-sending task accepts a `no_email` flag (`1`, `true`, or `yes`) that suppresses the email entirely. The report is still generated and archived to project Files, and `recipients` are not required in this mode. This is useful for generating/archiving a report without notifying anyone, or for testing.
+
 ### Available Tasks
 
 #### Send Daily Report
@@ -227,6 +229,7 @@ rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" mode="range" 
   - `range`: uses `start_date` and `end_date` explicitly.
 - `start_date` (optional, range mode only): Start date in YYYY-MM-DD format (defaults to yesterday)
 - `end_date` (optional): End date in YYYY-MM-DD format (defaults to today)
+- `no_email` (optional): `1`, `true`, or `yes` to skip sending the email (report is still archived to project Files)
 
 #### Send Weekly Report
 
@@ -241,6 +244,7 @@ rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV=pr
 - `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
 - `start_date` (optional): Start of date range in YYYY-MM-DD format (defaults to previous Sunday)
 - `end_date` (optional): End of date range in YYYY-MM-DD format (defaults to most recent Sunday)
+- `no_email` (optional): `1`, `true`, or `yes` to skip sending the email (report is still archived to project Files)
 
 #### Send Monthly Report
 
@@ -257,6 +261,7 @@ rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_syst
 - `mode` (optional): "current" (live snapshot) or "monthly" (end-of-month snapshot, default: "monthly")
 - `month` (optional): Month number 1-12 (for monthly mode, default: current month)
 - `year` (optional): Year (for monthly mode, default: current year)
+- `no_email` (optional): `1`, `true`, or `yes` to skip sending the email (report is still archived to project Files)
 
 #### Audit Account Holder Info
 
@@ -300,6 +305,7 @@ rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" dry_r
 - `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
 - `dry_run` (optional): `1`, `true`, or `yes` to skip writes and only report drift
 - `force_email` (optional): `1`, `true`, or `yes` to always send the email even when there are no changes or exceptions
+- `no_email` (optional): `1`, `true`, or `yes` to never send the email (report is still archived to project Files); takes precedence over `force_email`
 
 #### Send All-Systems Monthly Report
 
@@ -315,6 +321,7 @@ rake nysenate_audit_utils:send_all_systems_monthly_report project_id="bachelp-2"
 - `mode` (optional): "current" (live snapshot) or "monthly" (end-of-month snapshot, default: "monthly")
 - `month` (optional): Month number 1-12 (for monthly mode, default: current month)
 - `year` (optional): Year (for monthly mode, default: current year)
+- `no_email` (optional): `1`, `true`, or `yes` to skip sending the email (report is still archived to project Files)
 
 ### Email Configuration
 
