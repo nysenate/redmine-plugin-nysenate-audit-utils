@@ -75,7 +75,7 @@
   </fieldset>
 <% end %>
 
-<% if @report_data.nil? || @report_data.empty? %>
+<% if @report_count.nil? || @report_count.zero? %>
   <p class="nodata">
     No account data found for <%= @target_system %>
     <% if @mode == 'monthly' %>
@@ -86,7 +86,7 @@
   </p>
 <% else %>
   <p class="report-info">
-    Showing <%= pluralize(@report_data.size, 'user') %> with accounts on <%= @target_system %>
+    Showing <%= pluralize(@report_count, 'user') %> with accounts on <%= @target_system %>
     <% if @mode == 'monthly' %>
       as of <strong><%= @as_of_time&.to_date&.strftime('%B %Y') %></strong>.
     <% else %>
@@ -142,6 +142,8 @@
       <% end %>
     </tbody>
   </table>
+
+  <span class="pagination"><%= pagination_links_full @report_pages, @report_count %></span>
 <% end %>
 
 <script>
@@ -290,6 +292,11 @@
     padding: 0.5em;
     background-color: #f0f0f0;
     border-left: 3px solid #169;
+  }
+
+  .pagination {
+    display: block;
+    margin-top: 1.5em;
   }
 
   .nodata {

@@ -148,7 +148,10 @@ Access via project menu: **Reports → Audit Utils**
   CSV columns match the legacy audit spreadsheet for direct Access import: `RequestType, FullName, Userid, Office, EntryDate, CompletedDate, BacNumber, SenDevNumber, Description` (`SenDevNumber` is the Redmine ticket #; `BacNumber` comes from the **BAC #** custom field — see [Custom Field Configuration](#custom-field-configuration)). View-only/CSV download; no scheduled email.
 - **Monthly Reports**: Account status snapshot; defaults to the last complete month, active accounts only
 
-All reports support CSV export for further analysis.
+All on-screen reports are paginated using Redmine's standard pagination
+control (page links and per-page selector, matching the issue list). Sorting
+and filters are preserved across pages. CSV exports always contain the full,
+unpaginated dataset for further analysis.
 
 #### Scheduled Email Reports
 
