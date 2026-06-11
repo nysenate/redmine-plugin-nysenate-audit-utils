@@ -1,0 +1,225 @@
+<% html_title("Quarterly / Annual Report") -%>
+
+<div class="contextual">
+  <%= link_to "Export CSV", periodic_project_audit_reports_path(@project,
+        format: :csv,
+        system: @system,
+        start_date: @from_date.to_date.iso8601,
+        end_date: @to_date.to_date.iso8601),
+      class: "icon icon-download" %>
+  <%= link_to "Back to Reports", project_audit_reports_path(@project), class: "icon icon-cancel" %>
+</div>
+
+<h2>Quarterly / Annual Report</h2>
+
+<%
+  # Active window dates, used to prefill the override pickers so they always
+  # reflect the current selection.
+  from_iso = @from_date.to_date.iso8601
+  to_iso   = @to_date.to_date.iso8601
+  # Switching system resets to that system's default window (avoids carrying
+  # one report's dates into the other).
+  sfms_url = periodic_project_audit_reports_path(@project, system: 'sfms')
+  sfs_url  = periodic_project_audit_reports_path(@project, system: 'sfs')
+%>
+<%= form_tag(periodic_project_audit_reports_path(@project), method: :get, id: "periodic-filters", class: "report-filters") do %>
+  <label>
+    System:
+    <%= select_tag :system,
+          options_for_select([['SFMS (Oracle/SFMS)', 'sfms'], ['SFS', 'sfs']], @system.to_s),
+          id: "periodic-system",
+          data: { 'sfms-url': sfms_url, 'sfs-url': sfs_url } %>
+  </label>
+
+  <% if @system == :sfms %>
+    <% selected_q = @sfms_quarters.index { |q| q[:from].to_date == @from_date.to_date && q[:to].to_date == @to_date.to_date } %>
+    <label>
+      Quarter:
+      <select id="periodic-quarter">
+        <% if selected_q.nil? %>
+          <option value="" selected>Custom range</option>
+        <% end %>
+        <% @sfms_quarters.each_with_index do |q, i| %>
+          <option value="<%= i %>"
+                  data-from="<%= q[:from].to_date.iso8601 %>"
+                  data-to="<%= q[:to].to_date.iso8601 %>"
+                  <%= 'selected' if i == selected_q %>><%= q[:label] %></option>
+        <% end %>
+      </select>
+    </label>
+    <span class="hint">or custom range &rarr;</span>
+    <label>From: <%= date_field_tag :start_date, from_iso, id: "periodic-start" %></label>
+    <label>To: <%= date_field_tag :end_date, to_iso, id: "periodic-end" %></label>
+  <% else %>
+    <label>End date: <%= date_field_tag :end_date, to_iso, id: "periodic-end" %></label>
+    <label>
+      Start date:
+      <%= date_field_tag :start_date, from_iso, id: "periodic-start" %>
+      <span class="hint">(defaults to one year before end date)</span>
+    </label>
+  <% end %>
+
+  <%= submit_tag "Apply", name: nil %>
+  <%= link_to "Reset to Default", periodic_project_audit_reports_path(@project, system: @system), class: "button-small" %>
+<% end %>
+
+<script>
+  (function () {
+    var form = document.getElementById('periodic-filters');
+    if (!form) return;
+
+    // Switching system resets to that system's default window.
+    var systemSelect = document.getElementById('periodic-system');
+    if (systemSelect) {
+      systemSelect.addEventListener('change', function () {
+        window.location = this.value === 'sfs'
+          ? this.dataset.sfsUrl : this.dataset.sfmsUrl;
+      });
+    }
+
+    // SFMS: selecting a quarter fills the From/To pickers and applies.
+    var quarter = document.getElementById('periodic-quarter');
+    var startInput = document.getElementById('periodic-start');
+    var endInput = document.getElementById('periodic-end');
+    if (quarter) {
+      quarter.addEventListener('change', function () {
+        var opt = this.options[this.selectedIndex];
+        if (opt && opt.dataset.from) {
+          startInput.value = opt.dataset.from;
+          endInput.value = opt.dataset.to;
+          form.submit();
+        }
+      });
+    }
+
+    // SFS: changing the End date auto-fills the Start date to one year prior
+    // (inclusive: end - 1 year + 1 day).
+    if (!quarter && startInput && endInput) {
+      endInput.addEventListener('change', function () {
+        if (!this.value) return;
+        var parts = this.value.split('-');
+        var d = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
+        d.setUTCFullYear(d.getUTCFullYear() - 1);
+        d.setUTCDate(d.getUTCDate() + 1);
+        startInput.value = d.toISOString().slice(0, 10);
+      });
+    }
+  })();
+</script>
+
+<% if @report_data.nil? || @report_data.empty? %>
+  <p class="nodata">
+    No closed <%= @system.to_s.upcase %> tickets found between
+    <%= @from_date.to_date.strftime('%Y-%m-%d') %> and <%= @to_date.to_date.strftime('%Y-%m-%d') %>.
+  </p>
+<% else %>
+  <p class="report-info">
+    Showing <%= pluralize(@report_data.size, "closed #{@system.to_s.upcase} ticket") %>
+    closed between <%= @from_date.to_date.strftime('%Y-%m-%d') %> and <%= @to_date.to_date.strftime('%Y-%m-%d') %>.
+  </p>
+
+  <div class="periodic-report-table-wrapper">
+  <table class="list issues periodic-report-table <%= sort_css_classes %>">
+    <thead>
+      <tr>
+        <%= sort_header_tag('request_code', caption: 'RequestType') %>
+        <%= sort_header_tag('user_name', caption: 'FullName', class: 'holder-col') %>
+        <%= sort_header_tag('user_uid', caption: 'Userid', class: 'holder-col') %>
+        <%= sort_header_tag('office', caption: 'Office', class: 'holder-col') %>
+        <%= sort_header_tag('created_on', caption: 'EntryDate', class: 'date-col') %>
+        <%= sort_header_tag('closed_on', caption: 'CompletedDate', default_order: 'desc', class: 'date-col') %>
+        <%= sort_header_tag('bac_number', caption: 'BacNumber') %>
+        <%= sort_header_tag('issue_id', caption: 'SenDevNumber', class: 'ticket-col') %>
+        <%= sort_header_tag('subject', caption: 'Description') %>
+      </tr>
+    </thead>
+    <tbody>
+      <% @report_data.each do |row| %>
+        <tr>
+          <td><%= row[:request_code] || '—' %></td>
+          <td><%= row[:user_name] || '—' %></td>
+          <td><%= row[:user_uid] || '—' %></td>
+          <td><%= row[:office] || '—' %></td>
+          <td class="date-col"><%= row[:created_on]&.strftime('%Y-%m-%d') || '—' %></td>
+          <td class="date-col"><%= row[:closed_on]&.strftime('%Y-%m-%d') || '—' %></td>
+          <td><%= row[:bac_number] || '—' %></td>
+          <td class="ticket-col">
+            <%= link_to "##{row[:issue_id]}", issue_path(row[:issue_id]), target: '_blank' %>
+          </td>
+          <td><%= row[:subject] %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  </div>
+<% end %>
+
+<style>
+  .report-filters {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    flex-wrap: wrap;
+  }
+
+  .report-filters label {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+  }
+
+  .report-filters .hint {
+    font-size: 0.85em;
+    color: #888;
+  }
+
+  .report-info {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    background-color: #f0f0f0;
+    border-left: 3px solid #169;
+  }
+
+  .nodata {
+    padding: 2em;
+    text-align: center;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    color: #666;
+  }
+
+  .periodic-report-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    border: 1px solid #e0e0e0;
+  }
+
+  .periodic-report-table {
+    min-width: 1000px;
+    width: auto;
+  }
+
+  .periodic-report-table thead th {
+    white-space: normal;
+    vertical-align: bottom;
+    line-height: 1.25;
+    text-align: center;
+    text-indent: 0;
+  }
+
+  .periodic-report-table thead th.date-col,
+  .periodic-report-table tbody td.date-col,
+  .periodic-report-table thead th.ticket-col,
+  .periodic-report-table tbody td.ticket-col {
+    white-space: nowrap;
+  }
+
+  .periodic-report-table thead th.holder-col {
+    max-width: 9em;
+  }
+</style>

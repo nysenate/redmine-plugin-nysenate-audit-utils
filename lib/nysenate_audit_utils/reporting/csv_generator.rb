@@ -133,6 +133,44 @@ module NysenateAuditUtils
         end
       end
 
+      # Generate CSV for the quarterly/annual (periodic) audit report.
+      # Columns match the legacy SFMS/SFS audit spreadsheet so the file imports
+      # directly into Access. No metadata preamble — the header is the first row.
+      # @param data [Array<Hash>] Report rows from PeriodicAuditReportService
+      # @return [String] CSV content
+      def self.generate_periodic_csv(data)
+        return '' unless data
+
+        CSV.generate do |csv|
+          # Header row (matches the legacy audit spreadsheet)
+          csv << [
+            'RequestType',
+            'FullName',
+            'Userid',
+            'Office',
+            'EntryDate',
+            'CompletedDate',
+            'BacNumber',
+            'SenDevNumber',
+            'Description'
+          ]
+
+          data.each do |row|
+            csv << [
+              row[:request_code],
+              row[:user_name],
+              row[:user_uid],
+              row[:office],
+              row[:created_on]&.strftime('%Y-%m-%d'),
+              row[:closed_on]&.strftime('%Y-%m-%d'),
+              row[:bac_number],
+              row[:issue_id],
+              row[:subject]
+            ]
+          end
+        end
+      end
+
       # Generate CSV for monthly report data
       # @param data [Array<Hash>] Report data with user account status
       # @param as_of_time [Time, nil] Snapshot time for the report

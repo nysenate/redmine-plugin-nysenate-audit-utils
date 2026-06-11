@@ -19,6 +19,13 @@ module NysenateAuditUtils
         required: true,
         category: :reporting
       },
+      'bac_number_field_id' => {
+        name: 'BAC #',
+        description: 'Legacy BAC system ticket number, surfaced on the quarterly/annual ' \
+                     'report (blank once the legacy system is phased out)',
+        required: false,
+        category: :reporting
+      },
       'user_name_field_id' => {
         name: 'User Name',
         description: 'User name field for autofill',
@@ -232,6 +239,16 @@ module NysenateAuditUtils
       # Get user ID field
       def user_id_field
         get_field('user_id_field_id')
+      end
+
+      # Get BAC # field ID
+      def bac_number_field_id
+        get_field_id('bac_number_field_id')
+      end
+
+      # Get BAC # field
+      def bac_number_field
+        get_field('bac_number_field_id')
       end
 
       # Get account action field ID

@@ -176,6 +176,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     # Stub where to return arrays that respond correctly to .first
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Type').returns([user_type_field])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User ID').returns([user_id_field])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'BAC #').returns([])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Name').returns([])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Email').returns([])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Phone').returns([])
@@ -224,14 +225,16 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
       'user_id_field_id' => 2,
       'user_name_field_id' => 3,
       'account_action_field_id' => 4
-      # target_system_field_id missing, and only 3 of 8 autofill fields configured
+      # target_system_field_id missing, bac_number_field_id missing,
+      # and only 3 of 8 autofill fields configured
     })
 
     status = NysenateAuditUtils::CustomFieldConfiguration.configuration_status
 
+    # reporting category holds user_id (configured) and bac_number (not configured)
     assert_equal 1, status[:reporting][:configured]
-    assert_equal 1, status[:reporting][:total]
-    assert status[:reporting][:complete]
+    assert_equal 2, status[:reporting][:total]
+    refute status[:reporting][:complete]
 
     # user_id is in reporting category, so autofill has user_type, user_name, email, phone, status, uid, office = 7 total
     # Of those, user_type and user_name are configured = 2 configured

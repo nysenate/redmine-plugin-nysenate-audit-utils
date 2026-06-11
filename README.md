@@ -77,6 +77,9 @@ Ensure that the following fields exist and are included in desired projects/trac
 - `Account Action` - List
 - `Target System` - List
 
+**Reporting Fields:**
+- `BAC #` - Text (optional) — legacy BAC system ticket number shown on the Quarterly/Annual report; left blank once the legacy system is phased out.
+
 Configure field mappings via **Administration → Plugins → Configure**.
 
 #### Auto-Configuration (Recommended)
@@ -138,6 +141,11 @@ Access via project menu: **Reports → Audit Utils**
   - **Last Business Day** (default): single date picker, defaults to today. Covers the previous business day at 00:00 → selected date at 00:00. If the selected date is a Monday, the range starts at the previous Friday at 00:00 so the prior weekend is included.
   - **Date Range**: explicit start/end date pickers (range runs 00:00 → 00:00).
 - **Weekly Reports**: Closed tickets from the previous full week (Sunday–Sunday), ordered by close date
+- **Quarterly / Annual Reports**: Closed tickets for a single target system, feeding the SFMS Quarterly Audit and the SFS Annual (Account & Roles Validation) Audit. A **System** selector switches between:
+  - **SFMS** (Oracle/SFMS, request codes `USR*`): a dropdown of *offset* audit quarters (Nov 1–Jan 31, Feb 1–Apr 30, May 1–Jul 31, Aug 1–Oct 31), defaulting to the most recently completed quarter; an explicit start/end range overrides it.
+  - **SFS** (request codes `SFS*`): pick an **end date**; the start auto-fills to one year prior (override allowed).
+
+  CSV columns match the legacy audit spreadsheet for direct Access import: `RequestType, FullName, Userid, Office, EntryDate, CompletedDate, BacNumber, SenDevNumber, Description` (`SenDevNumber` is the Redmine ticket #; `BacNumber` comes from the **BAC #** custom field — see [Custom Field Configuration](#custom-field-configuration)). View-only/CSV download; no scheduled email.
 - **Monthly Reports**: Account status snapshot; defaults to the last complete month, active accounts only
 
 All reports support CSV export for further analysis.
