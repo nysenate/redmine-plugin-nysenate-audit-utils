@@ -142,6 +142,62 @@ class AuditReportsController < ApplicationController
     render :error
   end
 
+  # Quarterly / Annual audit report: closed SFMS or SFS tickets over an audit
+  # window. Feeds the SFMS Quarterly Audit and the SFS Annual Audit.
+  def periodic
+    service_class = NysenateAuditUtils::Reporting::PeriodicAuditReportService
+    @system = params[:system] == 'sfs' ? :sfs : :sfms
+
+    # Offset-quarter options for the SFMS picker
+    @sfms_quarters = service_class.recent_sfms_quarters(8)
+
+    @from_date, @to_date = resolve_periodic_window(service_class)
+
+    service = service_class.new(
+      project: @project,
+      system: @system,
+      from_date: @from_date,
+      to_date: @to_date
+    )
+    @report_data = service.generate
+    @target_systems = service.target_systems
+
+    unless service.success?
+      @error_message = service.errors.join('; ')
+      render :error
+      return
+    end
+
+    sort_init 'closed_on', 'desc'
+    sort_update({
+      'request_code' => 'request_code',
+      'user_name' => 'user_name',
+      'user_uid' => 'user_uid',
+      'office' => 'office',
+      'created_on' => 'created_on',
+      'closed_on' => 'closed_on',
+      'bac_number' => 'bac_number',
+      'issue_id' => 'issue_id',
+      'subject' => 'subject'
+    })
+    @report_data = sort_report_data(@report_data) if @report_data.present?
+
+    respond_to do |format|
+      format.html
+      format.csv do
+        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_periodic_csv(@report_data)
+        send_data csv_data,
+                  type: 'text/csv; header=present',
+                  filename: "#{@system}_audit_#{@from_date.strftime('%Y%m%d')}_#{@to_date.strftime('%Y%m%d')}.csv"
+      end
+    end
+  rescue => e
+    Rails.logger.error "Periodic report generation failed: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    @error_message = "Unable to generate report: #{e.message}"
+    render :error
+  end
+
   def monthly
     # Get valid target systems from custom field configuration
     target_system_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
@@ -302,6 +358,29 @@ class AuditReportsController < ApplicationController
   rescue ArgumentError => e
     Rails.logger.error "Failed to parse date parameter '#{date_string}': #{e.message}"
     nil
+  end
+
+  # Resolve the [from, to] window for the periodic (quarterly/annual) report.
+  # The start_date/end_date pickers are the single source of truth (the SFMS
+  # quarter dropdown is a front-end helper that fills those pickers).
+  #   SFS:  end date drives it; start auto-fills to one year prior (inclusive)
+  #         unless overridden.
+  #   SFMS: an explicit start+end window, else the most recent offset quarter.
+  def resolve_periodic_window(service_class)
+    start_param = parse_date_param(params[:start_date])
+    end_param   = parse_date_param(params[:end_date])
+
+    if @system == :sfs
+      if end_param
+        from = start_param || service_class.sfs_start_for(end_param.to_date).to_time
+        return [from.beginning_of_day, end_param.end_of_day]
+      end
+    elsif start_param && end_param
+      return [start_param.beginning_of_day, end_param.end_of_day]
+    end
+
+    window = service_class.default_window(@system)
+    [window[:from], window[:to]]
   end
 
   def validate_date_range!(from_date, to_date)

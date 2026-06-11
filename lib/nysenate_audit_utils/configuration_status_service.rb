@@ -63,11 +63,14 @@ module NysenateAuditUtils
         validation_errors = NysenateAuditUtils::CustomFieldConfiguration.validate
         field_definitions = NysenateAuditUtils::CustomFieldConfiguration::FIELD_DEFINITIONS
 
-        # Count configured fields
-        configured_count = field_definitions.count do |setting_key, _definition|
+        # Count configured fields. Only required fields count toward the
+        # headline ratio so an unconfigured optional field (e.g. BAC #) does not
+        # contradict the "All configured" status, which is required-fields based.
+        required_definitions = field_definitions.select { |_key, definition| definition[:required] }
+        configured_count = required_definitions.count do |setting_key, _definition|
           NysenateAuditUtils::CustomFieldConfiguration.get_field_id(setting_key).present?
         end
-        total_count = field_definitions.size
+        total_count = required_definitions.size
         unconfigured_count = total_count - configured_count
 
         valid = validation_errors.empty?
