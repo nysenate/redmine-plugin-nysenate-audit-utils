@@ -107,14 +107,14 @@
   })();
 </script>
 
-<% if @report_data.nil? || @report_data.empty? %>
+<% if @report_count.nil? || @report_count.zero? %>
   <p class="nodata">
     No closed <%= @system.to_s.upcase %> tickets found between
     <%= @from_date.to_date.strftime('%Y-%m-%d') %> and <%= @to_date.to_date.strftime('%Y-%m-%d') %>.
   </p>
 <% else %>
   <p class="report-info">
-    Showing <%= pluralize(@report_data.size, "closed #{@system.to_s.upcase} ticket") %>
+    Showing <%= pluralize(@report_count, "closed #{@system.to_s.upcase} ticket") %>
     closed between <%= @from_date.to_date.strftime('%Y-%m-%d') %> and <%= @to_date.to_date.strftime('%Y-%m-%d') %>.
   </p>
 
@@ -152,6 +152,8 @@
     </tbody>
   </table>
   </div>
+
+  <span class="pagination"><%= pagination_links_full @report_pages, @report_count %></span>
 <% end %>
 
 <style>
@@ -182,6 +184,11 @@
     padding: 0.5em;
     background-color: #f0f0f0;
     border-left: 3px solid #169;
+  }
+
+  .pagination {
+    display: block;
+    margin-top: 1.5em;
   }
 
   .nodata {

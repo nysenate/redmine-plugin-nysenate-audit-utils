@@ -58,7 +58,7 @@ class AuditReportsController < ApplicationController
     end
 
     respond_to do |format|
-      format.html
+      format.html { paginate_report_data }
       format.csv do
         csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv(
           @report_data, from_date: @from_date, to_date: @to_date
@@ -125,7 +125,7 @@ class AuditReportsController < ApplicationController
     @report_data = sort_report_data(@report_data) if @report_data.present?
 
     respond_to do |format|
-      format.html
+      format.html { paginate_report_data }
       format.csv do
         csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(
           @report_data, from_date: @from_date, to_date: @to_date
@@ -183,7 +183,7 @@ class AuditReportsController < ApplicationController
     @report_data = sort_report_data(@report_data) if @report_data.present?
 
     respond_to do |format|
-      format.html
+      format.html { paginate_report_data }
       format.csv do
         csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_periodic_csv(@report_data)
         send_data csv_data,
@@ -279,7 +279,7 @@ class AuditReportsController < ApplicationController
 
     # Respond to formats
     respond_to do |format|
-      format.html
+      format.html { paginate_report_data }
       format.csv do
         csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
           @report_data, as_of_time: @as_of_time, target_system: target_system
@@ -424,6 +424,19 @@ class AuditReportsController < ApplicationController
       .where(custom_values: { custom_field_id: user_id_field_id })
       .minimum(:closed_on)
       &.to_date
+  end
+
+  # Paginate the in-memory report rows for HTML display only.
+  # Preserves the full row count in @report_count (for pagination links and
+  # the "Showing N" line) and replaces @report_data with the current page
+  # slice. Must be called inside the format.html block so CSV keeps the full
+  # dataset.
+  def paginate_report_data
+    @report_count = @report_data.size
+    @report_pages = Redmine::Pagination::Paginator.new(
+      @report_count, per_page_option, params['page']
+    )
+    @report_data = @report_data[@report_pages.offset, @report_pages.per_page] || []
   end
 
   def sort_report_data(data)

@@ -74,11 +74,11 @@
 </p>
 
 <div id="report-results">
-<% if @report_data.nil? || @report_data.empty? %>
+<% if @report_count.nil? || @report_count.zero? %>
   <p class="nodata">No user status changes found for the query period.</p>
 <% else %>
   <p class="report-info">
-    Showing <%= pluralize(@report_data.size, 'user') %> with status changes.
+    Showing <%= pluralize(@report_count, 'user') %> with status changes.
     <br>
     <% if @mode == 'business_day' %>
       Last business day ending <%= @to_date.strftime('%Y-%m-%d') %>
@@ -166,6 +166,8 @@
       <% end %>
     </tbody>
   </table>
+
+  <span class="pagination"><%= pagination_links_full @report_pages, @report_count %></span>
 <% end %>
 </div>
 
@@ -425,6 +427,11 @@
     padding: 0.5em;
     background-color: #f0f0f0;
     border-left: 3px solid #169;
+  }
+
+  .pagination {
+    display: block;
+    margin-top: 1.5em;
   }
 
   .nodata {
