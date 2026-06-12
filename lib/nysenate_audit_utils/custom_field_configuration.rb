@@ -23,7 +23,7 @@ module NysenateAuditUtils
         name: 'BAC #',
         description: 'Legacy BAC system ticket number, surfaced on the quarterly/annual ' \
                      'report (blank once the legacy system is phased out)',
-        required: false,
+        required: true,
         category: :reporting
       },
       'user_name_field_id' => {
