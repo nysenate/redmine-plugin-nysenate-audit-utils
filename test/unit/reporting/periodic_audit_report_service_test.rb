@@ -141,9 +141,11 @@ module NysenateAuditUtils
 
         # No metadata preamble: the header is the very first row.
         assert_equal %w[RequestType FullName Userid Office EntryDate CompletedDate
-                        BacNumber SenDevNumber Description], rows.first
+                        BacNumber SenDevNumber GeneralFormInfoID Program Description], rows.first
         ticket_row = rows.find { |r| r[7].to_s == issue.id.to_s }
         assert_equal '67419', ticket_row[6]
+        assert_nil ticket_row[8]
+        assert_equal 'SFMS', ticket_row[9]
       end
     end
   end

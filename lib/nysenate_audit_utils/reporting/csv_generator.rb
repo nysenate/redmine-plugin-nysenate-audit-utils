@@ -152,6 +152,8 @@ module NysenateAuditUtils
             'CompletedDate',
             'BacNumber',
             'SenDevNumber',
+            'GeneralFormInfoID',
+            'Program',
             'Description'
           ]
 
@@ -165,6 +167,8 @@ module NysenateAuditUtils
               row[:closed_on]&.strftime('%Y-%m-%d'),
               row[:bac_number],
               row[:issue_id],
+              nil,
+              'SFMS',
               row[:subject]
             ]
           end
