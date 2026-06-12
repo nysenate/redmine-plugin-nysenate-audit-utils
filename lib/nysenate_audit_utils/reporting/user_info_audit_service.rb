@@ -59,7 +59,7 @@ module NysenateAuditUtils
 
         return Result.new(changes: [], exceptions: [], summary: {}, errors: errors) if errors.any?
 
-        pairs = collect_pairs(type_field.id, id_field.id)
+        pairs = collect_pairs(type_field.id, id_field.id, synced_fields[:name].id)
 
         changes = []
         exceptions = []
@@ -67,25 +67,25 @@ module NysenateAuditUtils
 
         pairs.each do |(user_type, user_id), issue_ids|
           if user_id.to_s.strip.empty?
-            exceptions << pair_exception(user_type, user_id, issue_ids, 'missing_user_id',
-                                         'Account Holder ID is blank')
+            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids, 'missing_user_id',
+                                              'Account Holder ID is blank'))
             next
           end
 
           begin
             authoritative = user_service.find_by_id(user_id.to_s, type: user_type.to_s)
           rescue ArgumentError => e
-            exceptions << pair_exception(user_type, user_id, issue_ids, 'invalid_user_type', e.message)
+            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids, 'invalid_user_type', e.message))
             next
           rescue StandardError => e
-            exceptions << pair_exception(user_type, user_id, issue_ids, 'data_source_error',
-                                         "#{e.class}: #{e.message}")
+            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids, 'data_source_error',
+                                              "#{e.class}: #{e.message}"))
             next
           end
 
           unless authoritative
-            exceptions << pair_exception(user_type, user_id, issue_ids, 'user_not_found',
-                                         "No #{user_type} found with ID #{user_id}")
+            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids, 'user_not_found',
+                                              "No #{user_type} found with ID #{user_id}"))
             next
           end
 
@@ -104,13 +104,19 @@ module NysenateAuditUtils
       private
 
       # Returns { [user_type, user_id] => [issue_id, ...] } for issues in project.
-      def collect_pairs(type_field_id, id_field_id)
+      # Also caches per-issue Subject and the ticket's cached Account Holder
+      # Name custom value (@issue_subjects / @issue_names) so report rows can be
+      # labeled per ticket even when the authoritative lookup fails.
+      def collect_pairs(type_field_id, id_field_id, name_field_id)
         type_alias = 'cv_type'
         id_alias   = 'cv_id'
+        name_alias = 'cv_name'
         sql = <<~SQL
           SELECT issues.id           AS issue_id,
+                 issues.subject      AS subject,
                  #{type_alias}.value AS user_type,
-                 #{id_alias}.value   AS user_id
+                 #{id_alias}.value   AS user_id,
+                 #{name_alias}.value AS account_holder_name
           FROM issues
           LEFT JOIN custom_values #{type_alias}
             ON #{type_alias}.customized_type = 'Issue'
@@ -120,17 +126,26 @@ module NysenateAuditUtils
             ON #{id_alias}.customized_type = 'Issue'
            AND #{id_alias}.customized_id   = issues.id
            AND #{id_alias}.custom_field_id = #{id_field_id.to_i}
+          LEFT JOIN custom_values #{name_alias}
+            ON #{name_alias}.customized_type = 'Issue'
+           AND #{name_alias}.customized_id   = issues.id
+           AND #{name_alias}.custom_field_id = #{name_field_id.to_i}
           WHERE issues.project_id = #{project.id.to_i}
         SQL
 
         rows = ActiveRecord::Base.connection.select_all(sql)
         pairs = Hash.new { |h, k| h[k] = [] }
+        @issue_subjects = {}
+        @issue_names = {}
         rows.each do |row|
           user_type = row['user_type']
           user_id   = row['user_id']
           next if user_type.to_s.strip.empty? && user_id.to_s.strip.empty?
 
-          pairs[[user_type, user_id]] << row['issue_id'].to_i
+          issue_id = row['issue_id'].to_i
+          pairs[[user_type, user_id]] << issue_id
+          @issue_subjects[issue_id] = row['subject']
+          @issue_names[issue_id]    = row['account_holder_name']
         end
         pairs
       end
@@ -142,6 +157,7 @@ module NysenateAuditUtils
         issues.find_each do |issue|
           updates = {}
           row_diffs = []
+          account_holder_name = @issue_names[issue.id]
 
           synced_fields.each do |key, cf|
             current = issue.custom_value_for(cf)&.value.to_s
@@ -154,6 +170,7 @@ module NysenateAuditUtils
               subject: issue.subject,
               user_type: user_type,
               user_id: user_id,
+              account_holder_name: account_holder_name,
               field: cf.name,
               old_value: current,
               new_value: expected,
@@ -186,9 +203,11 @@ module NysenateAuditUtils
             changes.concat(row_diffs)
           rescue StandardError => e
             exceptions << {
+              issue_id: issue.id,
+              subject: issue.subject,
               user_type: user_type,
               user_id: user_id,
-              issue_ids: [issue.id],
+              account_holder_name: @issue_names[issue.id],
               category: 'issue_save_failed',
               message: "#{e.class}: #{e.message}"
             }
@@ -196,14 +215,23 @@ module NysenateAuditUtils
         end
       end
 
-      def pair_exception(user_type, user_id, issue_ids, category, message)
-        {
-          user_type: user_type,
-          user_id: user_id,
-          issue_ids: issue_ids,
-          category: category,
-          message: message
-        }
+      # Expands a pair-level (Account Holder Type/ID) lookup failure into one
+      # exception row per affected ticket, so the report lists exceptions per
+      # ticket just like the changes table. Account Holder Name is sourced from
+      # the ticket's cached custom value (the authoritative record is
+      # unavailable for these failures).
+      def pair_exceptions(user_type, user_id, issue_ids, category, message)
+        Array(issue_ids).map do |issue_id|
+          {
+            issue_id: issue_id,
+            subject: @issue_subjects[issue_id],
+            user_type: user_type,
+            user_id: user_id,
+            account_holder_name: @issue_names[issue_id],
+            category: category,
+            message: message
+          }
+        end
       end
 
       def normalize(value)
@@ -222,12 +250,11 @@ module NysenateAuditUtils
       end
 
       def build_summary(pairs, changes, exceptions)
-        # Count tickets affected per category (not the number of Account Holder
-        # IDs that generated the exception). A single exception row can cover
-        # many issues via its issue_ids list; dedupe per category to be safe.
+        # Count tickets affected per category. Exception rows are now one per
+        # ticket; dedupe by issue_id per category to be safe.
         category_issue_ids = Hash.new { |h, k| h[k] = [] }
         exceptions.each do |row|
-          category_issue_ids[row[:category]].concat(Array(row[:issue_ids]))
+          category_issue_ids[row[:category]] << row[:issue_id]
         end
         category_counts = category_issue_ids.transform_values { |ids| ids.uniq.size }
         {

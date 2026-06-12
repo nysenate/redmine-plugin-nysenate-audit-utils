@@ -134,6 +134,23 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
     assert_equal 'user_not_found', result.exceptions.first[:category]
   end
 
+  test 'emits one exception row per ticket sharing the same account holder' do
+    a = create_issue(user_type: 'Employee', user_id: '99999', seed: { user_name: 'Jane Doe' })
+    b = create_issue(user_type: 'Employee', user_id: '99999', seed: { user_name: 'Jane Doe' })
+    stub_lookup(returns: nil)
+
+    result = Service.new(project: @project).run
+
+    not_found = result.exceptions.select { |e| e[:category] == 'user_not_found' }
+    assert_equal 2, not_found.size
+    assert_equal [a.id, b.id].sort, not_found.map { |e| e[:issue_id] }.sort
+
+    row_a = not_found.find { |e| e[:issue_id] == a.id }
+    assert_equal a.subject, row_a[:subject]
+    # Account Holder Name is sourced from the ticket's cached custom value.
+    assert_equal 'Jane Doe', row_a[:account_holder_name]
+  end
+
   test 'records issue_save_failed exception when issue save fails' do
     create_issue(user_type: 'Employee', user_id: '12345', seed: { user_email: 'stale@example.com' })
     stub_lookup
