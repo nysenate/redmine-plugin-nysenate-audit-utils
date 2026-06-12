@@ -78,7 +78,7 @@ Ensure that the following fields exist and are included in desired projects/trac
 - `Target System` - List
 
 **Reporting Fields:**
-- `BAC #` - Text (optional) — legacy BAC system ticket number shown on the Quarterly/Annual report; left blank once the legacy system is phased out.
+- `BAC #` - Text — legacy BAC system ticket number shown on the Quarterly/Annual report; the field value may be left blank once the legacy system is phased out, but the field mapping must be configured.
 
 Configure field mappings via **Administration → Plugins → Configure**.
 

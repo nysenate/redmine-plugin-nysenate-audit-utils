@@ -63,7 +63,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
   end
 
   def test_validate_with_all_required_fields
-    # Mock all required fields as configured (all 10 fields)
+    # Mock all required fields as configured (all 11 fields)
     Setting.stubs(:plugin_nysenate_audit_utils).returns({
       'user_type_field_id' => 1,
       'user_id_field_id' => 2,
@@ -74,7 +74,8 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
       'user_uid_field_id' => 7,
       'user_location_field_id' => 8,
       'account_action_field_id' => 9,
-      'target_system_field_id' => 10
+      'target_system_field_id' => 10,
+      'bac_number_field_id' => 11
     })
 
     # Mock custom fields exist for each ID
@@ -88,6 +89,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:find_by).with(id: 8, type: 'IssueCustomField').returns(CustomField.new(id: 8, name: 'User Office'))
     CustomField.stubs(:find_by).with(id: 9, type: 'IssueCustomField').returns(CustomField.new(id: 9, name: 'Account Action'))
     CustomField.stubs(:find_by).with(id: 10, type: 'IssueCustomField').returns(CustomField.new(id: 10, name: 'Target System'))
+    CustomField.stubs(:find_by).with(id: 11, type: 'IssueCustomField').returns(CustomField.new(id: 11, name: 'BAC #'))
 
     errors = NysenateAuditUtils::CustomFieldConfiguration.validate
     assert_empty errors
@@ -105,7 +107,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
   end
 
   def test_valid_with_complete_configuration
-    # Mock all required fields as configured (all 10 fields)
+    # Mock all required fields as configured (all 11 fields)
     Setting.stubs(:plugin_nysenate_audit_utils).returns({
       'user_type_field_id' => 1,
       'user_id_field_id' => 2,
@@ -116,7 +118,8 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
       'user_uid_field_id' => 7,
       'user_location_field_id' => 8,
       'account_action_field_id' => 9,
-      'target_system_field_id' => 10
+      'target_system_field_id' => 10,
+      'bac_number_field_id' => 11
     })
 
     # Mock custom fields exist for each ID
@@ -130,6 +133,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:find_by).with(id: 8, type: 'IssueCustomField').returns(CustomField.new(id: 8, name: 'User Office'))
     CustomField.stubs(:find_by).with(id: 9, type: 'IssueCustomField').returns(CustomField.new(id: 9, name: 'Account Action'))
     CustomField.stubs(:find_by).with(id: 10, type: 'IssueCustomField').returns(CustomField.new(id: 10, name: 'Target System'))
+    CustomField.stubs(:find_by).with(id: 11, type: 'IssueCustomField').returns(CustomField.new(id: 11, name: 'BAC #'))
 
     assert NysenateAuditUtils::CustomFieldConfiguration.valid?
   end
