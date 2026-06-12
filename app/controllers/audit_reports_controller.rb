@@ -261,11 +261,12 @@ class AuditReportsController < ApplicationController
     end
 
     # Set up sorting
-    sort_init 'employee_id', 'asc'
+    sort_init 'user_name', 'asc'
     sort_update({
-      'employee_id' => 'employee_id',
-      'employee_name' => 'employee_name',
-      'employee_uid' => 'employee_uid',
+      'user_name' => 'user_name',
+      'user_id' => 'user_id',
+      'user_type' => 'user_type',
+      'user_uid' => 'user_uid',
       'status' => 'status',
       'account_action' => 'account_action',
       'closed_on' => 'closed_on',
@@ -443,6 +444,12 @@ class AuditReportsController < ApplicationController
     return data unless @sort_criteria
 
     sort_key = @sort_criteria.first_key
+    # Guard against stale/invalid sort keys (e.g. left over in the session from
+    # before a column rename). If the key isn't an actual column in the data,
+    # fall back to the default sort so the data isn't left unsorted.
+    unless @sortable_columns&.key?(sort_key)
+      sort_key = @sort_default.first.first
+    end
     sort_order = @sort_criteria.first_asc? ? 1 : -1
 
     data.sort do |a, b|
