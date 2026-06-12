@@ -433,6 +433,7 @@ class AuditReportsController < ApplicationController
   # slice. Must be called inside the format.html block so CSV keeps the full
   # dataset.
   def paginate_report_data
+    @report_data ||= []
     @report_count = @report_data.size
     @report_pages = Redmine::Pagination::Paginator.new(
       @report_count, per_page_option, params['page']
