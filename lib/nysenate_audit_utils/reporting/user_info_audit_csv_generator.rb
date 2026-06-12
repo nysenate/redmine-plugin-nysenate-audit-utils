@@ -35,17 +35,21 @@ module NysenateAuditUtils
       def self.write_exceptions(csv, exceptions)
         csv << ['Exceptions']
         csv << [
+          'Issue ID',
+          'Subject',
           'Account Holder Type',
           'Account Holder ID',
-          'Issue IDs',
+          'Account Holder Name',
           'Category',
           'Message'
         ]
         exceptions.each do |row|
           csv << [
+            row[:issue_id],
+            row[:subject],
             row[:user_type],
             row[:user_id],
-            Array(row[:issue_ids]).join(', '),
+            row[:account_holder_name],
             row[:category],
             row[:message]
           ]
@@ -59,6 +63,7 @@ module NysenateAuditUtils
           'Subject',
           'Account Holder Type',
           'Account Holder ID',
+          'Account Holder Name',
           'Account Holder Field',
           'Old Value',
           'New Value',
@@ -70,6 +75,7 @@ module NysenateAuditUtils
             row[:subject],
             row[:user_type],
             row[:user_id],
+            row[:account_holder_name],
             row[:field],
             row[:old_value],
             row[:new_value],

@@ -86,12 +86,18 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
     assert_includes csv, ['Exceptions: data_source_error', '1']
   end
 
-  test 'exceptions section lists each exception with issue_ids joined' do
+  test 'exceptions section lists one row per affected ticket' do
     result = Result.new(
       changes: [], errors: [], summary: {},
       exceptions: [
         {
-          user_type: 'Employee', user_id: '12345', issue_ids: [10, 11, 12],
+          issue_id: 10, subject: 'Add Oracle', user_type: 'Employee', user_id: '12345',
+          account_holder_name: nil,
+          category: 'user_not_found', message: 'No Employee found with ID 12345'
+        },
+        {
+          issue_id: 11, subject: 'Add AIX', user_type: 'Employee', user_id: '12345',
+          account_holder_name: nil,
           category: 'user_not_found', message: 'No Employee found with ID 12345'
         }
       ]
@@ -101,8 +107,11 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
 
     assert_includes csv, ['Exceptions']
     assert_includes csv,
-                    ['Employee', '12345', '10, 11, 12', 'user_not_found',
-                     'No Employee found with ID 12345']
+                    ['10', 'Add Oracle', 'Employee', '12345', nil,
+                     'user_not_found', 'No Employee found with ID 12345']
+    assert_includes csv,
+                    ['11', 'Add AIX', 'Employee', '12345', nil,
+                     'user_not_found', 'No Employee found with ID 12345']
   end
 
   test 'changes section renders Applied as yes or no' do
@@ -111,11 +120,13 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
       changes: [
         {
           issue_id: 10, subject: 'Add Oracle', user_type: 'Employee', user_id: '12345',
+          account_holder_name: 'Jane Doe',
           field: 'User Email', old_value: 'old@example.com', new_value: 'new@example.com',
           applied: true
         },
         {
           issue_id: 11, subject: 'Add AIX', user_type: 'Employee', user_id: '12345',
+          account_holder_name: 'Jane Doe',
           field: 'User Phone', old_value: '555-0000', new_value: '555-1111',
           applied: false
         }
@@ -131,13 +142,38 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
     assert_equal 'no', skipped_row.last
   end
 
+  test 'changes section includes the Account Holder Name for each ticket row' do
+    result = Result.new(
+      exceptions: [], errors: [], summary: {},
+      changes: [
+        {
+          issue_id: 10, subject: 'Add Oracle', user_type: 'Employee', user_id: '12345',
+          account_holder_name: 'Jane Doe',
+          field: 'User Email', old_value: 'old@example.com', new_value: 'new@example.com',
+          applied: true
+        }
+      ]
+    )
+
+    csv = rows(generate(result))
+
+    header = csv.find { |r| r.first == 'Issue ID' }
+    name_index = header.index('Account Holder Name')
+    assert_not_nil name_index, 'Changes header should include an Account Holder Name column'
+
+    change_row = csv.find { |r| r[0] == '10' }
+    assert_equal 'Jane Doe', change_row[name_index]
+  end
+
   test 'produces well-formed section headers even when empty' do
     csv = rows(generate(empty_result))
 
-    # Both table header rows are always present.
+    # Both table header rows are always present. Both column-header rows lead
+    # with 'Issue ID'; the Exceptions table is distinguished by 'Category' and
+    # the Changes table by 'Applied'.
     assert_includes csv, ['Exceptions']
     assert_includes csv, ['Changes']
-    assert(csv.any? { |r| r.first == 'Account Holder Type' })
-    assert(csv.any? { |r| r.first == 'Issue ID' })
+    assert(csv.any? { |r| r.first == 'Issue ID' && r.include?('Category') })
+    assert(csv.any? { |r| r.first == 'Issue ID' && r.include?('Applied') })
   end
 end
