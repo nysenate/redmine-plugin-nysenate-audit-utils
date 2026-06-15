@@ -283,13 +283,16 @@ authoritative data source for each Account Holder:
 - ESS API for Employees
 - `tracked_users` table for Vendors and Volunteers
 
+Only tickets whose tracker has both the Account Holder Type and ID custom
+fields enabled are audited; tickets on other trackers are ignored.
+
 For each distinct (Account Holder Type, Account Holder ID) appearing on
-issues in the project the task fetches the current authoritative record,
+in-scope issues the task fetches the current authoritative record,
 diffs it against the cached custom field values, and writes back any
 drifted fields. Changes are recorded in the ticket's **History / Property
-Changes** view (with watcher email notifications suppressed). Exceptions
-— unknown Account Holders, invalid types, ESS errors, save failures —
-are collected and listed for every affected ticket.
+Changes** view (with watcher email notifications suppressed). Tickets that
+can't be reconciled are listed as exceptions, including any missing the
+Account Holder Type and/or ID needed for the lookup.
 
 Produces a single CSV which is:
 1. Emailed to the configured recipients (see email behavior below).

@@ -21,8 +21,16 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
 
   def setup
     @project = Project.find(1)
-    @tracker = Tracker.find(1)
+    # Use a tracker with no project-1 issue fixtures (Support) and scope the
+    # Account Holder Type/ID fields to it, so the audit only sees the tickets
+    # these tests create — and so the new tracker-scoping path is exercised.
+    @tracker = Tracker.find(3)
     @fields = setup_standard_bachelp_fields(@tracker)
+    [@fields[:user_type], @fields[:user_id]].each do |cf|
+      cf.update!(is_for_all: false)
+      cf.trackers = [@tracker]
+      cf.projects = [@project]
+    end
     @open_status = IssueStatus.where(is_closed: false).first
 
     # A real, logged-in journal author so apply-mode writes are attributed.
@@ -96,6 +104,59 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
     assert result.success?
     assert_equal 1, result.exceptions.size
     assert_equal 'missing_user_id', result.exceptions.first[:category]
+  end
+
+  test 'records missing_user_type exception when account holder type is blank' do
+    # ID present but Type blank: the ticket should be flagged before any lookup.
+    create_issue(user_type: '', user_id: '12345')
+    # Fail loudly if a lookup is attempted for a ticket missing its type.
+    NysenateAuditUtils::Users::UserService.any_instance
+                                          .stubs(:find_by_id)
+                                          .raises('lookup should not be attempted')
+
+    result = Service.new(project: @project).run
+
+    assert result.success?
+    assert_equal 1, result.exceptions.size
+    assert_equal 'missing_user_type', result.exceptions.first[:category]
+    assert_empty result.changes
+  end
+
+  test 'records missing_user_type_and_id exception when both are blank' do
+    create_issue(user_type: '', user_id: '')
+
+    result = Service.new(project: @project).run
+
+    assert result.success?
+    assert_equal 1, result.exceptions.size
+    assert_equal 'missing_user_type_and_id', result.exceptions.first[:category]
+    assert_empty result.changes
+  end
+
+  test 'emits one missing-field exception per ticket' do
+    a = create_issue(user_type: '', user_id: '')
+    b = create_issue(user_type: '', user_id: '')
+
+    result = Service.new(project: @project).run
+
+    missing = result.exceptions.select { |e| e[:category] == 'missing_user_type_and_id' }
+    assert_equal 2, missing.size
+    assert_equal [a.id, b.id].sort, missing.map { |e| e[:issue_id] }.sort
+  end
+
+  test 'ignores tickets whose tracker lacks the account holder fields' do
+    # setup scopes the Type/ID fields to @tracker; a blank ticket on a different
+    # tracker is out of scope and must not be flagged.
+    other_tracker = Tracker.where.not(id: @tracker.id).first
+    out_of_scope = Issue.create!(
+      project: @project, tracker: other_tracker, author_id: 1,
+      subject: 'Non account request ticket', status: @open_status, priority_id: 5
+    )
+
+    result = Service.new(project: @project).run
+
+    assert result.success?
+    assert_empty result.exceptions.select { |e| e[:issue_id] == out_of_scope.id }
   end
 
   test 'records invalid_user_type exception when lookup raises ArgumentError' do
