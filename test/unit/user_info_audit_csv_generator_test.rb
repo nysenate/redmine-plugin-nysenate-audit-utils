@@ -114,6 +114,26 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
                      'user_not_found', 'No Employee found with ID 12345']
   end
 
+  test 'exceptions section renders missing-field categories' do
+    result = Result.new(
+      changes: [], errors: [], summary: {},
+      exceptions: [
+        {
+          issue_id: 12, subject: 'Add SFS', user_type: '', user_id: '',
+          account_holder_name: nil,
+          category: 'missing_user_type_and_id',
+          message: 'Account Holder Type and ID are both blank'
+        }
+      ]
+    )
+
+    csv = rows(generate(result))
+
+    assert_includes csv,
+                    ['12', 'Add SFS', '', '', nil,
+                     'missing_user_type_and_id', 'Account Holder Type and ID are both blank']
+  end
+
   test 'changes section renders Applied as yes or no' do
     result = Result.new(
       exceptions: [], errors: [], summary: {},

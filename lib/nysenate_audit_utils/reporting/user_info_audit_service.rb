@@ -59,15 +59,30 @@ module NysenateAuditUtils
 
         return Result.new(changes: [], exceptions: [], summary: {}, errors: errors) if errors.any?
 
-        pairs = collect_pairs(type_field.id, id_field.id, synced_fields[:name].id)
+        tracker_ids = scoped_tracker_ids(type_field, id_field)
+        pairs = collect_pairs(type_field.id, id_field.id, synced_fields[:name].id, tracker_ids)
 
         changes = []
         exceptions = []
         user_service = NysenateAuditUtils::Users::UserService.new
 
         pairs.each do |(user_type, user_id), issue_ids|
-          if user_id.to_s.strip.empty?
-            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids, 'missing_user_id',
+          type_blank = user_type.to_s.strip.empty?
+          id_blank   = user_id.to_s.strip.empty?
+
+          if type_blank && id_blank
+            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids,
+                                              'missing_user_type_and_id',
+                                              'Account Holder Type and ID are both blank'))
+            next
+          elsif type_blank
+            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids,
+                                              'missing_user_type',
+                                              'Account Holder Type is blank'))
+            next
+          elsif id_blank
+            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids,
+                                              'missing_user_id',
                                               'Account Holder ID is blank'))
             next
           end
@@ -103,14 +118,45 @@ module NysenateAuditUtils
 
       private
 
-      # Returns { [user_type, user_id] => [issue_id, ...] } for issues in project.
+      # Trackers where BOTH the Account Holder Type and ID fields are enabled.
+      # Returns nil when both fields are global (is_for_all), meaning no tracker
+      # filter is needed. When one or both fields are tracker-scoped, returns the
+      # intersection of their trackers so only tickets that can actually carry
+      # both fields are audited.
+      def scoped_tracker_ids(type_field, id_field)
+        per_field = [type_field, id_field].map do |cf|
+          cf.is_for_all? ? :all : cf.tracker_ids
+        end
+        return nil if per_field.all?(:all)
+
+        per_field.map { |t| t == :all ? Tracker.pluck(:id) : t }.reduce(:&)
+      end
+
+      # Returns { [user_type, user_id] => [issue_id, ...] } for in-scope issues in
+      # the project. When tracker_ids is non-nil, only issues on those trackers are
+      # scanned (see #scoped_tracker_ids); an empty array yields no rows. Tickets
+      # missing one or both of the Account Holder Type/ID values are intentionally
+      # retained here so the run loop can flag them as exceptions.
       # Also caches per-issue Subject and the ticket's cached Account Holder
       # Name custom value (@issue_subjects / @issue_names) so report rows can be
       # labeled per ticket even when the authoritative lookup fails.
-      def collect_pairs(type_field_id, id_field_id, name_field_id)
+      def collect_pairs(type_field_id, id_field_id, name_field_id, tracker_ids = nil)
+        @issue_subjects = {}
+        @issue_names = {}
+        pairs = Hash.new { |h, k| h[k] = [] }
+        # A nil filter means "all trackers"; an empty filter means "no in-scope
+        # trackers", so there is nothing to scan.
+        return pairs if tracker_ids && tracker_ids.empty?
+
         type_alias = 'cv_type'
         id_alias   = 'cv_id'
         name_alias = 'cv_name'
+        tracker_clause =
+          if tracker_ids
+            " AND issues.tracker_id IN (#{tracker_ids.map(&:to_i).join(',')})"
+          else
+            ''
+          end
         sql = <<~SQL
           SELECT issues.id           AS issue_id,
                  issues.subject      AS subject,
@@ -130,18 +176,13 @@ module NysenateAuditUtils
             ON #{name_alias}.customized_type = 'Issue'
            AND #{name_alias}.customized_id   = issues.id
            AND #{name_alias}.custom_field_id = #{name_field_id.to_i}
-          WHERE issues.project_id = #{project.id.to_i}
+          WHERE issues.project_id = #{project.id.to_i}#{tracker_clause}
         SQL
 
         rows = ActiveRecord::Base.connection.select_all(sql)
-        pairs = Hash.new { |h, k| h[k] = [] }
-        @issue_subjects = {}
-        @issue_names = {}
         rows.each do |row|
           user_type = row['user_type']
           user_id   = row['user_id']
-          next if user_type.to_s.strip.empty? && user_id.to_s.strip.empty?
-
           issue_id = row['issue_id'].to_i
           pairs[[user_type, user_id]] << issue_id
           @issue_subjects[issue_id] = row['subject']
