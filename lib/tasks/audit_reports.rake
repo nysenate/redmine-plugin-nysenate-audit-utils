@@ -514,14 +514,14 @@ Available options:
                   settings if not provided)
   * dry_run    => '1', 'true', or 'yes' to skip writes and only report drift
   * force_email => '1', 'true', or 'yes' to always send the email even when
-                  there are no changes or exceptions
+                  there are no changes or unresolved tickets
   * no_email   => '1', 'true', or 'yes' to never send the email (the CSV is still
                   archived to project Files); takes precedence over force_email and
                   recipients are not required in this mode
 
-By default no email is sent when the audit finds no changes and no exceptions
-(the CSV is still archived to project Files); this applies to dry runs too.
-Use force_email=1 to always send the email, or no_email=1 to never send it.
+By default no email is sent when the audit finds no changes and no unresolved
+tickets (the CSV is still archived to project Files); this applies to dry runs
+too. Use force_email=1 to always send the email, or no_email=1 to never send it.
 
 Example:
   rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" RAILS_ENV=production
@@ -616,14 +616,17 @@ END_DESC
     else
       puts "Account Holder info audit sent to: #{recipient_list.join(', ')}"
     end
+    unresolved = summary[:unresolved_tickets].to_i
     puts "Mode: #{dry_run ? 'dry run (no changes applied)' : 'apply'}"
-    puts "Account Holders scanned: #{summary[:pairs_scanned]}"
-    puts "Account Holders with exceptions: #{summary[:pairs_with_exceptions]}"
+    puts "Total Tickets Scanned: #{summary[:tickets_scanned]}"
+    puts "Unresolved tickets#{unresolved.positive? ? ' (review needed)' : ''}: #{unresolved}"
+    puts "Total Account Holders checked: #{summary[:account_holders_checked]}"
     puts "Account Holders with changes: #{summary[:pairs_with_changes]}"
     puts "Field updates#{dry_run ? ' (would apply)' : ' applied'}: #{summary[:field_updates]}"
-    if summary[:exceptions_by_category].present?
-      puts 'Exceptions by category:'
-      summary[:exceptions_by_category].each { |cat, n| puts "  #{cat}: #{n}" }
+    puts "#{dry_run ? 'Tickets to update' : 'Tickets updated'}: #{summary[:tickets_updated]}"
+    if summary[:unresolved_by_category].present?
+      puts 'Unresolved Tickets by category:'
+      summary[:unresolved_by_category].each { |cat, n| puts "  #{cat}: #{n}" }
     end
   end
 end

@@ -64,6 +64,9 @@ module NysenateAuditUtils
 
         changes = []
         exceptions = []
+        # Account Holders ([type, id] pairs) whose authoritative lookup
+        # succeeded — used for the "Total Account Holders checked" counter.
+        resolved_pairs = []
         user_service = NysenateAuditUtils::Users::UserService.new
 
         pairs.each do |(user_type, user_id), issue_ids|
@@ -104,6 +107,7 @@ module NysenateAuditUtils
             next
           end
 
+          resolved_pairs << [user_type, user_id]
           reconcile_issues(issue_ids, user_type, user_id, authoritative,
                            synced_fields, changes, exceptions)
         end
@@ -111,7 +115,7 @@ module NysenateAuditUtils
         Result.new(
           changes: changes,
           exceptions: exceptions,
-          summary: build_summary(pairs, changes, exceptions),
+          summary: build_summary(pairs, changes, exceptions, resolved_pairs),
           errors: []
         )
       end
@@ -290,8 +294,8 @@ module NysenateAuditUtils
         end
       end
 
-      def build_summary(pairs, changes, exceptions)
-        # Count tickets affected per category. Exception rows are now one per
+      def build_summary(pairs, changes, exceptions, resolved_pairs)
+        # Count unresolved tickets per category. Unresolved rows are one per
         # ticket; dedupe by issue_id per category to be safe.
         category_issue_ids = Hash.new { |h, k| h[k] = [] }
         exceptions.each do |row|
@@ -299,11 +303,13 @@ module NysenateAuditUtils
         end
         category_counts = category_issue_ids.transform_values { |ids| ids.uniq.size }
         {
-          pairs_scanned: pairs.size,
+          tickets_scanned: pairs.values.flatten.uniq.size,
+          unresolved_tickets: exceptions.pluck(:issue_id).uniq.size,
+          account_holders_checked: resolved_pairs.uniq.size,
           pairs_with_changes: changes.map { |c| [c[:user_type], c[:user_id]] }.uniq.size,
-          pairs_with_exceptions: exceptions.map { |e| [e[:user_type], e[:user_id]] }.uniq.size,
           field_updates: changes.size,
-          exceptions_by_category: category_counts
+          tickets_updated: changes.pluck(:issue_id).uniq.size,
+          unresolved_by_category: category_counts
         }
       end
     end
