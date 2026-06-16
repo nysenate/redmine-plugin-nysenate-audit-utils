@@ -702,6 +702,206 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_response :forbidden
   end
 
+  # Tests for account_holder_access action
+
+  test "should get account holder access report" do
+    mock_report_data = [
+      {
+        user_name: 'John Doe',
+        user_id: '12345',
+        user_uid: 'jdoe',
+        user_type: 'Employee',
+        account_type: 'Oracle / SFMS',
+        request_code: 'USRA',
+        issue_id: 1
+      }
+    ]
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'h2', text: 'Account Holder Access Report'
+    assert_select 'table.list.issues'
+    assert_select 'td div.account-line', text: 'Oracle / SFMS'
+    assert_select 'td div.account-line', text: 'USRA'
+  end
+
+  test "should group account holder access rows by holder in web view" do
+    # Same holder with access to two systems should collapse into one row
+    # carrying both (target system, request code) pairs.
+    mock_report_data = [
+      {
+        user_name: 'John Doe', user_id: '12345', user_uid: 'jdoe', user_type: 'Employee',
+        account_type: 'AIX', request_code: 'AIXA', issue_id: 1
+      },
+      {
+        user_name: 'John Doe', user_id: '12345', user_uid: 'jdoe', user_type: 'Employee',
+        account_type: 'Oracle / SFMS', request_code: 'USRA', issue_id: 2
+      }
+    ]
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1 }
+    assert_response :success
+    # One holder => one body row
+    assert_select 'table.list.issues tbody tr', 1
+    # ...but both systems and both codes are listed within that single row
+    assert_select 'tbody tr td div.account-line', text: 'AIX'
+    assert_select 'tbody tr td div.account-line', text: 'Oracle / SFMS'
+    assert_select 'tbody tr td div.account-line', text: 'AIXA'
+    assert_select 'tbody tr td div.account-line', text: 'USRA'
+  end
+
+  test "should handle empty account holder access report data" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns([])
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'p.nodata'
+  end
+
+  test "should render error page on account holder access service failure" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(nil)
+    service_mock.stubs(:success?).returns(false)
+    service_mock.stubs(:errors).returns(['boom'])
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'h2', text: 'Report Generation Error'
+  end
+
+  test "should export account holder access report as CSV" do
+    mock_report_data = [
+      {
+        user_name: 'John Doe',
+        user_id: '12345',
+        user_uid: 'jdoe',
+        user_type: 'Employee',
+        account_type: 'Oracle / SFMS',
+        request_code: 'USRA',
+        issue_id: 1
+      }
+    ]
+
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(mock_report_data)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1 }, format: :csv
+    assert_response :success
+    assert_match %r{text/csv}, response.content_type
+    assert_match /account_holder_access_report_\d{8}\.csv/, response.headers['Content-Disposition']
+    assert_match /Account Holder Name/, response.body
+    assert_match /USRA/, response.body
+  end
+
+  # Two holders of different types, used by the filter tests below.
+  ACCOUNT_HOLDER_ACCESS_MIXED = [
+    {
+      user_name: 'John Doe', user_id: '12345', user_uid: 'jdoe', user_type: 'Employee',
+      account_type: 'Oracle / SFMS', request_code: 'USRA', issue_id: 1
+    },
+    {
+      user_name: 'Jane Smith', user_id: '67890', user_uid: 'jsmith', user_type: 'Vendor',
+      account_type: 'AIX', request_code: 'AIXA', issue_id: 2
+    }
+  ].freeze
+
+  test "should filter account holder access web view by search on name or username" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_MIXED.map(&:dup))
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1, search: 'jsmith' }
+    assert_response :success
+    assert_select 'table.list.issues tbody tr', 1
+    assert_select 'tbody', text: /Jane Smith/
+    assert_select 'tbody', text: /John Doe/, count: 0
+  end
+
+  test "should highlight search matches in account holder access web view" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_MIXED.map(&:dup))
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1, search: 'jane' }
+    assert_response :success
+    assert_select 'td span.highlight', text: /Jane/i
+  end
+
+  test "should not highlight when no search is active" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_MIXED.map(&:dup))
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'td span.highlight', count: 0
+  end
+
+  test "should filter account holder access by type Employee" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_MIXED.map(&:dup))
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1, user_type: 'Employee' }
+    assert_response :success
+    assert_select 'table.list.issues tbody tr', 1
+    assert_select 'tbody', text: /John Doe/
+    assert_select 'tbody', text: /Jane Smith/, count: 0
+  end
+
+  test "should filter account holder access by type non_employee" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_MIXED.map(&:dup))
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1, user_type: 'non_employee' }
+    assert_response :success
+    assert_select 'table.list.issues tbody tr', 1
+    assert_select 'tbody', text: /Jane Smith/
+    assert_select 'tbody', text: /John Doe/, count: 0
+  end
+
+  test "should apply filters to account holder access CSV export" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_MIXED.map(&:dup))
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1, user_type: 'Employee' }, format: :csv
+    assert_response :success
+    assert_match /John Doe/, response.body
+    assert_no_match /Jane Smith/, response.body
+  end
+
+  test "should require view_audit_reports permission for account holder access report" do
+    @request.session[:user_id] = 2 # Non-admin user
+    role = Role.find(1)
+    role.remove_permission!(:view_audit_reports) if role.permissions.include?(:view_audit_reports)
+    get :account_holder_access, params: { project_id: 1 }
+    assert_response :forbidden
+  end
+
   private
 
   # Returns a simple service mock that generates report_data and succeeds.

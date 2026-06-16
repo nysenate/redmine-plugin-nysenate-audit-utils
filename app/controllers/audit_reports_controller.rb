@@ -6,6 +6,7 @@ class AuditReportsController < ApplicationController
 
   helper :sort
   include SortHelper
+  helper :search # for highlight_tokens in the Account Holder Access report
 
   def index
     # Report selection/navigation page
@@ -350,6 +351,58 @@ class AuditReportsController < ApplicationController
     render :error
   end
 
+  # Account Holder Access Report: all currently active account access across
+  # every target system, one row per account holder x system, ordered by name.
+  def account_holder_access
+    # Filters (applied to the flat rows before grouping/CSV so both the web view
+    # and the CSV export reflect them). Blank search / blank type = no filtering.
+    @search = params[:search].to_s.strip
+    @user_type_filter = params[:user_type].presence
+
+    service = NysenateAuditUtils::Reporting::AccountHolderAccessReportService.new(project: @project)
+    @report_data = service.generate
+
+    unless service.success?
+      @error_message = service.errors.join('; ')
+      render :error
+      return
+    end
+
+    sort_init 'user_name', 'asc'
+    # Only holder-level columns are sortable; target system / request code are
+    # squished into a single grouped row in the web view, so they aren't sorted.
+    sort_update({
+      'user_name' => 'user_name',
+      'user_type' => 'user_type',
+      'user_uid' => 'user_uid'
+    })
+
+    @report_data = sort_report_data(@report_data) if @report_data.present?
+    @report_data = filter_account_holder_access_data(@report_data) if @report_data.present?
+
+    respond_to do |format|
+      format.html do
+        # Total accounts = flat row count, before collapsing to one row per holder.
+        @account_count = @report_data.size
+        # Collapse to one row per account holder for the web view only.
+        @report_data = group_report_data_by_holder(@report_data)
+        paginate_report_data
+      end
+      format.csv do
+        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_account_holder_access_csv(@report_data)
+        send_data csv_data,
+                  filename: "account_holder_access_report_#{Date.current.strftime('%Y%m%d')}.csv",
+                  type: 'text/csv',
+                  disposition: 'attachment'
+      end
+    end
+  rescue => e
+    Rails.logger.error "Account Holder Access report generation failed: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    @error_message = "Unable to generate report: #{e.message}"
+    render :error
+  end
+
   private
 
   def parse_date_param(date_string)
@@ -439,6 +492,55 @@ class AuditReportsController < ApplicationController
       @report_count, per_page_option, params['page']
     )
     @report_data = @report_data[@report_pages.offset, @report_pages.per_page] || []
+  end
+
+  # Collapse the flat per-account rows into one row per account holder for the
+  # HTML view. Each holder keeps a single name/type/username and carries a list
+  # of its (target system, request code) accounts. Order is preserved from the
+  # already-sorted input. The CSV export keeps the flat one-row-per-account
+  # layout (this is only applied in the HTML branch).
+  # Apply the Account Holder Access report filters (search + type) to the flat
+  # per-account rows. Runs before the HTML grouping and before the CSV is built,
+  # so both outputs honour the same filtered set.
+  def filter_account_holder_access_data(rows)
+    rows = rows.select { |r| holder_type_match?(r[:user_type]) } if @user_type_filter
+    if @search.present?
+      q = @search.downcase
+      rows = rows.select do |r|
+        r[:user_name].to_s.downcase.include?(q) ||
+          r[:user_uid].to_s.downcase.include?(q)
+      end
+    end
+    rows
+  end
+
+  # "Non-employee" matches any type that is not Employee; the other options are
+  # exact matches on the Account Holder Type value.
+  def holder_type_match?(user_type)
+    case @user_type_filter
+    when 'non_employee' then user_type.to_s != 'Employee'
+    else user_type.to_s == @user_type_filter
+    end
+  end
+
+  def group_report_data_by_holder(rows)
+    grouped = {}
+    rows.each do |row|
+      key = row[:user_id]
+      grouped[key] ||= {
+        user_name: row[:user_name],
+        user_type: row[:user_type],
+        user_uid: row[:user_uid],
+        user_id: row[:user_id],
+        accounts: []
+      }
+      grouped[key][:accounts] << {
+        account_type: row[:account_type],
+        request_code: row[:request_code],
+        issue_id: row[:issue_id]
+      }
+    end
+    grouped.values
   end
 
   def sort_report_data(data)

@@ -4,6 +4,7 @@ en:
   label_audit_daily_report: "Daily Report"
   label_audit_weekly_report: "Weekly Report"
   label_audit_monthly_report: "Monthly Report"
+  label_audit_account_holder_access_report: "Account Holder Access Report"
 
   # Packet creation labels
   button_create_packet: "Create Packet"

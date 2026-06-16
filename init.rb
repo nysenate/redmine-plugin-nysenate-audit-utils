@@ -10,6 +10,7 @@ require_relative 'lib/nysenate_audit_utils/users/employee_data_source'
 require_relative 'lib/nysenate_audit_utils/users/database_data_source'
 require_relative 'lib/nysenate_audit_utils/users/user_service'
 require_relative 'lib/nysenate_audit_utils/reporting/daily_report_service'
+require_relative 'lib/nysenate_audit_utils/reporting/account_holder_access_report_service'
 require_relative 'lib/nysenate_audit_utils/reporting/csv_generator'
 require_relative 'lib/nysenate_audit_utils/reporting/project_file_archiver'
 require_relative 'lib/nysenate_audit_utils/reporting/user_info_audit_service'
@@ -33,7 +34,7 @@ Redmine::Plugin.register :nysenate_audit_utils do
   # Consolidated project module for all audit utils functionality
   project_module :audit_utils do
     # Reporting permissions
-    permission :view_audit_reports, { audit_reports: [:index, :daily, :weekly, :periodic, :monthly, :monthly_zip] }
+    permission :view_audit_reports, { audit_reports: [:index, :daily, :weekly, :periodic, :monthly, :monthly_zip, :account_holder_access] }
     permission :export_audit_reports, { audit_reports: [:export] }
 
     # User autofill permissions

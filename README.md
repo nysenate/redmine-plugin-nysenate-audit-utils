@@ -147,6 +147,7 @@ Access via project menu: **Reports → Audit Utils**
 
   CSV columns match the legacy audit spreadsheet for direct Access import: `RequestType, FullName, Userid, Office, EntryDate, CompletedDate, BacNumber, SenDevNumber, Description` (`SenDevNumber` is the Redmine ticket #; `BacNumber` comes from the **BAC #** custom field — see [Custom Field Configuration](#custom-field-configuration)). View-only/CSV download; no scheduled email.
 - **Monthly Reports**: Account status snapshot; defaults to the last complete month, active accounts only
+- **Account Holder Access Report**: Listing of all currently active account access across every target system — one row per account (account holder × system), ordered by account holder name. "Active" is determined the same way as the Monthly report (the latest closed Add/Delete ticket for that account holder + system). Columns: Account Holder Name, Account Holder Type, Account Holder Username, Target System, Request Code (the request code of the latest Add ticket). Supports a search filter (matches Account Holder Name or Username, with matches highlighted in the web view) and an Account Holder Type filter (All, Non-employee, Employee, Vendor, Volunteer); both filters apply to the CSV export as well. View-only with a CSV export; no scheduled email.
 
 All on-screen reports are paginated using Redmine's standard pagination
 control (page links and per-page selector, matching the issue list). Sorting
