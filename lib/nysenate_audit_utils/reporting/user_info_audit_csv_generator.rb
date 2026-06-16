@@ -5,35 +5,45 @@ require 'csv'
 module NysenateAuditUtils
   module Reporting
     # Formats a UserInfoAuditService::Result as a CSV with metadata header,
-    # an Exceptions table (first, since exceptions are highest priority for
-    # operators), and then a Changes table.
+    # an Unresolved Tickets table (first, since unresolved tickets are the
+    # highest priority for operators), and then a Changes table.
     class UserInfoAuditCsvGenerator
       def self.generate(result, project:, dry_run:, generated_at: Time.now)
         CSV.generate do |csv|
           write_header(csv, project, result.summary, dry_run, generated_at)
           csv << []
-          write_exceptions(csv, result.exceptions)
+          write_unresolved(csv, result.exceptions)
           csv << []
           write_changes(csv, result.changes)
         end
       end
 
       def self.write_header(csv, project, summary, dry_run, generated_at)
+        unresolved = summary[:unresolved_tickets].to_i
         csv << ['Report Name', 'Account Holder Info Audit']
         csv << ['Project', project.identifier]
         csv << ['Generated at', generated_at.strftime('%Y-%m-%d %H:%M:%S %Z')]
         csv << ['Mode', dry_run ? 'Dry run (no changes applied)' : 'Apply']
-        csv << ['Account Holders scanned', summary[:pairs_scanned].to_i]
-        csv << ['Account Holders with exceptions', summary[:pairs_with_exceptions].to_i]
+        csv << ['Total Tickets Scanned', summary[:tickets_scanned].to_i]
+        csv << [
+          "Unresolved tickets#{unresolved.positive? ? ' (review needed)' : ''}",
+          unresolved
+        ]
+        csv << ['Total Account Holders checked', summary[:account_holders_checked].to_i]
         csv << ['Account Holders with changes', summary[:pairs_with_changes].to_i]
         csv << ['Field updates', summary[:field_updates].to_i]
-        (summary[:exceptions_by_category] || {}).each do |category, count|
-          csv << ["Exceptions: #{category}", count]
+        csv << [dry_run ? 'Tickets to update' : 'Tickets updated', summary[:tickets_updated].to_i]
+        by_category = summary[:unresolved_by_category]
+        return if by_category.blank?
+
+        csv << ['Unresolved Tickets by category']
+        by_category.each do |category, count|
+          csv << [category, count]
         end
       end
 
-      def self.write_exceptions(csv, exceptions)
-        csv << ['Exceptions']
+      def self.write_unresolved(csv, exceptions)
+        csv << ['Unresolved Tickets']
         csv << [
           'Issue ID',
           'Subject',

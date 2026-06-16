@@ -295,7 +295,7 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
 
   # --- Summary -------------------------------------------------------------
 
-  test 'summary aggregates scanned pairs, changes, exceptions and field updates' do
+  test 'summary aggregates scanned tickets, holders, changes, unresolved and field updates' do
     # Seed every synced field with the authoritative value, then make exactly
     # two stale so field_updates is unambiguously 2.
     create_issue(
@@ -315,10 +315,12 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
     result = service.run
     summary = result.summary
 
-    assert_equal 2, summary[:pairs_scanned]
+    assert_equal 2, summary[:tickets_scanned]
+    assert_equal 1, summary[:unresolved_tickets]
+    assert_equal 1, summary[:account_holders_checked]
     assert_equal 1, summary[:pairs_with_changes]
-    assert_equal 1, summary[:pairs_with_exceptions]
     assert_equal 2, summary[:field_updates]
-    assert_equal({ 'missing_user_id' => 1 }, summary[:exceptions_by_category])
+    assert_equal 1, summary[:tickets_updated]
+    assert_equal({ 'missing_user_id' => 1 }, summary[:unresolved_by_category])
   end
 end
