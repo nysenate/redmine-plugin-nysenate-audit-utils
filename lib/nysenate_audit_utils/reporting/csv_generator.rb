@@ -227,6 +227,44 @@ module NysenateAuditUtils
           end
         end
       end
+      ACCOUNT_HOLDER_ACCESS_DESCRIPTION = 'Snapshot of all currently active account access.'
+
+      # Generate CSV for the Account Holder Access Report.
+      # One row per active account (account holder x target system).
+      # @param data [Array<Hash>] Report rows from AccountHolderAccessReportService
+      # @return [String] CSV content
+      def self.generate_account_holder_access_csv(data)
+        return '' unless data
+
+        CSV.generate do |csv|
+          write_metadata(csv,
+            name: 'Account Holder Access',
+            description: ACCOUNT_HOLDER_ACCESS_DESCRIPTION,
+            start_time: 'N/A',
+            end_time: Time.now
+          )
+
+          # Header row (Account Holder terminology per plugin convention)
+          csv << [
+            'Account Holder Name',
+            'Account Holder Type',
+            'Account Holder Username',
+            'Target System',
+            'Request Code'
+          ]
+
+          data.each do |row|
+            csv << [
+              row[:user_name],
+              row[:user_type],
+              row[:user_uid],
+              row[:account_type],
+              row[:request_code]
+            ]
+          end
+        end
+      end
+
       # Generate a ZIP containing one monthly CSV per target system
       # @param reports_by_system [Hash<String, Array<Hash>>] Map of system name => report data
       # @param filename_suffix [String] Suffix appended to each CSV filename (e.g. "202504" or "current")

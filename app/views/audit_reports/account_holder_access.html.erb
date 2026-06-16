@@ -1,0 +1,159 @@
+<% html_title(l(:label_audit_account_holder_access_report)) -%>
+
+<div class="contextual">
+  <%= link_to "Export CSV", account_holder_access_project_audit_reports_path(@project, search: @search, user_type: @user_type_filter, format: :csv), class: "icon icon-download" %>
+  <%= link_to "Back to Reports", project_audit_reports_path(@project), class: "icon icon-cancel" %>
+</div>
+
+<h2>Account Holder Access Report</h2>
+
+<%= form_tag(account_holder_access_project_audit_reports_path(@project), method: :get, id: "account-holder-access-filter-form") do %>
+  <fieldset class="box tabular">
+    <legend>Report Filters</legend>
+    <p>
+      <%= label_tag :search, "Search Name or Username" %>
+      <%= text_field_tag :search, @search %>
+      <%= submit_tag "Apply", name: nil, class: "button-small" %>
+    </p>
+    <p>
+      <%= label_tag :user_type, "Account Holder Type" %>
+      <%= select_tag :user_type,
+          options_for_select([
+            ['All', ''],
+            ['Non-employee', 'non_employee'],
+            ['Employee', 'Employee'],
+            ['Vendor', 'Vendor'],
+            ['Volunteer', 'Volunteer']
+          ], @user_type_filter),
+          onchange: "this.form.submit();" %>
+    </p>
+    <p>
+      <label></label>
+      <% if @search.blank? && @user_type_filter.blank? %>
+        <span class="button-small disabled-link">Reset</span>
+      <% else %>
+        <%= link_to "Reset", account_holder_access_project_audit_reports_path(@project), class: "button-small" %>
+      <% end %>
+    </p>
+  </fieldset>
+<% end %>
+
+<% if @report_count.nil? || @report_count.zero? %>
+  <p class="nodata">
+    No active account access found.
+  </p>
+<% else %>
+  <p class="report-info">
+    Showing <%= pluralize(@report_count, 'account holder') %> with <%= pluralize(@account_count, 'total account') %> across all target systems
+    <strong>(current state)</strong><% if @search.present? || @user_type_filter.present? %> <em>(filtered)</em><% end %>.
+  </p>
+
+  <table class="list issues account-holder-access <%= sort_css_classes %>">
+    <thead>
+      <tr>
+        <%= sort_header_tag('user_type', caption: 'Account Holder Type', class: 'col-type') %>
+        <%= sort_header_tag('user_name', caption: 'Account Holder Name', class: 'col-name') %>
+        <%= sort_header_tag('user_uid', caption: 'Account Holder Username', class: 'col-uid') %>
+        <th class="col-system">Target System</th>
+        <th class="col-code">Request Code</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @report_data.each do |row| %>
+        <tr>
+          <td class="col-type"><%= row[:user_type] || '—' %></td>
+          <td class="col-name">
+            <%
+              user_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_id_field_id
+              filter_url = project_issues_path(@project,
+                set_filter: 1,
+                "f[]": ["cf_#{user_id_field_id}", "status_id"],
+                "op[cf_#{user_id_field_id}]": "=",
+                "v[cf_#{user_id_field_id}][]": row[:user_id],
+                "op[status_id]": "*"
+              )
+              # Fix the double array encoding in the URL
+              filter_url = filter_url.gsub('f%5B%5D%5B%5D=', 'f%5B%5D=')
+            %>
+            <% name = row[:user_name] || '—' %>
+            <% name = highlight_tokens(name, [@search]) if @search.present? %>
+            <%= link_to name, filter_url, target: '_blank', title: "View all issues for this user" %>
+          </td>
+          <td class="col-uid">
+            <% uid = row[:user_uid] || '—' %>
+            <%= @search.present? ? highlight_tokens(uid, [@search]) : uid %>
+          </td>
+          <td class="col-system">
+            <% row[:accounts].each do |acct| %>
+              <div class="account-line"><%= acct[:account_type] %></div>
+            <% end %>
+          </td>
+          <td class="col-code">
+            <% row[:accounts].each do |acct| %>
+              <div class="account-line">
+                <% if acct[:request_code].present? && acct[:issue_id].present? %>
+                  <%= link_to acct[:request_code], issue_path(acct[:issue_id]), title: "View issue ##{acct[:issue_id]}" %>
+                <% else %>
+                  <%= acct[:request_code] || '—' %>
+                <% end %>
+              </div>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <span class="pagination"><%= pagination_links_full @report_pages, @report_count %></span>
+<% end %>
+
+<style>
+  /* Few columns — cap the width so the table doesn't stretch full-page,
+     and left-justify the text values for readability. */
+  table.list.account-holder-access {
+    max-width: 1000px;
+  }
+
+  /* Left-justify only the Account Holder Name column. */
+  table.list.account-holder-access .col-name {
+    text-align: left;
+  }
+
+  /* Shrink the Type and Username columns to fit their contents instead of
+     stretching to an even share of the width. */
+  table.list.account-holder-access .col-type,
+  table.list.account-holder-access .col-uid {
+    width: 1px;
+    white-space: nowrap;
+  }
+
+  /* Holders with multiple accounts stack their systems/codes; keep the row's
+     cells aligned to the top and give each line a little spacing. */
+  table.list.account-holder-access td {
+    vertical-align: top;
+  }
+
+  table.list.account-holder-access .account-line + .account-line {
+    margin-top: 0.25em;
+  }
+
+  .report-info {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    background-color: #f0f0f0;
+    border-left: 3px solid #169;
+  }
+
+  .pagination {
+    display: block;
+    margin-top: 1.5em;
+  }
+
+  .nodata {
+    padding: 2em;
+    text-align: center;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    color: #666;
+  }
+</style>
