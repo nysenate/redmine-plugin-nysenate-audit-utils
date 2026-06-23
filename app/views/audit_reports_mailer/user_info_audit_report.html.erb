@@ -3,21 +3,24 @@
 <p><strong>Project:</strong> <%= @project_identifier %></p>
 <p><strong>Mode:</strong> <%= @dry_run ? 'Dry run (no changes applied)' : 'Apply' %></p>
 
-<% unresolved = @summary[:unresolved_tickets].to_i %>
+<% unmatched = @summary[:unmatched_tickets].to_i %>
 <h3>Summary</h3>
 <ul>
   <li>Total Tickets Scanned: <%= @summary[:tickets_scanned].to_i %></li>
-  <li>Unresolved tickets<% if unresolved.positive? %> <strong>(review needed)</strong><% end %>: <%= unresolved %></li>
+  <li>Unmatched tickets<% if unmatched.positive? %> <strong>(review needed)</strong><% end %>: <%= unmatched %></li>
   <li>Total Account Holders checked: <%= @summary[:account_holders_checked].to_i %></li>
   <li>Account Holders with changes: <%= @summary[:pairs_with_changes].to_i %></li>
   <li>Field updates<%= @dry_run ? ' (would apply)' : ' applied' %>: <%= @summary[:field_updates].to_i %></li>
   <li><%= @dry_run ? 'Tickets to update' : 'Tickets updated' %>: <%= @summary[:tickets_updated].to_i %></li>
 </ul>
 
-<% if @summary[:unresolved_by_category].present? %>
-<h3>Unresolved Tickets by category</h3>
+<% if @summary[:unmatched_by_category].present? %>
+<h3>Unmatched Tickets by category</h3>
+<p style="font-size: 0.9em; color: #666; margin-top: 0;">
+  Tickets that could not be matched to an employee, vendor, or volunteer.
+</p>
 <ul>
-  <% @summary[:unresolved_by_category].each do |category, count| %>
+  <% @summary[:unmatched_by_category].each do |category, count| %>
     <li><%= category %>: <%= count %></li>
   <% end %>
 </ul>

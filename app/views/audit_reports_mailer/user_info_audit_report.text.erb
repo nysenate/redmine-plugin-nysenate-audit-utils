@@ -4,20 +4,21 @@ Account Holder Info Audit<% if @dry_run %> -- Dry Run<% end %>
 Project: <%= @project_identifier %>
 Mode: <%= @dry_run ? 'Dry run (no changes applied)' : 'Apply' %>
 
-<% unresolved = @summary[:unresolved_tickets].to_i %>
+<% unmatched = @summary[:unmatched_tickets].to_i %>
 Summary
 -------
 Total Tickets Scanned:            <%= @summary[:tickets_scanned].to_i %>
-Unresolved tickets<%= unresolved.positive? ? ' (review needed)' : '' %>:  <%= unresolved %>
+Unmatched tickets<%= unmatched.positive? ? ' (review needed)' : '' %>:  <%= unmatched %>
 Total Account Holders checked:    <%= @summary[:account_holders_checked].to_i %>
 Account Holders with changes:     <%= @summary[:pairs_with_changes].to_i %>
 Field updates<%= @dry_run ? ' (would apply)' : ' applied' %>: <%= @summary[:field_updates].to_i %>
 <%= @dry_run ? 'Tickets to update' : 'Tickets updated' %>: <%= @summary[:tickets_updated].to_i %>
 
-<% if @summary[:unresolved_by_category].present? %>
-Unresolved Tickets by category
+<% if @summary[:unmatched_by_category].present? %>
+Unmatched Tickets by category
 ------------------------------
-<% @summary[:unresolved_by_category].each do |category, count| %>
+Tickets that could not be matched to an employee, vendor, or volunteer.
+<% @summary[:unmatched_by_category].each do |category, count| %>
   <%= category %>: <%= count %>
 <% end %>
 <% end %>
