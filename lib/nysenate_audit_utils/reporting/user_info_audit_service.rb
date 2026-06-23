@@ -7,7 +7,9 @@ module NysenateAuditUtils
     # and optionally writes corrections back to the tickets.
     #
     # Returned `Result` carries:
-    #   * `exceptions` — Array of Hash rows describing pair/issue level errors
+    #   * `unmatched`  — Array of Hash rows for tickets that could not be
+    #                    matched to an account holder (missing/invalid ID,
+    #                    lookup failure, save failure, etc.)
     #   * `changes`    — Array of Hash rows describing per-field diffs
     #   * `summary`    — Hash of counters
     #   * `success?`   — false only if configuration is invalid
@@ -26,7 +28,7 @@ module NysenateAuditUtils
         location: 'user_location_field_id'
       }.freeze
 
-      Result = Struct.new(:changes, :exceptions, :summary, :errors, keyword_init: true) do
+      Result = Struct.new(:changes, :unmatched, :summary, :errors, keyword_init: true) do
         def success?
           errors.empty?
         end
@@ -57,16 +59,16 @@ module NysenateAuditUtils
           errors << "Missing Account Holder custom fields: #{missing.join(', ')}"
         end
 
-        return Result.new(changes: [], exceptions: [], summary: {}, errors: errors) if errors.any?
+        return Result.new(changes: [], unmatched: [], summary: {}, errors: errors) if errors.any?
 
         tracker_ids = scoped_tracker_ids(type_field, id_field)
         pairs = collect_pairs(type_field.id, id_field.id, synced_fields[:name].id, tracker_ids)
 
         changes = []
-        exceptions = []
+        unmatched = []
         # Account Holders ([type, id] pairs) whose authoritative lookup
         # succeeded — used for the "Total Account Holders checked" counter.
-        resolved_pairs = []
+        matched_pairs = []
         user_service = NysenateAuditUtils::Users::UserService.new
 
         pairs.each do |(user_type, user_id), issue_ids|
@@ -74,48 +76,48 @@ module NysenateAuditUtils
           id_blank   = user_id.to_s.strip.empty?
 
           if type_blank && id_blank
-            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids,
-                                              'missing_user_type_and_id',
-                                              'Account Holder Type and ID are both blank'))
+            unmatched.concat(pair_unmatched(user_type, user_id, issue_ids,
+                                            'missing_user_type_and_id',
+                                            'Account Holder Type and ID are both blank'))
             next
           elsif type_blank
-            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids,
-                                              'missing_user_type',
-                                              'Account Holder Type is blank'))
+            unmatched.concat(pair_unmatched(user_type, user_id, issue_ids,
+                                            'missing_user_type',
+                                            'Account Holder Type is blank'))
             next
           elsif id_blank
-            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids,
-                                              'missing_user_id',
-                                              'Account Holder ID is blank'))
+            unmatched.concat(pair_unmatched(user_type, user_id, issue_ids,
+                                            'missing_user_id',
+                                            'Account Holder ID is blank'))
             next
           end
 
           begin
             authoritative = user_service.find_by_id(user_id.to_s, type: user_type.to_s)
           rescue ArgumentError => e
-            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids, 'invalid_user_type', e.message))
+            unmatched.concat(pair_unmatched(user_type, user_id, issue_ids, 'invalid_user_type', e.message))
             next
           rescue StandardError => e
-            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids, 'data_source_error',
-                                              "#{e.class}: #{e.message}"))
+            unmatched.concat(pair_unmatched(user_type, user_id, issue_ids, 'data_source_error',
+                                            "#{e.class}: #{e.message}"))
             next
           end
 
           unless authoritative
-            exceptions.concat(pair_exceptions(user_type, user_id, issue_ids, 'user_not_found',
-                                              "No #{user_type} found with ID #{user_id}"))
+            unmatched.concat(pair_unmatched(user_type, user_id, issue_ids, 'user_not_found',
+                                            "No #{user_type} found with ID #{user_id}"))
             next
           end
 
-          resolved_pairs << [user_type, user_id]
+          matched_pairs << [user_type, user_id]
           reconcile_issues(issue_ids, user_type, user_id, authoritative,
-                           synced_fields, changes, exceptions)
+                           synced_fields, changes, unmatched)
         end
 
         Result.new(
           changes: changes,
-          exceptions: exceptions,
-          summary: build_summary(pairs, changes, exceptions, resolved_pairs),
+          unmatched: unmatched,
+          summary: build_summary(pairs, changes, unmatched, matched_pairs),
           errors: []
         )
       end
@@ -140,7 +142,7 @@ module NysenateAuditUtils
       # the project. When tracker_ids is non-nil, only issues on those trackers are
       # scanned (see #scoped_tracker_ids); an empty array yields no rows. Tickets
       # missing one or both of the Account Holder Type/ID values are intentionally
-      # retained here so the run loop can flag them as exceptions.
+      # retained here so the run loop can flag them as unmatched.
       # Also caches per-issue Subject and the ticket's cached Account Holder
       # Name custom value (@issue_subjects / @issue_names) so report rows can be
       # labeled per ticket even when the authoritative lookup fails.
@@ -196,7 +198,7 @@ module NysenateAuditUtils
       end
 
       def reconcile_issues(issue_ids, user_type, user_id, authoritative,
-                           synced_fields, changes, exceptions)
+                           synced_fields, changes, unmatched)
         issues = Issue.where(id: issue_ids).preload(:custom_values)
 
         issues.find_each do |issue|
@@ -247,7 +249,7 @@ module NysenateAuditUtils
             end
             changes.concat(row_diffs)
           rescue StandardError => e
-            exceptions << {
+            unmatched << {
               issue_id: issue.id,
               subject: issue.subject,
               user_type: user_type,
@@ -261,11 +263,11 @@ module NysenateAuditUtils
       end
 
       # Expands a pair-level (Account Holder Type/ID) lookup failure into one
-      # exception row per affected ticket, so the report lists exceptions per
-      # ticket just like the changes table. Account Holder Name is sourced from
-      # the ticket's cached custom value (the authoritative record is
+      # unmatched row per affected ticket, so the report lists unmatched tickets
+      # per ticket just like the changes table. Account Holder Name is sourced
+      # from the ticket's cached custom value (the authoritative record is
       # unavailable for these failures).
-      def pair_exceptions(user_type, user_id, issue_ids, category, message)
+      def pair_unmatched(user_type, user_id, issue_ids, category, message)
         Array(issue_ids).map do |issue_id|
           {
             issue_id: issue_id,
@@ -294,22 +296,22 @@ module NysenateAuditUtils
         end
       end
 
-      def build_summary(pairs, changes, exceptions, resolved_pairs)
-        # Count unresolved tickets per category. Unresolved rows are one per
+      def build_summary(pairs, changes, unmatched, matched_pairs)
+        # Count unmatched tickets per category. Unmatched rows are one per
         # ticket; dedupe by issue_id per category to be safe.
         category_issue_ids = Hash.new { |h, k| h[k] = [] }
-        exceptions.each do |row|
+        unmatched.each do |row|
           category_issue_ids[row[:category]] << row[:issue_id]
         end
         category_counts = category_issue_ids.transform_values { |ids| ids.uniq.size }
         {
           tickets_scanned: pairs.values.flatten.uniq.size,
-          unresolved_tickets: exceptions.pluck(:issue_id).uniq.size,
-          account_holders_checked: resolved_pairs.uniq.size,
+          unmatched_tickets: unmatched.pluck(:issue_id).uniq.size,
+          account_holders_checked: matched_pairs.uniq.size,
           pairs_with_changes: changes.map { |c| [c[:user_type], c[:user_id]] }.uniq.size,
           field_updates: changes.size,
           tickets_updated: changes.pluck(:issue_id).uniq.size,
-          unresolved_by_category: category_counts
+          unmatched_by_category: category_counts
         }
       end
     end

@@ -292,15 +292,15 @@ in-scope issues the task fetches the current authoritative record,
 diffs it against the cached custom field values, and writes back any
 drifted fields. Changes are recorded in the ticket's **History / Property
 Changes** view (with watcher email notifications suppressed). Tickets that
-can't be reconciled are listed as **Unresolved** (and flagged "review
-needed" in the summary), including any missing the Account Holder Type
-and/or ID needed for the lookup.
+can't be matched to an account holder are listed as **Unmatched** (and
+flagged "review needed" in the summary), including any missing the Account
+Holder Type and/or ID needed for the lookup.
 
 Produces a single CSV which is:
 1. Emailed to the configured recipients (see email behavior below).
 2. Archived to the project's Files repository.
 
-The email is only sent when the audit finds changes or unresolved tickets.
+The email is only sent when the audit finds changes or unmatched tickets.
 When a run turns up nothing actionable, no email is sent (the CSV is still
 archived); pass `force_email=1` to send the email regardless. This applies
 to dry runs too.
@@ -320,7 +320,7 @@ rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" dry_r
 - `project_id` (required): Project identifier or numeric ID
 - `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
 - `dry_run` (optional): `1`, `true`, or `yes` to skip writes and only report drift
-- `force_email` (optional): `1`, `true`, or `yes` to always send the email even when there are no changes or unresolved tickets
+- `force_email` (optional): `1`, `true`, or `yes` to always send the email even when there are no changes or unmatched tickets
 - `no_email` (optional): `1`, `true`, or `yes` to never send the email (report is still archived to project Files); takes precedence over `force_email`
 
 #### Send All-Systems Monthly Report

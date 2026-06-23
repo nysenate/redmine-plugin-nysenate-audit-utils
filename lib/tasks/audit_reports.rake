@@ -514,12 +514,12 @@ Available options:
                   settings if not provided)
   * dry_run    => '1', 'true', or 'yes' to skip writes and only report drift
   * force_email => '1', 'true', or 'yes' to always send the email even when
-                  there are no changes or unresolved tickets
+                  there are no changes or unmatched tickets
   * no_email   => '1', 'true', or 'yes' to never send the email (the CSV is still
                   archived to project Files); takes precedence over force_email and
                   recipients are not required in this mode
 
-By default no email is sent when the audit finds no changes and no unresolved
+By default no email is sent when the audit finds no changes and no unmatched
 tickets (the CSV is still archived to project Files); this applies to dry runs
 too. Use force_email=1 to always send the email, or no_email=1 to never send it.
 
@@ -572,10 +572,10 @@ END_DESC
     )
 
     # Decide whether to email. By default, skip the email when the audit found
-    # nothing actionable (no changes and no exceptions); force_email overrides
+    # nothing actionable (no changes and no unmatched tickets); force_email overrides
     # the skip. no_email suppresses the email unconditionally and takes
     # precedence over force_email. This applies to dry runs too.
-    has_findings = result.changes.any? || result.exceptions.any?
+    has_findings = result.changes.any? || result.unmatched.any?
     should_email = !no_email && (force_email || has_findings)
 
     email_error = nil
@@ -612,21 +612,21 @@ END_DESC
     elsif no_email
       puts 'Account Holder info audit email skipped (no_email set)'
     elsif !should_email
-      puts 'Account Holder info audit email skipped (no changes or exceptions; use force_email=1 to override)'
+      puts 'Account Holder info audit email skipped (no changes or unmatched tickets; use force_email=1 to override)'
     else
       puts "Account Holder info audit sent to: #{recipient_list.join(', ')}"
     end
-    unresolved = summary[:unresolved_tickets].to_i
+    unmatched = summary[:unmatched_tickets].to_i
     puts "Mode: #{dry_run ? 'dry run (no changes applied)' : 'apply'}"
     puts "Total Tickets Scanned: #{summary[:tickets_scanned]}"
-    puts "Unresolved tickets#{unresolved.positive? ? ' (review needed)' : ''}: #{unresolved}"
+    puts "Unmatched tickets#{unmatched.positive? ? ' (review needed)' : ''}: #{unmatched}"
     puts "Total Account Holders checked: #{summary[:account_holders_checked]}"
     puts "Account Holders with changes: #{summary[:pairs_with_changes]}"
     puts "Field updates#{dry_run ? ' (would apply)' : ' applied'}: #{summary[:field_updates]}"
     puts "#{dry_run ? 'Tickets to update' : 'Tickets updated'}: #{summary[:tickets_updated]}"
-    if summary[:unresolved_by_category].present?
-      puts 'Unresolved Tickets by category:'
-      summary[:unresolved_by_category].each { |cat, n| puts "  #{cat}: #{n}" }
+    if summary[:unmatched_by_category].present?
+      puts 'Unmatched Tickets by category:'
+      summary[:unmatched_by_category].each { |cat, n| puts "  #{cat}: #{n}" }
     end
   end
 end

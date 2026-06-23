@@ -20,7 +20,7 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
   end
 
   def empty_result
-    Result.new(changes: [], exceptions: [], summary: {}, errors: [])
+    Result.new(changes: [], unmatched: [], summary: {}, errors: [])
   end
 
   # Parse the flat CSV into rows for assertions.
@@ -57,10 +57,10 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
 
   test 'header includes summary counters' do
     result = Result.new(
-      changes: [], exceptions: [], errors: [],
+      changes: [], unmatched: [], errors: [],
       summary: {
         tickets_scanned: 20,
-        unresolved_tickets: 2,
+        unmatched_tickets: 2,
         account_holders_checked: 7,
         pairs_with_changes: 3,
         field_updates: 5,
@@ -71,28 +71,28 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
     csv = rows(generate(result))
 
     assert_includes csv, ['Total Tickets Scanned', '20']
-    assert_includes csv, ['Unresolved tickets (review needed)', '2']
+    assert_includes csv, ['Unmatched tickets (review needed)', '2']
     assert_includes csv, ['Total Account Holders checked', '7']
     assert_includes csv, ['Account Holders with changes', '3']
     assert_includes csv, ['Field updates', '5']
     assert_includes csv, ['Tickets updated', '4']
   end
 
-  test 'header omits review-needed suffix when there are no unresolved tickets' do
+  test 'header omits review-needed suffix when there are no unmatched tickets' do
     result = Result.new(
-      changes: [], exceptions: [], errors: [],
-      summary: { unresolved_tickets: 0 }
+      changes: [], unmatched: [], errors: [],
+      summary: { unmatched_tickets: 0 }
     )
 
     csv = rows(generate(result))
 
-    assert_includes csv, ['Unresolved tickets', '0']
-    assert_not(csv.any? { |r| r[0] == 'Unresolved tickets (review needed)' })
+    assert_includes csv, ['Unmatched tickets', '0']
+    assert_not(csv.any? { |r| r[0] == 'Unmatched tickets (review needed)' })
   end
 
   test 'header labels tickets-to-update for dry runs' do
     result = Result.new(
-      changes: [], exceptions: [], errors: [],
+      changes: [], unmatched: [], errors: [],
       summary: { tickets_updated: 4 }
     )
 
@@ -101,23 +101,23 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
     assert_includes csv, ['Tickets to update', '4']
   end
 
-  test 'header emits one row per unresolved category' do
+  test 'header emits one row per unmatched category' do
     result = Result.new(
-      changes: [], exceptions: [], errors: [],
-      summary: { unresolved_by_category: { 'user_not_found' => 2, 'data_source_error' => 1 } }
+      changes: [], unmatched: [], errors: [],
+      summary: { unmatched_by_category: { 'user_not_found' => 2, 'data_source_error' => 1 } }
     )
 
     csv = rows(generate(result))
 
-    assert_includes csv, ['Unresolved Tickets by category']
+    assert_includes csv, ['Unmatched Tickets by category']
     assert_includes csv, ['user_not_found', '2']
     assert_includes csv, ['data_source_error', '1']
   end
 
-  test 'exceptions section lists one row per affected ticket' do
+  test 'unmatched section lists one row per affected ticket' do
     result = Result.new(
       changes: [], errors: [], summary: {},
-      exceptions: [
+      unmatched: [
         {
           issue_id: 10, subject: 'Add Oracle', user_type: 'Employee', user_id: '12345',
           account_holder_name: nil,
@@ -133,7 +133,7 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
 
     csv = rows(generate(result))
 
-    assert_includes csv, ['Unresolved Tickets']
+    assert_includes csv, ['Unmatched Tickets']
     assert_includes csv,
                     ['10', 'Add Oracle', 'Employee', '12345', nil,
                      'user_not_found', 'No Employee found with ID 12345']
@@ -142,10 +142,10 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
                      'user_not_found', 'No Employee found with ID 12345']
   end
 
-  test 'exceptions section renders missing-field categories' do
+  test 'unmatched section renders missing-field categories' do
     result = Result.new(
       changes: [], errors: [], summary: {},
-      exceptions: [
+      unmatched: [
         {
           issue_id: 12, subject: 'Add SFS', user_type: '', user_id: '',
           account_holder_name: nil,
@@ -164,7 +164,7 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
 
   test 'changes section renders Applied as yes or no' do
     result = Result.new(
-      exceptions: [], errors: [], summary: {},
+      unmatched: [], errors: [], summary: {},
       changes: [
         {
           issue_id: 10, subject: 'Add Oracle', user_type: 'Employee', user_id: '12345',
@@ -192,7 +192,7 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
 
   test 'changes section includes the Account Holder Name for each ticket row' do
     result = Result.new(
-      exceptions: [], errors: [], summary: {},
+      unmatched: [], errors: [], summary: {},
       changes: [
         {
           issue_id: 10, subject: 'Add Oracle', user_type: 'Employee', user_id: '12345',
@@ -217,9 +217,9 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
     csv = rows(generate(empty_result))
 
     # Both table header rows are always present. Both column-header rows lead
-    # with 'Issue ID'; the Unresolved Tickets table is distinguished by
+    # with 'Issue ID'; the Unmatched Tickets table is distinguished by
     # 'Category' and the Changes table by 'Applied'.
-    assert_includes csv, ['Unresolved Tickets']
+    assert_includes csv, ['Unmatched Tickets']
     assert_includes csv, ['Changes']
     assert(csv.any? { |r| r.first == 'Issue ID' && r.include?('Category') })
     assert(csv.any? { |r| r.first == 'Issue ID' && r.include?('Applied') })

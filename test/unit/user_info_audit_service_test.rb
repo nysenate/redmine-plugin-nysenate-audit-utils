@@ -94,19 +94,19 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
     assert(result.errors.any? { |e| e.include?('Missing Account Holder custom fields') })
   end
 
-  # --- Exception categories ------------------------------------------------
+  # --- Unmatched categories ------------------------------------------------
 
-  test 'records missing_user_id exception when account holder id is blank' do
+  test 'records missing_user_id unmatched row when account holder id is blank' do
     create_issue(user_type: 'Employee', user_id: '')
 
     result = Service.new(project: @project).run
 
     assert result.success?
-    assert_equal 1, result.exceptions.size
-    assert_equal 'missing_user_id', result.exceptions.first[:category]
+    assert_equal 1, result.unmatched.size
+    assert_equal 'missing_user_id', result.unmatched.first[:category]
   end
 
-  test 'records missing_user_type exception when account holder type is blank' do
+  test 'records missing_user_type unmatched row when account holder type is blank' do
     # ID present but Type blank: the ticket should be flagged before any lookup.
     create_issue(user_type: '', user_id: '12345')
     # Fail loudly if a lookup is attempted for a ticket missing its type.
@@ -117,29 +117,29 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
     result = Service.new(project: @project).run
 
     assert result.success?
-    assert_equal 1, result.exceptions.size
-    assert_equal 'missing_user_type', result.exceptions.first[:category]
+    assert_equal 1, result.unmatched.size
+    assert_equal 'missing_user_type', result.unmatched.first[:category]
     assert_empty result.changes
   end
 
-  test 'records missing_user_type_and_id exception when both are blank' do
+  test 'records missing_user_type_and_id unmatched row when both are blank' do
     create_issue(user_type: '', user_id: '')
 
     result = Service.new(project: @project).run
 
     assert result.success?
-    assert_equal 1, result.exceptions.size
-    assert_equal 'missing_user_type_and_id', result.exceptions.first[:category]
+    assert_equal 1, result.unmatched.size
+    assert_equal 'missing_user_type_and_id', result.unmatched.first[:category]
     assert_empty result.changes
   end
 
-  test 'emits one missing-field exception per ticket' do
+  test 'emits one missing-field unmatched row per ticket' do
     a = create_issue(user_type: '', user_id: '')
     b = create_issue(user_type: '', user_id: '')
 
     result = Service.new(project: @project).run
 
-    missing = result.exceptions.select { |e| e[:category] == 'missing_user_type_and_id' }
+    missing = result.unmatched.select { |e| e[:category] == 'missing_user_type_and_id' }
     assert_equal 2, missing.size
     assert_equal [a.id, b.id].sort, missing.map { |e| e[:issue_id] }.sort
   end
@@ -156,10 +156,10 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
     result = Service.new(project: @project).run
 
     assert result.success?
-    assert_empty result.exceptions.select { |e| e[:issue_id] == out_of_scope.id }
+    assert_empty result.unmatched.select { |e| e[:issue_id] == out_of_scope.id }
   end
 
-  test 'records invalid_user_type exception when lookup raises ArgumentError' do
+  test 'records invalid_user_type unmatched row when lookup raises ArgumentError' do
     # The lookup itself rejects the type; the stored value need not be invalid.
     create_issue(user_type: 'Employee', user_id: '12345')
     NysenateAuditUtils::Users::UserService.any_instance
@@ -168,11 +168,11 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
 
     result = Service.new(project: @project).run
 
-    assert_equal 1, result.exceptions.size
-    assert_equal 'invalid_user_type', result.exceptions.first[:category]
+    assert_equal 1, result.unmatched.size
+    assert_equal 'invalid_user_type', result.unmatched.first[:category]
   end
 
-  test 'records data_source_error exception when lookup raises StandardError' do
+  test 'records data_source_error unmatched row when lookup raises StandardError' do
     create_issue(user_type: 'Employee', user_id: '12345')
     NysenateAuditUtils::Users::UserService.any_instance
                                           .stubs(:find_by_id)
@@ -180,29 +180,29 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
 
     result = Service.new(project: @project).run
 
-    assert_equal 1, result.exceptions.size
-    assert_equal 'data_source_error', result.exceptions.first[:category]
-    assert_match(/ESS down/, result.exceptions.first[:message])
+    assert_equal 1, result.unmatched.size
+    assert_equal 'data_source_error', result.unmatched.first[:category]
+    assert_match(/ESS down/, result.unmatched.first[:message])
   end
 
-  test 'records user_not_found exception when lookup returns nil' do
+  test 'records user_not_found unmatched row when lookup returns nil' do
     create_issue(user_type: 'Employee', user_id: '99999')
     stub_lookup(returns: nil)
 
     result = Service.new(project: @project).run
 
-    assert_equal 1, result.exceptions.size
-    assert_equal 'user_not_found', result.exceptions.first[:category]
+    assert_equal 1, result.unmatched.size
+    assert_equal 'user_not_found', result.unmatched.first[:category]
   end
 
-  test 'emits one exception row per ticket sharing the same account holder' do
+  test 'emits one unmatched row per ticket sharing the same account holder' do
     a = create_issue(user_type: 'Employee', user_id: '99999', seed: { user_name: 'Jane Doe' })
     b = create_issue(user_type: 'Employee', user_id: '99999', seed: { user_name: 'Jane Doe' })
     stub_lookup(returns: nil)
 
     result = Service.new(project: @project).run
 
-    not_found = result.exceptions.select { |e| e[:category] == 'user_not_found' }
+    not_found = result.unmatched.select { |e| e[:category] == 'user_not_found' }
     assert_equal 2, not_found.size
     assert_equal [a.id, b.id].sort, not_found.map { |e| e[:issue_id] }.sort
 
@@ -212,14 +212,14 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
     assert_equal 'Jane Doe', row_a[:account_holder_name]
   end
 
-  test 'records issue_save_failed exception when issue save fails' do
+  test 'records issue_save_failed unmatched row when issue save fails' do
     create_issue(user_type: 'Employee', user_id: '12345', seed: { user_email: 'stale@example.com' })
     stub_lookup
     Issue.any_instance.stubs(:save).returns(false)
 
     result = Service.new(project: @project).run
 
-    assert(result.exceptions.any? { |e| e[:category] == 'issue_save_failed' })
+    assert(result.unmatched.any? { |e| e[:category] == 'issue_save_failed' })
   end
 
   # --- Diff detection ------------------------------------------------------
@@ -295,7 +295,7 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
 
   # --- Summary -------------------------------------------------------------
 
-  test 'summary aggregates scanned tickets, holders, changes, unresolved and field updates' do
+  test 'summary aggregates scanned tickets, holders, changes, unmatched and field updates' do
     # Seed every synced field with the authoritative value, then make exactly
     # two stale so field_updates is unambiguously 2.
     create_issue(
@@ -316,11 +316,11 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
     summary = result.summary
 
     assert_equal 2, summary[:tickets_scanned]
-    assert_equal 1, summary[:unresolved_tickets]
+    assert_equal 1, summary[:unmatched_tickets]
     assert_equal 1, summary[:account_holders_checked]
     assert_equal 1, summary[:pairs_with_changes]
     assert_equal 2, summary[:field_updates]
     assert_equal 1, summary[:tickets_updated]
-    assert_equal({ 'missing_user_id' => 1 }, summary[:unresolved_by_category])
+    assert_equal({ 'missing_user_id' => 1 }, summary[:unmatched_by_category])
   end
 end
