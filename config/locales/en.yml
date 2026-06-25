@@ -6,6 +6,10 @@ en:
   label_audit_monthly_report: "Monthly Report"
   label_audit_account_holder_access_report: "Account Holder Access Report"
 
+  # Daily report -> new ticket launcher (#18134)
+  button_create_account_request: "Create Ticket"
+  warning_account_request_employee_not_found: "Could not load account holder %{id} from ESS; please fill in the ticket manually."
+
   # Packet creation labels
   button_create_packet: "Create Packet"
   button_create_packet_title: "Download ticket packet (PDF + attachments)"

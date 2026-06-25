@@ -20,6 +20,28 @@ module NysenateAuditUtils
             resp_center_head: employee.resp_center_head
           }
         end
+
+        # Map employee data to a { custom_field_id => value } hash suitable for
+        # seeding a new-issue form (e.g. issue[custom_field_values][<id>]=<value>).
+        # Only includes fields that are actually configured; the daily report is
+        # always for employees, so Account Holder Type is fixed to 'Employee'.
+        # @param employee [EssEmployee] The employee object from ESS
+        # @return [Hash{Integer => Object}] Hash of custom field ID => value
+        def map_employee_to_field_values(employee)
+          mapped = map_employee(employee)
+          field_ids = NysenateAuditUtils::CustomFieldConfiguration.autofill_field_ids
+
+          values = {}
+          values[field_ids[:user_id]]       = mapped[:employee_id] if field_ids[:user_id]
+          values[field_ids[:user_name]]     = mapped[:name]        if field_ids[:user_name]
+          values[field_ids[:user_email]]    = mapped[:email]       if field_ids[:user_email]
+          values[field_ids[:user_phone]]    = mapped[:phone]       if field_ids[:user_phone]
+          values[field_ids[:user_status]]   = mapped[:status]      if field_ids[:user_status]
+          values[field_ids[:user_uid]]      = mapped[:uid]         if field_ids[:user_uid]
+          values[field_ids[:user_location]] = mapped[:location]    if field_ids[:user_location]
+          values[field_ids[:user_type]]     = 'Employee'           if field_ids[:user_type]
+          values
+        end
       end
     end
   end
