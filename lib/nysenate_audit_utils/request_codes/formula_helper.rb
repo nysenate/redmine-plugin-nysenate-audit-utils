@@ -14,7 +14,9 @@ module NysenateAuditUtils
 
         return nil unless account_action_field_id && target_system_field_id
 
-        # Get field values from current issue
+        # Get field values from current issue. Uses Redmine core's public
+        # Issue#custom_field_value (acts_as_customizable.rb), which accepts a
+        # field ID and returns the field value.
         account_action_value = custom_field_value(account_action_field_id)
         target_system_value = custom_field_value(target_system_field_id)
 
@@ -33,19 +35,6 @@ module NysenateAuditUtils
 
         mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new
         mapper.get_fields_from_code(code)
-      end
-
-      private
-
-      # Helper to get custom field value by field ID
-      # @param field_id [Integer] The custom field ID
-      # @return [String, nil] The field value
-      def custom_field_value(field_id)
-        cfv = custom_field_values.find { |v| v.custom_field_id == field_id }
-        return nil unless cfv
-
-        # For list fields, get the actual value (not the ID)
-        cfv.value
       end
     end
 
