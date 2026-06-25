@@ -93,4 +93,52 @@ class EmployeeMapperTest < ActiveSupport::TestCase
     field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_id_field_id')
     assert_nil field_id
   end
+
+  def test_map_employee_to_field_values_keys_by_configured_field_id
+    resp_center_head = OpenStruct.new(code: 'PERSONNEL', short_name: 'Personnel')
+    employee = OpenStruct.new(
+      employee_id: 12345,
+      display_name: 'John Doe',
+      email: 'john.doe@nysenate.gov',
+      work_phone: '(518) 555-1234',
+      active: true,
+      uid: 'jdoe',
+      resp_center_head: resp_center_head
+    )
+
+    values = NysenateAuditUtils::Autofill::EmployeeMapper.map_employee_to_field_values(employee)
+
+    # Keyed by the configured custom field IDs from @mock_settings
+    assert_equal 12345, values[2]                    # user_id
+    assert_equal 'John Doe', values[3]               # user_name
+    assert_equal 'john.doe@nysenate.gov', values[4]  # user_email
+    assert_equal '(518) 555-1234', values[5]         # user_phone
+    assert_equal 'PERSONNEL', values[6]              # user_location
+    assert_equal 'Active', values[7]                 # user_status
+    assert_equal 'jdoe', values[8]                   # user_uid
+    # Daily report is always employees -> Account Holder Type fixed to 'Employee'
+    assert_equal 'Employee', values[1]               # user_type
+  end
+
+  def test_map_employee_to_field_values_skips_unconfigured_fields
+    # Only user_id and user_name are configured
+    Setting.stubs(:plugin_nysenate_audit_utils).returns(
+      'user_id_field_id' => 2,
+      'user_name_field_id' => 3
+    )
+
+    employee = OpenStruct.new(
+      employee_id: 999,
+      display_name: 'Jane Roe',
+      email: 'jane@nysenate.gov',
+      work_phone: nil,
+      active: true,
+      uid: 'jroe',
+      resp_center_head: nil
+    )
+
+    values = NysenateAuditUtils::Autofill::EmployeeMapper.map_employee_to_field_values(employee)
+
+    assert_equal({ 2 => 999, 3 => 'Jane Roe' }, values)
+  end
 end

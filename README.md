@@ -140,6 +140,7 @@ Access via project menu: **Reports → Audit Utils**
 - **Daily Reports**: Account status of employees with status changes. Two modes:
   - **Last Business Day** (default): single date picker, defaults to today. Covers the previous business day at 00:00 → selected date at 00:00. If the selected date is a Monday, the range starts at the previous Friday at 00:00 so the prior weekend is included.
   - **Date Range**: explicit start/end date pickers (range runs 00:00 → 00:00).
+  - Each row has a **Create Ticket** action (shown to users with permission to add issues) that opens a new ticket pre-filled with that account holder's information — the account holder fields are re-fetched live from ESS and the form is left unsaved for review. The ticket's tracker is auto-detected as the project tracker carrying the Account Holder custom fields.
 - **Weekly Reports**: Closed tickets from the previous full week (Sunday–Sunday), ordered by close date
 - **Quarterly / Annual Reports**: Closed tickets for a single target system, feeding the SFMS Quarterly Audit and the SFS Annual (Account & Roles Validation) Audit. A **System** selector switches between:
   - **SFMS** (Oracle/SFMS, request codes `USR*`): a dropdown of *offset* audit quarters (Nov 1–Jan 31, Feb 1–Apr 30, May 1–Jul 31, Aug 1–Oct 31), defaulting to the most recently completed quarter; an explicit start/end range overrides it.

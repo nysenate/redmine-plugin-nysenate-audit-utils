@@ -37,6 +37,8 @@ Rails.application.routes.draw do
   # Project-scoped user management routes
   resources :projects do
     resources :tracked_users
+    # Pre-filled new-issue launcher from the daily report (#18134)
+    resources :account_requests, only: [:new]
   end
 
   # Packet creation routes
