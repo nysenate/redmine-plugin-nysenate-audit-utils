@@ -27,10 +27,11 @@ class AccountRequestsController < IssuesController
     employee = NysenateAuditUtils::Ess::EssEmployeeService.find_by_id(params[:employee_id])
 
     if employee
-      @issue.safe_attributes = {
-        'tracker_id' => detect_tracker&.id,
-        'custom_field_values' => NysenateAuditUtils::Autofill::EmployeeMapper.map_employee_to_field_values(employee)
-      }
+      if params[:target_system].present?
+        prefill_removal_issue(employee, params[:target_system])
+      else
+        prefill_create_issue(employee)
+      end
       # Recompute allowed statuses for the (possibly changed) tracker.
       @allowed_statuses = @issue.new_statuses_allowed_to(User.current)
       attach_daily_report
@@ -42,6 +43,33 @@ class AccountRequestsController < IssuesController
   end
 
   private
+
+  # Prefill a generic Account Request ticket with the holder's ESS data.
+  def prefill_create_issue(employee)
+    @issue.safe_attributes = {
+      'tracker_id' => detect_tracker&.id,
+      'custom_field_values' => NysenateAuditUtils::Autofill::EmployeeMapper.map_employee_to_field_values(employee)
+    }
+  end
+
+  # Prefill an access-removal ticket for a single target system: holder fields,
+  # Target System + Account Action ('Delete'), and a formatted subject/description.
+  def prefill_removal_issue(employee, target_system)
+    name = employee.display_name
+    code = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new.get_request_code('Delete', target_system)
+    subject = if code.present?
+                l(:text_removal_ticket_subject_coded, code: code, system: target_system, name: name)
+              else
+                l(:text_removal_ticket_subject, system: target_system, name: name)
+              end
+    @issue.safe_attributes = {
+      'tracker_id' => detect_tracker&.id,
+      'subject' => subject,
+      'description' => l(:text_removal_ticket_description, system: target_system, name: name),
+      'custom_field_values' =>
+        NysenateAuditUtils::Autofill::EmployeeMapper.map_removal_field_values(employee, target_system: target_system)
+    }
+  end
 
   def authorize_account_request
     @project ||= Project.find(params[:project_id])

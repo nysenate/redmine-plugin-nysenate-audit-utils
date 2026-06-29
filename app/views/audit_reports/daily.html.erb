@@ -88,19 +88,18 @@
     <% end %>
   </p>
 
-  <table class="list issues <%= sort_css_classes %>">
+  <table class="list issues daily-report-table <%= sort_css_classes %>">
     <thead>
       <tr>
-        <%= sort_header_tag('user_name', caption: 'Account Holder Name') %>
+        <%= sort_header_tag('user_name', caption: 'Account Holder Name', class: 'holder-col') %>
         <th>Current Status</th>
         <th>Open Tickets</th>
         <%= sort_header_tag('status_changes', caption: 'Status Changes') %>
-        <%= sort_header_tag('office', caption: 'Account Holder Office') %>
-        <%= sort_header_tag('office_location', caption: 'Account Holder Location') %>
-        <%= sort_header_tag('user_id', caption: 'Account Holder ID') %>
-        <%= sort_header_tag('user_uid', caption: 'Account Holder Username') %>
+        <%= sort_header_tag('office', caption: 'Account Holder Office', class: 'holder-col') %>
+        <%= sort_header_tag('office_location', caption: 'Account Holder Location', class: 'holder-col') %>
+        <%= sort_header_tag('user_id', caption: 'Account Holder ID', class: 'holder-col') %>
+        <%= sort_header_tag('user_uid', caption: 'Account Holder Username', class: 'holder-col') %>
         <%= sort_header_tag('post_date', caption: 'Post Date', default_order: 'asc') %>
-        <th>Action</th>
       </tr>
     </thead>
     <tbody>
@@ -121,29 +120,58 @@
             %>
             <%= link_to row[:user_name], filter_url, target: '_blank' %>
           </td>
-          <td>
+          <td class="account-status-cell">
             <% if row[:account_statuses].present? %>
-              <%= row[:account_statuses].map { |status|
-                if status[:request_code].present?
-                  link_to status[:request_code], issue_path(status[:issue_id]), target: '_blank'
-                else
-                  "#{status[:account_type]} (no code)"
-                end
-              }.join(', ').html_safe %>
+              <% can_add = User.current.allowed_to?(:add_issues, @project) %>
+              <% row[:account_statuses].each do |status| %>
+                <div class="account-status-line">
+                  <span class="account-status-name"><%= status[:request_code].presence || "#{status[:account_type]} (no code)" %></span>
+                  <% if status[:issue_id].present? %>
+                    <%= link_to sprite_icon('issue', l(:label_view_last_ticket), icon_only: true),
+                          issue_path(status[:issue_id]),
+                          class: 'action-icon',
+                          title: l(:label_view_last_ticket), target: '_blank' %>
+                  <% end %>
+                  <% if can_add && status[:status] == 'active' %>
+                    <% if row[:removal_systems].include?(status[:account_type]) %>
+                      <%= link_to sprite_icon('del', l(:label_create_removal_ticket), icon_only: true),
+                            new_project_account_request_path(@project, employee_id: row[:user_id],
+                              target_system: status[:account_type], account_action: 'Delete',
+                              from_date: @from_date.iso8601, to_date: @to_date.iso8601),
+                            class: 'action-icon create-removal-ticket',
+                            title: l(:label_create_removal_ticket), target: '_blank' %>
+                    <% else %>
+                      <%= content_tag :span,
+                            sprite_icon('del', l(:label_removal_ticket_already_open), icon_only: true),
+                            class: 'action-icon create-removal-disabled',
+                            title: l(:label_removal_ticket_already_open) %>
+                    <% end %>
+                  <% end %>
+                </div>
+              <% end %>
             <% else %>
               <span class="no-data">—</span>
             <% end %>
           </td>
-          <td>
-            <% if row[:open_requests].present? %>
-              <%= row[:open_requests].map { |request|
-                if request[:request_code].present?
-                  link_to request[:request_code], issue_path(request[:issue_id]), target: '_blank'
-                else
-                  "#{request[:account_type]} (no code)"
-                end
-              }.join(', ').html_safe %>
-            <% else %>
+          <td class="open-tickets-cell">
+            <% row[:open_requests].each do |request| %>
+              <div class="open-ticket-line">
+                <% if request[:request_code].present? %>
+                  <%= link_to request[:request_code], issue_path(request[:issue_id]), target: '_blank' %>
+                <% else %>
+                  <%= "#{request[:account_type]} (no code)" %>
+                <% end %>
+              </div>
+            <% end %>
+            <% if User.current.allowed_to?(:add_issues, @project) %>
+              <div class="open-ticket-line create-new-line">
+                <%= link_to sprite_icon('add', l(:button_create_new_account_request), icon_only: true),
+                      new_project_account_request_path(@project, employee_id: row[:user_id],
+                        from_date: @from_date.iso8601, to_date: @to_date.iso8601),
+                      class: 'action-icon',
+                      title: l(:button_create_new_account_request), target: '_blank' %>
+              </div>
+            <% elsif row[:open_requests].blank? %>
               <span class="no-data">—</span>
             <% end %>
           </td>
@@ -163,14 +191,6 @@
           <td><%= row[:user_id] %></td>
           <td><%= row[:user_uid] %></td>
           <td><%= row[:post_date] %></td>
-          <td>
-            <% if User.current.allowed_to?(:add_issues, @project) %>
-              <%= link_to l(:button_create_account_request),
-                    new_project_account_request_path(@project, employee_id: row[:user_id],
-                      from_date: @from_date.iso8601, to_date: @to_date.iso8601),
-                    class: 'icon icon-add', target: '_blank' %>
-            <% end %>
-          </td>
         </tr>
       <% end %>
     </tbody>
@@ -351,6 +371,73 @@
 </script>
 
 <style>
+  /* Let "Account Holder X" headers wrap so each column only needs to be wide
+     enough for the longest word ("Holder"/"Username"), shrinking overall table
+     width. Mirrors the weekly report's vertical-header approach. */
+  .daily-report-table thead th {
+    white-space: normal;
+    vertical-align: bottom;
+    line-height: 1.25;
+    text-align: center;
+    text-indent: 0;
+  }
+
+  .daily-report-table thead th a,
+  .daily-report-table thead th a.sort,
+  .daily-report-table thead th a.icon {
+    white-space: normal;
+    text-indent: 0;
+    text-align: center;
+    display: inline;
+    padding-right: 0;
+    background: none;
+  }
+
+  /* On inactive sort headers Redmine emits an empty <svg> before the label; its
+     reserved width creates a phantom hanging indent when the header wraps. */
+  .daily-report-table thead th a:not(.icon) .icon-svg {
+    display: none;
+  }
+  .daily-report-table thead th a:not(.icon) .icon-label {
+    margin-left: 0;
+  }
+
+  /* Account-holder columns — wrap headers across 2 lines without overflowing. */
+  .daily-report-table thead th.holder-col {
+    max-width: 8em;
+  }
+
+  /* Current Status / Open Tickets: one entry per line with trailing action icons. */
+  table.list.issues td.account-status-cell,
+  table.list.issues td.open-tickets-cell {
+    white-space: nowrap;
+    text-align: left;
+    padding-left: 1em;
+  }
+
+  .account-status-line,
+  .open-ticket-line {
+    display: block;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+
+  .account-status-line .action-icon {
+    margin-left: 0.4em;
+    vertical-align: middle;
+  }
+
+  .open-ticket-line.create-new-line {
+    margin-top: 0.3em;
+  }
+
+  /* Greyed, non-clickable removal icon for active accounts that already have an
+     open removal ticket. */
+  .create-removal-disabled {
+    cursor: default;
+    opacity: 0.4;
+  }
+
   #date-filter-form {
     margin-bottom: 2em;
   }

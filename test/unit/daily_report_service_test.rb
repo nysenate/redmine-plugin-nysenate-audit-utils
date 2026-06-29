@@ -178,6 +178,67 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     assert_equal 'AIXA', result.first[:open_requests].first[:request_code]
   end
 
+  test 'removal_systems includes active accounts without an open delete ticket' do
+    changes = [create_mock_status_change(employee_id: 12345)]
+    mock_ess_api(changes)
+    statuses = [
+      { account_type: 'Oracle / SFMS', status: 'active', request_code: 'USRA', issue_id: 1 },
+      { account_type: 'AIX', status: 'active', request_code: 'AIXA', issue_id: 2 }
+    ]
+    mock_account_tracking('12345', statuses, [])
+
+    result = @service.generate
+
+    assert_equal ['AIX', 'Oracle / SFMS'].sort, result.first[:removal_systems].sort
+  end
+
+  test 'removal_systems excludes inactive accounts' do
+    changes = [create_mock_status_change(employee_id: 12345)]
+    mock_ess_api(changes)
+    statuses = [
+      { account_type: 'Oracle / SFMS', status: 'active', request_code: 'USRA', issue_id: 1 },
+      { account_type: 'AIX', status: 'inactive', request_code: 'AIXI', issue_id: 2 }
+    ]
+    mock_account_tracking('12345', statuses, [])
+
+    result = @service.generate
+
+    assert_equal ['Oracle / SFMS'], result.first[:removal_systems]
+  end
+
+  test 'removal_systems excludes active accounts that already have an open delete ticket' do
+    changes = [create_mock_status_change(employee_id: 12345)]
+    mock_ess_api(changes)
+    statuses = [
+      { account_type: 'Oracle / SFMS', status: 'active', request_code: 'USRA', issue_id: 1 },
+      { account_type: 'AIX', status: 'active', request_code: 'AIXA', issue_id: 2 }
+    ]
+    open_requests = [
+      { account_type: 'AIX', account_action: 'Delete', request_code: 'AIXI', issue_id: 3 }
+    ]
+    mock_account_tracking('12345', statuses, open_requests)
+
+    result = @service.generate
+
+    assert_equal ['Oracle / SFMS'], result.first[:removal_systems]
+  end
+
+  test 'removal_systems keeps active accounts whose only open ticket is a non-delete action' do
+    changes = [create_mock_status_change(employee_id: 12345)]
+    mock_ess_api(changes)
+    statuses = [
+      { account_type: 'AIX', status: 'active', request_code: 'AIXA', issue_id: 2 }
+    ]
+    open_requests = [
+      { account_type: 'AIX', account_action: 'Update Privileges Only', request_code: 'AIXU', issue_id: 3 }
+    ]
+    mock_account_tracking('12345', statuses, open_requests)
+
+    result = @service.generate
+
+    assert_equal ['AIX'], result.first[:removal_systems]
+  end
+
   test 'generate converts post_date_time to date' do
     post_datetime = DateTime.new(2025, 1, 15, 10, 30, 0)
     changes = [create_mock_status_change(post_date_time: post_datetime)]

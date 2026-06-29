@@ -7,8 +7,16 @@ en:
   label_audit_account_holder_access_report: "Account Holder Access Report"
 
   # Daily report -> new ticket launcher (#18134)
-  button_create_account_request: "Create Ticket"
   warning_account_request_employee_not_found: "Could not load account holder %{id} from ESS; please fill in the ticket manually."
+
+  # Daily report -> per-entry ticket actions (#18134 phase 3)
+  button_create_new_account_request: "Create New"
+  label_view_last_ticket: "View last ticket"
+  label_create_removal_ticket: "Create removal ticket"
+  label_removal_ticket_already_open: "Removal ticket already open"
+  text_removal_ticket_subject_coded: "%{code}: Remove %{system} account for %{name}"
+  text_removal_ticket_subject: "Remove %{system} account for %{name}"
+  text_removal_ticket_description: "Remove %{system} account for %{name}"
 
   # Packet creation labels
   button_create_packet: "Create Packet"
