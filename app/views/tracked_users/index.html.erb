@@ -31,7 +31,22 @@
         <tr class="<%= cycle('odd', 'even') %>">
           <td><%= tracked_user.user_type %></td>
           <td><%= tracked_user.user_id %></td>
-          <td><%= tracked_user.name %></td>
+          <td>
+            <%
+              user_id_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_id_field_id
+              filter_url = project_issues_path(@project,
+                set_filter: 1,
+                "f[]": ["cf_#{user_id_field_id}", "status_id"],
+                "op[cf_#{user_id_field_id}]": "=",
+                "v[cf_#{user_id_field_id}][]": tracked_user.user_id,
+                "op[status_id]": "*"
+              )
+              # Fix the double array encoding in the URL
+              filter_url = filter_url.gsub('f%5B%5D%5B%5D=', 'f%5B%5D=')
+            %>
+            <%= link_to tracked_user.name, filter_url, target: '_blank',
+                title: 'View all tickets for this Vendor/Volunteer' %>
+          </td>
           <td><%= tracked_user.email %></td>
           <td><%= tracked_user.phone %></td>
           <td><%= tracked_user.location %></td>
