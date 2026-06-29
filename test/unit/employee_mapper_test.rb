@@ -141,4 +141,42 @@ class EmployeeMapperTest < ActiveSupport::TestCase
 
     assert_equal({ 2 => 999, 3 => 'Jane Roe' }, values)
   end
+
+  def test_map_removal_field_values_sets_target_system_and_delete_action
+    Setting.stubs(:plugin_nysenate_audit_utils).returns(
+      @mock_settings.merge(
+        'target_system_field_id' => 20,
+        'account_action_field_id' => 21
+      )
+    )
+
+    employee = OpenStruct.new(
+      employee_id: 12345, display_name: 'John Doe', email: 'john@nysenate.gov',
+      work_phone: nil, active: true, uid: 'jdoe', resp_center_head: nil
+    )
+
+    values = NysenateAuditUtils::Autofill::EmployeeMapper.map_removal_field_values(employee, target_system: 'AIX')
+
+    assert_equal 12345, values[2]        # Account Holder fields still present
+    assert_equal 'John Doe', values[3]
+    assert_equal 'AIX', values[20]       # Target System
+    assert_equal 'Delete', values[21]    # Account Action
+  end
+
+  def test_map_removal_field_values_skips_unconfigured_target_and_action_fields
+    # Neither target_system nor account_action field is configured
+    Setting.stubs(:plugin_nysenate_audit_utils).returns(
+      'user_id_field_id' => 2,
+      'user_name_field_id' => 3
+    )
+
+    employee = OpenStruct.new(
+      employee_id: 999, display_name: 'Jane Roe', email: nil,
+      work_phone: nil, active: true, uid: 'jroe', resp_center_head: nil
+    )
+
+    values = NysenateAuditUtils::Autofill::EmployeeMapper.map_removal_field_values(employee, target_system: 'SFS')
+
+    assert_equal({ 2 => 999, 3 => 'Jane Roe' }, values)
+  end
 end

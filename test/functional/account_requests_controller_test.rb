@@ -60,6 +60,34 @@ class AccountRequestsControllerTest < Redmine::ControllerTest
     assert_select 'div.flash.warning', false
   end
 
+  test "removal mode prefills subject and description with the request code" do
+    NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).with('12345').returns(stub_employee)
+    NysenateAuditUtils::RequestCodes::RequestCodeMapper.any_instance.stubs(:get_request_code)
+      .with('Delete', 'AIX').returns('AIXI')
+    stub_report
+
+    assert_difference 'Attachment.count', 1 do
+      get_new(target_system: 'AIX', account_action: 'Delete')
+    end
+
+    assert_response :success
+    assert_select 'input#issue_subject[value=?]', 'AIXI: Remove AIX account for John Doe'
+    assert_select 'textarea#issue_description', 'Remove AIX account for John Doe'
+    # The daily report is still seeded as a pending attachment
+    assert_select "input[type=hidden][name=?]", 'attachments[p0][token]'
+  end
+
+  test "removal mode omits the code prefix when no request code is configured" do
+    NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).with('12345').returns(stub_employee)
+    NysenateAuditUtils::RequestCodes::RequestCodeMapper.any_instance.stubs(:get_request_code).returns(nil)
+    stub_report
+
+    get_new(target_system: 'AIX', account_action: 'Delete')
+
+    assert_response :success
+    assert_select 'input#issue_subject[value=?]', 'Remove AIX account for John Doe'
+  end
+
   test "renders a blank form with a warning when the employee is missing" do
     NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).returns(nil)
 

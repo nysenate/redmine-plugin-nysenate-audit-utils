@@ -77,7 +77,7 @@ module NysenateAuditUtils
           status_changes = ordered_changes.map do |change|
             { code: change.transaction_code, notes: change.notes }
           end
-          latest_post_date = changes.map { |c| c.post_date_time }.compact.max&.to_date
+          latest_post_date = changes.filter_map(&:post_date_time).max&.to_date
 
           # Get account statuses and open requests for this employee (filtered by project if provided)
           account_statuses = @account_tracking_service.get_account_statuses(employee_id, project: @project)
@@ -88,6 +88,7 @@ module NysenateAuditUtils
             user_name: employee.display_name,
             account_statuses: account_statuses,
             open_requests: open_requests,
+            removal_systems: removal_target_systems(account_statuses, open_requests),
             status_changes: status_changes,
             office: employee.resp_center_display_name,
             office_location: employee.location&.display_name,
@@ -96,6 +97,20 @@ module NysenateAuditUtils
             post_date: latest_post_date
           }
         end
+      end
+
+      # Target systems for which the account holder currently has an active account
+      # AND no already-open removal (Delete) ticket. These are the systems the daily
+      # report's "Create Access Removal Tickets" action spins up new tickets for.
+      def removal_target_systems(account_statuses, open_requests)
+        delete_action = NysenateAuditUtils::AccountTracking::AccountTrackingService::INACTIVE_ACTION
+        open_delete_systems = open_requests
+                              .select { |r| r[:account_action] == delete_action }
+                              .pluck(:account_type)
+        account_statuses
+          .select { |s| s[:status] == 'active' && open_delete_systems.exclude?(s[:account_type]) }
+          .pluck(:account_type)
+          .uniq
       end
     end
   end
