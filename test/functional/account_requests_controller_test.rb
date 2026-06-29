@@ -2,65 +2,106 @@
 
 require File.expand_path('../../test_helper', __FILE__)
 
-class AccountRequestsControllerTest < ActionController::TestCase
+class AccountRequestsControllerTest < Redmine::ControllerTest
   fixtures :users, :roles, :projects, :trackers, :projects_trackers, :issue_statuses,
            :enumerations, :members, :member_roles, :enabled_modules, :custom_fields
 
   def setup
+    set_tmp_attachments_directory
     @request.session[:user_id] = 1 # admin
     @project = Project.find(1)
     @project.enable_module!(:audit_utils)
+    @from = (Date.today - 1).to_time
+    @to = Date.today.to_time
   end
 
   def stub_employee
-    OpenStruct.new(employee_id: 12345, display_name: 'John Doe')
+    OpenStruct.new(
+      employee_id: 12345, display_name: 'John Doe', email: 'john@nysenate.gov',
+      work_phone: '555-1234', active: true, uid: 'jdoe', resp_center_head: nil
+    )
   end
 
-  test "redirects to prefilled new issue form when employee is found" do
+  # Stub the daily report service so a CSV gets generated for the attachment.
+  def stub_report(success: true, rows: [{ user_id: 12345 }])
+    service = mock('daily_report_service')
+    service.stubs(:generate).returns(rows)
+    service.stubs(:success?).returns(success)
+    NysenateAuditUtils::Reporting::DailyReportService.stubs(:new).returns(service)
+    NysenateAuditUtils::Reporting::CsvGenerator.stubs(:generate_daily_csv).returns("a,b\n1,2\n")
+  end
+
+  def get_new(extra = {})
+    get :new, params: {
+      project_id: @project.id, employee_id: '12345',
+      from_date: @from.iso8601, to_date: @to.iso8601
+    }.merge(extra)
+  end
+
+  test "renders the prefilled new issue form and seeds the daily report attachment" do
     NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).with('12345').returns(stub_employee)
-    NysenateAuditUtils::Autofill::EmployeeMapper
-      .stubs(:map_employee_to_field_values).returns(2 => 'jdoe')
+    stub_report
 
-    get :new, params: { project_id: @project.id, employee_id: '12345' }
+    assert_difference 'Attachment.count', 1 do
+      get_new
+    end
 
-    assert_response :redirect
-    assert_match %r{/projects/#{@project.identifier}/issues/new}, @response.location
-    # Prefilled custom field value rides along in the redirect query string
-    assert_match(/jdoe/, @response.location)
-    assert_nil flash[:warning]
+    assert_response :success
+    assert_select 'input#issue_subject' # the new issue form rendered
+
+    # The created attachment is container-less (tokenable)
+    attachment = Attachment.order(:id).last
+    assert_nil attachment.container
+    assert_equal "daily_report_#{@to.to_date.strftime('%Y%m%d')}.csv", attachment.filename
+
+    # Core renders it natively as a pending attachment: filename + submittable token
+    assert_select "input[name=?][value=?]", 'attachments[p0][filename]', attachment.filename
+    assert_select "input[type=hidden][name=?]", 'attachments[p0][token]'
+    assert_select 'div.flash.warning', false
   end
 
-  test "redirects to blank new issue form with a warning when employee is missing" do
+  test "renders a blank form with a warning when the employee is missing" do
     NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).returns(nil)
 
-    get :new, params: { project_id: @project.id, employee_id: 'bogus' }
+    assert_no_difference 'Attachment.count' do
+      get_new(employee_id: 'bogus')
+    end
 
-    assert_response :redirect
-    assert_match %r{/projects/#{@project.identifier}/issues/new}, @response.location
-    assert_not_nil flash[:warning]
+    assert_response :success
+    assert_select 'input#issue_subject'
+    assert_select 'div.flash.warning'
+    assert_select "input[name=?]", 'attachments[p0][token]', false # nothing seeded
+  end
+
+  test "renders the form without an attachment when report generation fails" do
+    NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).returns(stub_employee)
+    stub_report(success: false)
+
+    assert_no_difference 'Attachment.count' do
+      get_new
+    end
+
+    assert_response :success
+    assert_select "input[name=?]", 'attachments[p0][token]', false
   end
 
   test "returns 403 when the user cannot add issues" do
-    # Non-admin member whose role lacks :add_issues
     @request.session[:user_id] = 2
     Role.find(1).remove_permission!(:add_issues)
 
-    get :new, params: { project_id: @project.id, employee_id: '12345' }
-
+    get_new
     assert_response :forbidden
   end
 
   test "returns 403 when the audit_utils module is not enabled" do
     @project.disable_module!(:audit_utils)
 
-    get :new, params: { project_id: @project.id, employee_id: '12345' }
-
+    get_new
     assert_response :forbidden
   end
 
   test "returns 404 for an unknown project" do
     get :new, params: { project_id: 999999, employee_id: '12345' }
-
     assert_response :not_found
   end
 end

@@ -166,7 +166,8 @@
           <td>
             <% if User.current.allowed_to?(:add_issues, @project) %>
               <%= link_to l(:button_create_account_request),
-                    new_project_account_request_path(@project, employee_id: row[:user_id]),
+                    new_project_account_request_path(@project, employee_id: row[:user_id],
+                      from_date: @from_date.iso8601, to_date: @to_date.iso8601),
                     class: 'icon icon-add', target: '_blank' %>
             <% end %>
           </td>
