@@ -26,6 +26,45 @@ class EssEmployeeTest < ActiveSupport::TestCase
     assert_nil employee.resp_center_head
   end
 
+  def test_should_map_matched_terms_from_api_response
+    api_data = {
+      'employeeId' => 12345,
+      'firstName' => 'John',
+      'lastName' => 'Smith',
+      'fullName' => 'John A. Smith',
+      'matchedTerms' => %w[JOHN SMITH]
+    }
+
+    employee = EssEmployee.new(api_data)
+
+    assert_equal %w[JOHN SMITH], employee.matched_terms
+  end
+
+  def test_matched_terms_defaults_to_empty_array_when_absent
+    api_data = {
+      'employeeId' => 12345,
+      'firstName' => 'John',
+      'lastName' => 'Smith',
+      'fullName' => 'John A. Smith'
+    }
+
+    employee = EssEmployee.new(api_data)
+
+    assert_equal [], employee.matched_terms
+  end
+
+  def test_to_hash_includes_matched_terms
+    employee = EssEmployee.new(
+      employee_id: 12345,
+      first_name: 'John',
+      last_name: 'Smith',
+      full_name: 'John A. Smith',
+      matched_terms: %w[JOHN SMITH]
+    )
+
+    assert_equal %w[JOHN SMITH], employee.to_hash[:matched_terms]
+  end
+
   def test_should_initialize_from_attributes_hash
     attrs = {
       employee_id: 12345,

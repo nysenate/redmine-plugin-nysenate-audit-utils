@@ -20,7 +20,8 @@ class UserSearchControllerTest < ActionController::TestCase
       phone: '(518) 555-1234',
       status: 'Active',
       uid: 'johndoe',
-      location: 'PERSONNEL'
+      location: 'PERSONNEL',
+      matched_terms: %w[JOHN DOE]
     }
 
     # Mock data for vendor
@@ -67,6 +68,18 @@ class UserSearchControllerTest < ActionController::TestCase
     assert_equal 'John Doe', response_data['users'][0]['name']
     assert_equal '12345', response_data['users'][0]['user_id']
     assert_equal 'Employee', response_data['type']
+  end
+
+  def test_search_passes_matched_terms_through_to_response
+    @admin.stubs(:allowed_to?).with(:use_user_autofill, @project).returns(true)
+    @request.session[:user_id] = @admin.id
+    @mock_service.stubs(:search).with('John', type: 'Employee', limit: 20, offset: 0).returns([@mock_employee_data])
+
+    get :search, params: { q: 'John', project_id: @project.id }
+
+    assert_response :success
+    response_data = JSON.parse(@response.body)
+    assert_equal %w[JOHN DOE], response_data['users'][0]['matched_terms']
   end
 
   def test_search_defaults_to_employee_type_when_not_specified

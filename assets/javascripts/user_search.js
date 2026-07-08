@@ -254,7 +254,7 @@ function initializeUserSearch() {
         // Build details based on available information
         let details = `Status: <span class="${statusClass}">${escapeHtml(tracked_user.status || 'N/A')}</span>`;
         if (tracked_user.uid) {
-          details += ` | UID: ${escapeHtml(tracked_user.uid)}`;
+          details += ` | UID: ${highlightTerms(tracked_user.uid, tracked_user.matched_terms, userSearchState.currentSearchQuery)}`;
         }
         if (tracked_user.location) {
           details += ` | Location: ${escapeHtml(tracked_user.location)}`;
@@ -264,7 +264,7 @@ function initializeUserSearch() {
         }
 
         li.innerHTML = `
-          <div class="user-name">${highlightMatch(tracked_user.name || 'Unknown', userSearchState.currentSearchQuery)}</div>
+          <div class="user-name">${highlightTerms(tracked_user.name || 'Unknown', tracked_user.matched_terms, userSearchState.currentSearchQuery)}</div>
           <div class="user-details">${details}</div>
         `;
 
@@ -451,14 +451,26 @@ function initializeUserSearch() {
     return div.innerHTML;
   }
 
-  function highlightMatch(text, query) {
-    if (!query || !text) {
+  // Highlight matched search tokens within a display string.
+  // `terms` is the per-result matchedTerms array from the ESS search (normalized,
+  // uppercased tokens). When it is empty (e.g. Vendor/Volunteer results from the
+  // local DB, or the non-search endpoints), fall back to the raw query string so
+  // highlighting still works. Matching is case-insensitive.
+  function highlightTerms(text, terms, fallbackQuery) {
+    if (!text) {
       return escapeHtml(text);
     }
 
-    const escapedText = escapeHtml(text);
-    const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
-    return escapedText.replace(regex, '<mark class="search-highlight">$1</mark>');
+    const tokens = (terms && terms.length)
+      ? terms
+      : (fallbackQuery ? [fallbackQuery] : []);
+    const pattern = tokens.map(escapeRegex).filter(Boolean).join('|');
+    if (!pattern) {
+      return escapeHtml(text);
+    }
+
+    const regex = new RegExp(`(${pattern})`, 'gi');
+    return escapeHtml(text).replace(regex, '<mark class="search-highlight">$1</mark>');
   }
 
   function escapeRegex(str) {

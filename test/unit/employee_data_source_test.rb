@@ -35,6 +35,21 @@ class EmployeeDataSourceTest < ActiveSupport::TestCase
     assert_equal 'Active', result[:status]
   end
 
+  def test_search_includes_matched_terms
+    ess_employee = EssEmployee.new(
+      employee_id: 12345,
+      full_name: 'John Doe',
+      active: true,
+      matched_terms: %w[JOHN DOE]
+    )
+
+    NysenateAuditUtils::Ess::EssEmployeeService.stubs(:search).returns([ess_employee])
+
+    results = @data_source.search('john doe')
+
+    assert_equal %w[JOHN DOE], results.first[:matched_terms]
+  end
+
   def test_search_converts_inactive_status
     ess_employee = EssEmployee.new(
       employee_id: 12345,

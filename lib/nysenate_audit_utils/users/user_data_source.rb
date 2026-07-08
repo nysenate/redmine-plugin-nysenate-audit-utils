@@ -55,7 +55,10 @@ module NysenateAuditUtils
           phone: tracked_user.phone,
           uid: tracked_user.uid,
           location: tracked_user.location,
-          status: tracked_user.status
+          status: tracked_user.status,
+          # Local records have no ESS search tokens; the frontend falls back to
+          # query-based highlighting when this is empty.
+          matched_terms: []
         }
       end
     end

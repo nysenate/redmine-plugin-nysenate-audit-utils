@@ -62,7 +62,8 @@ module NysenateAuditUtils
           phone: employee.work_phone,
           uid: employee.uid,
           location: employee.resp_center_head&.code,
-          status: employee.active ? 'Active' : 'Inactive'
+          status: employee.active ? 'Active' : 'Inactive',
+          matched_terms: employee.matched_terms || []
         }
       end
     end

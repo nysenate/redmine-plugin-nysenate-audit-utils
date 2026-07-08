@@ -14,6 +14,7 @@ class EssEmployee
   attribute :work_phone, :string
   attribute :active, :boolean
   attribute :location
+  attribute :matched_terms, default: -> { [] }
 
   validates :employee_id, presence: true, numericality: { greater_than: 0 }
   validates :first_name, presence: true, length: { maximum: 100 }
@@ -81,7 +82,8 @@ class EssEmployee
       email: email,
       work_phone: work_phone,
       active: active,
-      location: location&.to_hash
+      location: location&.to_hash,
+      matched_terms: matched_terms
     }
   end
 
@@ -100,7 +102,8 @@ class EssEmployee
       full_name: api_response['fullName'],
       email: api_response['email'],
       work_phone: api_response['workPhone'],
-      active: api_response['active']
+      active: api_response['active'],
+      matched_terms: api_response['matchedTerms'] || []
     }
 
     if api_response['location'].present?
