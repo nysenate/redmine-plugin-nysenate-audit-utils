@@ -13,7 +13,8 @@ class EmployeeDataSourceTest < ActiveSupport::TestCase
       uid: 'jdoe',
       first_name: 'John',
       last_name: 'Doe',
-      full_name: 'John Doe',
+      middle_initial: 'A.',
+      full_name: 'John A. Doe',
       email: 'jdoe@nysenate.gov',
       work_phone: '518-555-0123',
       active: true
@@ -28,7 +29,7 @@ class EmployeeDataSourceTest < ActiveSupport::TestCase
     result = results.first
     assert_equal 'Employee', result[:user_type]
     assert_equal '12345', result[:user_id]
-    assert_equal 'John Doe', result[:name]
+    assert_equal 'Doe, John A.', result[:name]
     assert_equal 'jdoe@nysenate.gov', result[:email]
     assert_equal '518-555-0123', result[:phone]
     assert_equal 'jdoe', result[:uid]
@@ -105,6 +106,8 @@ class EmployeeDataSourceTest < ActiveSupport::TestCase
   def test_find_by_id_returns_normalized_employee
     ess_employee = EssEmployee.new(
       employee_id: 12345,
+      first_name: 'John',
+      last_name: 'Doe',
       full_name: 'John Doe',
       email: 'jdoe@nysenate.gov',
       active: true
@@ -116,7 +119,7 @@ class EmployeeDataSourceTest < ActiveSupport::TestCase
 
     assert_equal 'Employee', result[:user_type]
     assert_equal '12345', result[:user_id]
-    assert_equal 'John Doe', result[:name]
+    assert_equal 'Doe, John', result[:name]
   end
 
   def test_find_by_id_returns_nil_when_not_found

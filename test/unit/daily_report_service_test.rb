@@ -59,7 +59,7 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     result = @service.generate
 
     assert_equal 1, result.size
-    assert_equal 'John Doe', result.first[:user_name]
+    assert_equal 'Doe, John', result.first[:user_name]
     assert_equal [], result.first[:account_statuses]
     assert_equal [], result.first[:open_requests]
     assert_equal [{ code: 'APP', notes: nil }], result.first[:status_changes]
@@ -78,9 +78,9 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     result = @service.generate
 
     assert_equal 2, result.size
-    assert_equal 'John Doe', result.first[:user_name]
+    assert_equal 'Doe, John', result.first[:user_name]
     assert_equal [], result.first[:account_statuses]
-    assert_equal 'Jane Smith', result.last[:user_name]
+    assert_equal 'Smith, Jane', result.last[:user_name]
     assert_equal [], result.last[:open_requests]
   end
 
@@ -322,6 +322,8 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     employee_id: 12345,
     first_name: 'John',
     last_name: 'Doe',
+    middle_initial: nil,
+    suffix: nil,
     transaction_code: 'APP',
     post_date_time: DateTime.now,
     work_phone: '555-1234',
@@ -332,6 +334,8 @@ class DailyReportServiceTest < ActiveSupport::TestCase
       employee_id: employee_id,
       first_name: first_name,
       last_name: last_name,
+      middle_initial: middle_initial,
+      suffix: suffix,
       full_name: "#{first_name} #{last_name}",
       work_phone: work_phone,
       location: EssLocation.new(

@@ -23,7 +23,7 @@ class EmployeeMapperTest < ActiveSupport::TestCase
     resp_center_head = OpenStruct.new(code: 'PERSONNEL', short_name: 'Personnel')
     employee = OpenStruct.new(
       employee_id: 12345,
-      display_name: 'John Doe',
+      formatted_name: 'Doe, John',
       email: 'john.doe@nysenate.gov',
       work_phone: '(518) 555-1234',
       active: true,
@@ -34,7 +34,7 @@ class EmployeeMapperTest < ActiveSupport::TestCase
     result = NysenateAuditUtils::Autofill::EmployeeMapper.map_employee(employee)
 
     assert_equal 12345, result[:employee_id]
-    assert_equal 'John Doe', result[:name]
+    assert_equal 'Doe, John', result[:name]
     assert_equal 'john.doe@nysenate.gov', result[:email]
     assert_equal '(518) 555-1234', result[:phone]
     assert_equal 'Active', result[:status]
@@ -46,7 +46,7 @@ class EmployeeMapperTest < ActiveSupport::TestCase
   def test_map_employee_with_missing_data
     employee = OpenStruct.new(
       employee_id: nil,
-      display_name: nil,
+      formatted_name: nil,
       email: nil,
       work_phone: nil,
       active: false,
@@ -98,7 +98,7 @@ class EmployeeMapperTest < ActiveSupport::TestCase
     resp_center_head = OpenStruct.new(code: 'PERSONNEL', short_name: 'Personnel')
     employee = OpenStruct.new(
       employee_id: 12345,
-      display_name: 'John Doe',
+      formatted_name: 'Doe, John',
       email: 'john.doe@nysenate.gov',
       work_phone: '(518) 555-1234',
       active: true,
@@ -110,7 +110,7 @@ class EmployeeMapperTest < ActiveSupport::TestCase
 
     # Keyed by the configured custom field IDs from @mock_settings
     assert_equal 12345, values[2]                    # user_id
-    assert_equal 'John Doe', values[3]               # user_name
+    assert_equal 'Doe, John', values[3]               # user_name
     assert_equal 'john.doe@nysenate.gov', values[4]  # user_email
     assert_equal '(518) 555-1234', values[5]         # user_phone
     assert_equal 'PERSONNEL', values[6]              # user_location
@@ -129,7 +129,7 @@ class EmployeeMapperTest < ActiveSupport::TestCase
 
     employee = OpenStruct.new(
       employee_id: 999,
-      display_name: 'Jane Roe',
+      formatted_name: 'Roe, Jane',
       email: 'jane@nysenate.gov',
       work_phone: nil,
       active: true,
@@ -139,7 +139,7 @@ class EmployeeMapperTest < ActiveSupport::TestCase
 
     values = NysenateAuditUtils::Autofill::EmployeeMapper.map_employee_to_field_values(employee)
 
-    assert_equal({ 2 => 999, 3 => 'Jane Roe' }, values)
+    assert_equal({ 2 => 999, 3 => 'Roe, Jane' }, values)
   end
 
   def test_map_removal_field_values_sets_target_system_and_delete_action
@@ -151,14 +151,14 @@ class EmployeeMapperTest < ActiveSupport::TestCase
     )
 
     employee = OpenStruct.new(
-      employee_id: 12345, display_name: 'John Doe', email: 'john@nysenate.gov',
+      employee_id: 12345, formatted_name: 'Doe, John', email: 'john@nysenate.gov',
       work_phone: nil, active: true, uid: 'jdoe', resp_center_head: nil
     )
 
     values = NysenateAuditUtils::Autofill::EmployeeMapper.map_removal_field_values(employee, target_system: 'AIX')
 
     assert_equal 12345, values[2]        # Account Holder fields still present
-    assert_equal 'John Doe', values[3]
+    assert_equal 'Doe, John', values[3]
     assert_equal 'AIX', values[20]       # Target System
     assert_equal 'Delete', values[21]    # Account Action
   end
@@ -171,12 +171,12 @@ class EmployeeMapperTest < ActiveSupport::TestCase
     )
 
     employee = OpenStruct.new(
-      employee_id: 999, display_name: 'Jane Roe', email: nil,
+      employee_id: 999, formatted_name: 'Roe, Jane', email: nil,
       work_phone: nil, active: true, uid: 'jroe', resp_center_head: nil
     )
 
     values = NysenateAuditUtils::Autofill::EmployeeMapper.map_removal_field_values(employee, target_system: 'SFS')
 
-    assert_equal({ 2 => 999, 3 => 'Jane Roe' }, values)
+    assert_equal({ 2 => 999, 3 => 'Roe, Jane' }, values)
   end
 end

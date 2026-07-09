@@ -85,7 +85,7 @@ module NysenateAuditUtils
 
           # Use user terminology for consistency across all reports
           {
-            user_name: employee.display_name,
+            user_name: employee.formatted_name,
             account_statuses: account_statuses,
             open_requests: open_requests,
             removal_systems: removal_target_systems(account_statuses, open_requests),

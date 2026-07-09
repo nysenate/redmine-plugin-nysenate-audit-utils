@@ -11,7 +11,7 @@ module NysenateAuditUtils
         def map_employee(employee)
           {
             employee_id: employee.employee_id,
-            name: employee.display_name,
+            name: employee.formatted_name,
             email: employee.email,
             phone: employee.work_phone,
             status: employee.active ? 'Active' : 'Inactive',

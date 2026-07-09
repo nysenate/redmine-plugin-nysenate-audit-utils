@@ -7,7 +7,9 @@ class EssEmployeeTest < ActiveSupport::TestCase
       'uid' => 'jsmith',
       'firstName' => 'John',
       'lastName' => 'Smith',
-      'fullName' => 'John A. Smith',
+      'initial' => 'A.',
+      'suffix' => 'Jr.',
+      'fullName' => 'John A. Smith Jr.',
       'email' => 'jsmith@nysenate.gov',
       'workPhone' => '(518) 555-0123',
       'active' => true
@@ -19,11 +21,43 @@ class EssEmployeeTest < ActiveSupport::TestCase
     assert_equal 'jsmith', employee.uid
     assert_equal 'John', employee.first_name
     assert_equal 'Smith', employee.last_name
-    assert_equal 'John A. Smith', employee.full_name
+    assert_equal 'A.', employee.middle_initial
+    assert_equal 'Jr.', employee.suffix
+    assert_equal 'John A. Smith Jr.', employee.full_name
     assert_equal 'jsmith@nysenate.gov', employee.email
     assert_equal '(518) 555-0123', employee.work_phone
     assert employee.active
     assert_nil employee.resp_center_head
+  end
+
+  def test_formatted_name_inverts_order_with_middle_initial_and_suffix
+    employee = EssEmployee.new(
+      first_name: 'Barbara', last_name: 'Wilson',
+      middle_initial: 'D.', suffix: 'Jr.', full_name: 'Barbara D. Wilson Jr.'
+    )
+    assert_equal 'Wilson, Barbara D., Jr.', employee.formatted_name
+  end
+
+  def test_formatted_name_without_suffix
+    employee = EssEmployee.new(
+      first_name: 'John', last_name: 'Smith',
+      middle_initial: 'A.', full_name: 'John A. Smith'
+    )
+    assert_equal 'Smith, John A.', employee.formatted_name
+  end
+
+  def test_formatted_name_without_middle_initial
+    employee = EssEmployee.new(
+      first_name: 'Mary', last_name: 'Jones', full_name: 'Mary Jones'
+    )
+    assert_equal 'Jones, Mary', employee.formatted_name
+  end
+
+  def test_formatted_name_with_suffix_but_no_middle_initial
+    employee = EssEmployee.new(
+      first_name: 'John', last_name: 'Doe', suffix: 'Jr.', full_name: 'John Doe Jr.'
+    )
+    assert_equal 'Doe, John, Jr.', employee.formatted_name
   end
 
   def test_should_map_matched_terms_from_api_response

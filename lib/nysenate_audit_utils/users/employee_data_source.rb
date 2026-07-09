@@ -57,7 +57,7 @@ module NysenateAuditUtils
         {
           user_type: 'Employee',
           user_id: employee.employee_id.to_s,
-          name: employee.full_name,
+          name: employee.formatted_name,
           email: employee.email,
           phone: employee.work_phone,
           uid: employee.uid,

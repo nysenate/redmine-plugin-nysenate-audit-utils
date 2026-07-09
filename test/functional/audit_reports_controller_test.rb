@@ -35,14 +35,18 @@ class AuditReportsControllerTest < ActionController::TestCase
     # Mock the service to return test data
     mock_report_data = [
       {
-        user_name: 'John Doe',
+        user_name: 'Doe, John',
         ticket_count: 2,
         ticket_url: '/issues?cf_1=12345',
         status_changes: [{ code: 'APP', notes: nil }],
+        account_statuses: [],
+        open_requests: [],
+        removal_systems: [],
         phone_number: '555-1234',
         office: 'IT',
         office_location: nil,
         user_id: '12345',
+        user_uid: 'jdoe',
         post_date: '2025-01-15'
       }
     ]
@@ -59,7 +63,7 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'h2', text: 'Daily Report'
     assert_select 'table.list.issues'
     # Verify employee name appears in table
-    assert_select 'td', text: 'John Doe'
+    assert_select 'td', text: 'Doe, John'
   end
 
   test "should require admin access for daily report" do
@@ -116,14 +120,18 @@ class AuditReportsControllerTest < ActionController::TestCase
   test "should export daily report as CSV" do
     mock_report_data = [
       {
-        user_name: 'John Doe',
+        user_name: 'Doe, John',
         ticket_count: 2,
         ticket_url: '/issues?cf_1=12345',
         status_changes: [{ code: 'APP', notes: nil }],
+        account_statuses: [],
+        open_requests: [],
+        removal_systems: [],
         phone_number: '555-1234',
         office: 'IT',
         office_location: nil,
         user_id: '12345',
+        user_uid: 'jdoe',
         post_date: '2025-01-15'
       }
     ]
@@ -143,7 +151,7 @@ class AuditReportsControllerTest < ActionController::TestCase
 
     csv_content = response.body
     assert_match /Account Holder Name/, csv_content
-    assert_match /John Doe/, csv_content
+    assert_match /Doe, John/, csv_content
     assert_match /12345/, csv_content
   end
 

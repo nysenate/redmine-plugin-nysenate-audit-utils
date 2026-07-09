@@ -11,7 +11,7 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
 
   # Authoritative payload a UserService lookup would return for an employee.
   AUTHORITATIVE = {
-    name: 'John Doe',
+    name: 'Doe, John',
     email: 'john.doe@example.com',
     phone: '555-1234',
     status: 'Active',
@@ -244,7 +244,7 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
     create_issue(
       user_type: 'Employee', user_id: '12345',
       seed: {
-        user_name: '  John Doe  ', user_email: 'john.doe@example.com ',
+        user_name: '  Doe, John  ', user_email: 'john.doe@example.com ',
         user_phone: ' 555-1234', user_status: 'Active ',
         user_uid: ' jdoe ', user_location: ' Capitol '
       }

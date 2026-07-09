@@ -9,6 +9,8 @@ class EssEmployee
   attribute :uid, :string
   attribute :first_name, :string
   attribute :last_name, :string
+  attribute :middle_initial, :string
+  attribute :suffix, :string
   attribute :full_name, :string
   attribute :email, :string
   attribute :work_phone, :string
@@ -35,6 +37,15 @@ class EssEmployee
 
   def display_name
     full_name.presence || "#{first_name} #{last_name}"
+  end
+
+  # Surname-first "Last, First MI, Suffix" order (Chicago index style) used for the
+  # Account Holder Name field and the daily report. See issue #18741.
+  def formatted_name
+    name = "#{last_name}, #{first_name}"
+    name += " #{middle_initial}" if middle_initial.present?
+    name += ", #{suffix}" if suffix.present?
+    name
   end
 
   def has_uid?
@@ -78,6 +89,8 @@ class EssEmployee
       uid: uid,
       first_name: first_name,
       last_name: last_name,
+      middle_initial: middle_initial,
+      suffix: suffix,
       full_name: full_name,
       email: email,
       work_phone: work_phone,
@@ -99,6 +112,8 @@ class EssEmployee
       uid: api_response['uid'],
       first_name: api_response['firstName'],
       last_name: api_response['lastName'],
+      middle_initial: api_response['initial'],
+      suffix: api_response['suffix'],
       full_name: api_response['fullName'],
       email: api_response['email'],
       work_phone: api_response['workPhone'],
