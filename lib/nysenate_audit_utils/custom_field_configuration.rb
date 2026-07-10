@@ -73,6 +73,18 @@ module NysenateAuditUtils
         description: 'Target system field for request code mapping',
         required: true,
         category: :request_codes
+      },
+      'requested_by_field_id' => {
+        name: 'Requested By',
+        description: 'Requested By (single user) field, auto-populated on removal tickets',
+        required: true,
+        category: :request_codes
+      },
+      'authorizing_users_field_id' => {
+        name: 'Authorizing Users',
+        description: 'Authorizing Users (multiple users) field, auto-populated on removal tickets',
+        required: true,
+        category: :request_codes
       }
     }.freeze
 
@@ -269,6 +281,26 @@ module NysenateAuditUtils
       # Get target system field
       def target_system_field
         get_field('target_system_field_id')
+      end
+
+      # Get Requested By field ID (single-user field)
+      def requested_by_field_id
+        get_field_id('requested_by_field_id')
+      end
+
+      # Get Requested By field
+      def requested_by_field
+        get_field('requested_by_field_id')
+      end
+
+      # Get Authorizing Users field ID (multiple-user field)
+      def authorizing_users_field_id
+        get_field_id('authorizing_users_field_id')
+      end
+
+      # Get Authorizing Users field
+      def authorizing_users_field
+        get_field('authorizing_users_field_id')
       end
 
       # Get all autofill field IDs as a hash

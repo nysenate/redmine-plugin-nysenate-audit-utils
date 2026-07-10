@@ -5,6 +5,7 @@
   custom_fields_status = status[:sections][:custom_fields]
   email_status = status[:sections][:email_reporting]
   request_codes_status = status[:sections][:request_codes]
+  removal_defaults_status = status[:sections][:removal_defaults]
 %>
 
 <!-- Configuration Issues Summary -->
@@ -215,6 +216,40 @@
             <% end %>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Removal Ticket Defaults Section -->
+  <div class="config-accordion">
+    <div class="accordion-header" data-section="removal-defaults">
+      <h3>
+        <span class="accordion-toggle">▶</span>
+        Removal Ticket Defaults
+        <span class="status-badge <%= NysenateAuditUtils::ConfigurationStatusService.status_badge_class(removal_defaults_status) %>">
+          <%= NysenateAuditUtils::ConfigurationStatusService.status_badge(removal_defaults_status) %>
+          <%= NysenateAuditUtils::ConfigurationStatusService.status_description(removal_defaults_status) %>
+        </span>
+      </h3>
+    </div>
+
+    <div class="accordion-body" id="removal-defaults-section">
+      <div class="box tabular settings">
+        <p style="margin: 1em 0 0.5em 0; padding: 0;">
+          Select the Redmine user auto-populated as both the <strong>Requested By</strong>
+          and <strong>Authorizing Users</strong> fields when a removal ticket is created from
+          the Daily Report. Leave unset to leave these fields blank. Requires the "Requested By"
+          and "Authorizing Users" custom fields to be mapped above.
+        </p>
+
+        <p>
+          <%= content_tag 'label', 'Requested By / Authorizing User' %>
+          <%= select_tag 'settings[removal_ticket_requester_user_id]',
+                options_for_select([['-- Select User --', '']] +
+                  User.active.sorted.map { |u| [u.name, u.id] },
+                  @settings['removal_ticket_requester_user_id']) %>
+          <em class="info">The single user applied to Requested By and Authorizing Users on removal tickets</em>
+        </p>
       </div>
     </div>
   </div>

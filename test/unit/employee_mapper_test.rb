@@ -179,4 +179,46 @@ class EmployeeMapperTest < ActiveSupport::TestCase
 
     assert_equal({ 2 => 999, 3 => 'Roe, Jane' }, values)
   end
+
+  def test_map_removal_field_values_populates_requested_by_and_authorizing_users
+    Setting.stubs(:plugin_nysenate_audit_utils).returns(
+      @mock_settings.merge(
+        'target_system_field_id' => 20,
+        'account_action_field_id' => 21,
+        'requested_by_field_id' => 30,
+        'authorizing_users_field_id' => 31,
+        'removal_ticket_requester_user_id' => 42
+      )
+    )
+
+    employee = OpenStruct.new(
+      employee_id: 12345, formatted_name: 'Doe, John', email: 'john@nysenate.gov',
+      work_phone: nil, active: true, uid: 'jdoe', resp_center_head: nil
+    )
+
+    values = NysenateAuditUtils::Autofill::EmployeeMapper.map_removal_field_values(employee, target_system: 'AIX')
+
+    assert_equal '42', values[30]     # Requested By - single user id
+    assert_equal ['42'], values[31]   # Authorizing Users - array with single user id
+  end
+
+  def test_map_removal_field_values_skips_requester_when_setting_blank
+    Setting.stubs(:plugin_nysenate_audit_utils).returns(
+      @mock_settings.merge(
+        'requested_by_field_id' => 30,
+        'authorizing_users_field_id' => 31,
+        'removal_ticket_requester_user_id' => nil
+      )
+    )
+
+    employee = OpenStruct.new(
+      employee_id: 12345, formatted_name: 'Doe, John', email: 'john@nysenate.gov',
+      work_phone: nil, active: true, uid: 'jdoe', resp_center_head: nil
+    )
+
+    values = NysenateAuditUtils::Autofill::EmployeeMapper.map_removal_field_values(employee, target_system: 'AIX')
+
+    assert_nil values[30]
+    assert_nil values[31]
+  end
 end

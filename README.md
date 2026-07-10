@@ -76,6 +76,8 @@ Ensure that the following fields exist and are included in desired projects/trac
 **Request Fields:**
 - `Account Action` - List
 - `Target System` - List
+- `Requested By` - User (single) — auto-populated on removal tickets (see [Removal Ticket Defaults](#removal-ticket-defaults))
+- `Authorizing Users` - User (multiple) — auto-populated on removal tickets (see [Removal Ticket Defaults](#removal-ticket-defaults))
 
 **Reporting Fields:**
 - `BAC #` - Text — legacy BAC system ticket number shown on the Quarterly/Annual report; the field value may be left blank once the legacy system is phased out, but the field mapping must be configured.
@@ -96,6 +98,13 @@ If auto-detection fails, manually select field IDs from dropdowns in plugin sett
 After configuration, check status indicators to ensure all required fields are mapped. The system shows:
 - ✓ Configured fields with field names
 - ✗ Missing fields with configuration prompts
+
+#### Removal Ticket Defaults
+
+In the **Removal Ticket Defaults** section of plugin settings, select a single Redmine user
+to auto-populate as both the **Requested By** and **Authorizing Users** fields whenever a
+removal ticket is created from the Daily Report. Leave it unset to leave those fields blank.
+This requires the `Requested By` and `Authorizing Users` custom fields to be mapped above.
 
 ### 3. Project Module
 
@@ -141,7 +150,7 @@ Access via project menu: **Reports → Audit Utils**
   - **Last Business Day** (default): single date picker, defaults to today. Covers the previous business day at 00:00 → selected date at 00:00. If the selected date is a Monday, the range starts at the previous Friday at 00:00 so the prior weekend is included.
   - **Date Range**: explicit start/end date pickers (range runs 00:00 → 00:00).
   - Ticket-creation actions are embedded in the row's **Current Status** and **Open Tickets** columns (all shown to users with permission to add issues). Every new ticket opens in its own tab, pre-filled with that account holder's information re-fetched live from ESS, left unsaved for review; the ticket's tracker is auto-detected as the project tracker carrying the Account Holder custom fields, and the daily report (CSV for the same date range) is seeded as a pending attachment (remove it before saving if you don't want it).
-    - **Current Status** lists each target system the account holder has on its own line. Next to each is a **View last ticket** icon (opens the most recent Add/Delete ticket for that system) and, for *active* accounts, a **Create removal ticket** icon. The removal ticket is pre-filled with **Account Action = Delete**, the **Target System** set, a subject of `<request code>: Remove <target system> account for <account holder name>` (the request code is the system's Delete code, omitted if the system has no configured code), and a matching description. It also pre-fills an overridable **Related issue** field on the new-issue form, seeded with the granting ticket (the same one the **View last ticket** icon opens) and defaulting to a "relates to" relationship; the user can change the issue number or relation type, or clear the field to skip linking. The relation is created after the ticket is saved. An invalid or non-visible issue number does not block ticket creation — the ticket is created and a warning is shown. The removal icon is greyed out for active systems that already have an open removal ticket, and is absent for inactive accounts.
+    - **Current Status** lists each target system the account holder has on its own line. Next to each is a **View last ticket** icon (opens the most recent Add/Delete ticket for that system) and, for *active* accounts, a **Create removal ticket** icon. The removal ticket is pre-filled with **Account Action = Delete**, the **Target System** set, the **Requested By** and **Authorizing Users** fields set to the user configured under [Removal Ticket Defaults](#removal-ticket-defaults) (when configured), a subject of `<request code>: Remove <target system> account for <account holder name>` (the request code is the system's Delete code, omitted if the system has no configured code), and a matching description. It also pre-fills an overridable **Related issue** field on the new-issue form, seeded with the granting ticket (the same one the **View last ticket** icon opens) and defaulting to a "relates to" relationship; the user can change the issue number or relation type, or clear the field to skip linking. The relation is created after the ticket is saved. An invalid or non-visible issue number does not block ticket creation — the ticket is created and a warning is shown. The removal icon is greyed out for active systems that already have an open removal ticket, and is absent for inactive accounts.
     - **Open Tickets** lists each open ticket on its own line and ends with a **Create New** link that opens a blank (Add) account-request ticket pre-filled with the account holder's information.
 - **Weekly Reports**: Closed tickets from the previous full week (Sunday–Sunday), ordered by close date
 - **Quarterly / Annual Reports**: Closed tickets for a single target system, feeding the SFMS Quarterly Audit and the SFS Annual (Account & Roles Validation) Audit. A **System** selector switches between:

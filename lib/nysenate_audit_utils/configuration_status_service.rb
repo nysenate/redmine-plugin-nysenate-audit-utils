@@ -16,6 +16,7 @@ module NysenateAuditUtils
         custom_fields_status = self.custom_fields_status
         email_status = email_reporting_status
         request_codes_status = self.request_codes_status
+        removal_defaults_status = self.removal_defaults_status
 
         # Collect all errors and warnings
         all_errors = []
@@ -23,19 +24,22 @@ module NysenateAuditUtils
         all_errors += custom_fields_status[:errors] if custom_fields_status[:errors].any?
         all_errors += email_status[:errors] if email_status[:errors].any?
         all_errors += request_codes_status[:errors] if request_codes_status[:errors].any?
+        all_errors += removal_defaults_status[:errors] if removal_defaults_status[:errors].any?
 
         all_warnings = []
         all_warnings += ess_status[:warnings] if ess_status[:warnings].any?
         all_warnings += custom_fields_status[:warnings] if custom_fields_status[:warnings].any?
         all_warnings += email_status[:warnings] if email_status[:warnings].any?
         all_warnings += request_codes_status[:warnings] if request_codes_status[:warnings].any?
+        all_warnings += removal_defaults_status[:warnings] if removal_defaults_status[:warnings].any?
 
         {
           sections: {
             ess_api: ess_status,
             custom_fields: custom_fields_status,
             email_reporting: email_status,
-            request_codes: request_codes_status
+            request_codes: request_codes_status,
+            removal_defaults: removal_defaults_status
           },
           all_errors: all_errors,
           all_warnings: all_warnings,
@@ -103,6 +107,26 @@ module NysenateAuditUtils
         {
           status: warnings.empty? ? STATUS_OK : STATUS_WARNING,
           valid: true, # Email is optional
+          errors: [],
+          warnings: warnings
+        }
+      end
+
+      # Get Removal Ticket Defaults configuration status
+      # Optional feature: a blank requester is a warning, not an error.
+      # @return [Hash] Status hash with :status, :errors, :warnings
+      def removal_defaults_status
+        requester_id = Setting.plugin_nysenate_audit_utils['removal_ticket_requester_user_id']
+
+        warnings = []
+        if requester_id.blank?
+          warnings << 'Removal Ticket Defaults: No default requester configured. ' \
+                      'Requested By and Authorizing Users will be left blank on removal tickets.'
+        end
+
+        {
+          status: warnings.empty? ? STATUS_OK : STATUS_WARNING,
+          valid: true, # Optional feature
           errors: [],
           warnings: warnings
         }

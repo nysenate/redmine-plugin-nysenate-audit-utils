@@ -77,6 +77,10 @@ Redmine::Plugin.register :nysenate_audit_utils do
     'user_location_field_id' => nil,
     'account_action_field_id' => nil,
     'target_system_field_id' => nil,
+    'requested_by_field_id' => nil,
+    'authorizing_users_field_id' => nil,
+    # Default requester/authorizer auto-populated on daily-report removal tickets
+    'removal_ticket_requester_user_id' => nil,
     # Request Code Mapping settings (stored in DB via migration 006)
     'request_code_system_prefixes' => {}, # System to prefix mappings (managed via migration)
     'request_code_action_suffixes' => {}, # Action to suffix mappings (managed via migration)

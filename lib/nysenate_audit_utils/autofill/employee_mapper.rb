@@ -55,6 +55,25 @@ module NysenateAuditUtils
           account_action_field_id = NysenateAuditUtils::CustomFieldConfiguration.account_action_field_id
           values[target_system_field_id]  = target_system if target_system_field_id
           values[account_action_field_id] = 'Delete'      if account_action_field_id
+          apply_removal_requester(values)
+          values
+        end
+
+        # Populate the Requested By (single user) and Authorizing Users (multiple users)
+        # custom fields with the single Redmine user configured in the plugin setting
+        # 'removal_ticket_requester_user_id'. No-op unless the setting and the respective
+        # field ids are configured. A single-user field takes a scalar id; a multiple-user
+        # field takes an array.
+        # @param values [Hash{Integer => Object}] the custom-field values hash to mutate
+        # @return [Hash{Integer => Object}] the same hash
+        def apply_removal_requester(values)
+          requester_id = Setting.plugin_nysenate_audit_utils['removal_ticket_requester_user_id'].presence
+          return values unless requester_id
+
+          requested_by_id      = NysenateAuditUtils::CustomFieldConfiguration.requested_by_field_id
+          authorizing_users_id = NysenateAuditUtils::CustomFieldConfiguration.authorizing_users_field_id
+          values[requested_by_id]      = requester_id.to_s   if requested_by_id
+          values[authorizing_users_id] = [requester_id.to_s] if authorizing_users_id
           values
         end
       end
