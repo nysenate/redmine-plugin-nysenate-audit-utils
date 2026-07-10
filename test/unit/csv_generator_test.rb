@@ -181,6 +181,7 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     user_id: '12345',
     user_uid: 'jdoe',
     user_type: 'Employee',
+    user_office: 'Senate Office',
     account_type: 'Oracle / SFMS',
     request_code: 'USRA',
     status: 'active',
@@ -198,7 +199,7 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     assert_match(/^End time,\d{4}-\d{2}-\d{2}/, lines[3])
     assert_match(/^Generated at,\d{4}-\d{2}-\d{2}/, lines[4])
     assert_equal '', lines[5].chomp
-    assert_equal 'Account Holder Name,Account Holder Type,Account Holder Username,Target System,Account Status,Request Code', lines[6].chomp
+    assert_equal 'Account Holder Name,Account Holder Type,Account Holder Username,Account Holder Office,Target System,Account Status,Request Code', lines[6].chomp
   end
 
   def test_account_holder_access_csv_writes_one_row_per_account
@@ -207,8 +208,8 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     )
     rows = CSV.parse(csv)
     # 6 metadata/separator rows + header + 2 data rows
-    assert_equal ['John Doe', 'Employee', 'jdoe', 'Oracle / SFMS', 'Active', 'USRA'], rows[7]
-    assert_equal ['John Doe', 'Employee', 'jdoe', 'AIX', 'Inactive', 'AIXD'], rows[8]
+    assert_equal ['John Doe', 'Employee', 'jdoe', 'Senate Office', 'Oracle / SFMS', 'Active', 'USRA'], rows[7]
+    assert_equal ['John Doe', 'Employee', 'jdoe', 'Senate Office', 'AIX', 'Inactive', 'AIXD'], rows[8]
   end
 
   def test_account_holder_access_csv_handles_nil_data

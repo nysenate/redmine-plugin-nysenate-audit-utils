@@ -75,7 +75,9 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
       'user_location_field_id' => 8,
       'account_action_field_id' => 9,
       'target_system_field_id' => 10,
-      'bac_number_field_id' => 11
+      'bac_number_field_id' => 11,
+      'requested_by_field_id' => 12,
+      'authorizing_users_field_id' => 13
     })
 
     # Mock custom fields exist for each ID
@@ -90,6 +92,8 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:find_by).with(id: 9, type: 'IssueCustomField').returns(CustomField.new(id: 9, name: 'Account Action'))
     CustomField.stubs(:find_by).with(id: 10, type: 'IssueCustomField').returns(CustomField.new(id: 10, name: 'Target System'))
     CustomField.stubs(:find_by).with(id: 11, type: 'IssueCustomField').returns(CustomField.new(id: 11, name: 'BAC #'))
+    CustomField.stubs(:find_by).with(id: 12, type: 'IssueCustomField').returns(CustomField.new(id: 12, name: 'Requested By'))
+    CustomField.stubs(:find_by).with(id: 13, type: 'IssueCustomField').returns(CustomField.new(id: 13, name: 'Authorizing Users'))
 
     errors = NysenateAuditUtils::CustomFieldConfiguration.validate
     assert_empty errors
@@ -119,7 +123,9 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
       'user_location_field_id' => 8,
       'account_action_field_id' => 9,
       'target_system_field_id' => 10,
-      'bac_number_field_id' => 11
+      'bac_number_field_id' => 11,
+      'requested_by_field_id' => 12,
+      'authorizing_users_field_id' => 13
     })
 
     # Mock custom fields exist for each ID
@@ -134,6 +140,8 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:find_by).with(id: 9, type: 'IssueCustomField').returns(CustomField.new(id: 9, name: 'Account Action'))
     CustomField.stubs(:find_by).with(id: 10, type: 'IssueCustomField').returns(CustomField.new(id: 10, name: 'Target System'))
     CustomField.stubs(:find_by).with(id: 11, type: 'IssueCustomField').returns(CustomField.new(id: 11, name: 'BAC #'))
+    CustomField.stubs(:find_by).with(id: 12, type: 'IssueCustomField').returns(CustomField.new(id: 12, name: 'Requested By'))
+    CustomField.stubs(:find_by).with(id: 13, type: 'IssueCustomField').returns(CustomField.new(id: 13, name: 'Authorizing Users'))
 
     assert NysenateAuditUtils::CustomFieldConfiguration.valid?
   end
@@ -189,6 +197,8 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Office').returns([])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Account Action').returns([account_action_field])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Target System').returns([])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Requested By').returns([])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Authorizing Users').returns([])
 
     Setting.stubs(:plugin_nysenate_audit_utils=)
 
@@ -246,8 +256,10 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     assert_equal 7, status[:autofill][:total]
     refute status[:autofill][:complete]
 
+    # request_codes holds account_action (configured), target_system, requested_by,
+    # and authorizing_users (all not configured)
     assert_equal 1, status[:request_codes][:configured]
-    assert_equal 2, status[:request_codes][:total]
+    assert_equal 4, status[:request_codes][:total]
     refute status[:request_codes][:complete]
   end
 
