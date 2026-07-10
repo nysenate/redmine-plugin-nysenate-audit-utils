@@ -1,0 +1,15 @@
+<%# Visible, overridable "related issue" chooser injected into the new-issue form
+    by the removal-ticket flow. Its top-level params (related_relation_type,
+    related_issue_id) are read back by RelationPrefillHook after the issue saves. %>
+<p id="related-issue-field">
+  <label><%= l(:field_related_issue) %></label>
+  <%= select_tag 'related_relation_type',
+        options_for_select(collection_for_relation_type_select, relation_type) %>
+  <%= l(:label_issue) %> #<%= text_field_tag 'related_issue_id', related_issue_id, size: 6 %>
+  <% if related_issue %>
+    <span class="related-issue-hint">
+      <%= truncate(related_issue.subject, length: 60) %>
+      (<%= related_issue.status %>)
+    </span>
+  <% end %>
+</p>

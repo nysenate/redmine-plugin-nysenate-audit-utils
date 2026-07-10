@@ -91,4 +91,5 @@ end
 Rails.application.config.after_initialize do
   require File.expand_path('lib/attachments_helper_patch', __dir__)
   require File.expand_path('lib/issue_context_menu_hook', __dir__)
+  require File.expand_path('lib/nysenate_audit_utils/relation_prefill_hook', __dir__)
 end

@@ -88,6 +88,30 @@ class AccountRequestsControllerTest < Redmine::ControllerTest
     assert_select 'input#issue_subject[value=?]', 'Remove AIX account for John Doe'
   end
 
+  test "removal mode renders the overridable related-issue field seeded with the granting ticket" do
+    NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).with('12345').returns(stub_employee)
+    NysenateAuditUtils::RequestCodes::RequestCodeMapper.any_instance.stubs(:get_request_code).returns(nil)
+    stub_report
+
+    get_new(target_system: 'AIX', account_action: 'Delete', related_issue_id: '42')
+
+    assert_response :success
+    assert_select 'p#related-issue-field' do
+      assert_select 'select#related_relation_type'
+      assert_select 'input#related_issue_id[value=?]', '42'
+    end
+  end
+
+  test "does not render the related-issue field without a related_issue_id" do
+    NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).with('12345').returns(stub_employee)
+    stub_report
+
+    get_new
+
+    assert_response :success
+    assert_select 'p#related-issue-field', false
+  end
+
   test "renders a blank form with a warning when the employee is missing" do
     NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).returns(nil)
 

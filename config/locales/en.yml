@@ -17,6 +17,8 @@ en:
   text_removal_ticket_subject_coded: "%{code}: Remove %{system} account for %{name}"
   text_removal_ticket_subject: "Remove %{system} account for %{name}"
   text_removal_ticket_description: "Remove %{system} account for %{name}"
+  field_related_issue: "Related issue"
+  warning_related_issue_not_linked: "Could not link issue #%{id}; the ticket was created without a related issue."
 
   # Packet creation labels
   button_create_packet: "Create Packet"

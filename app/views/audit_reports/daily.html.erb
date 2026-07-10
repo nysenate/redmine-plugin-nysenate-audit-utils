@@ -137,6 +137,7 @@
                       <%= link_to sprite_icon('del', l(:label_create_removal_ticket), icon_only: true),
                             new_project_account_request_path(@project, employee_id: row[:user_id],
                               target_system: status[:account_type], account_action: 'Delete',
+                              related_issue_id: status[:issue_id],
                               from_date: @from_date.iso8601, to_date: @to_date.iso8601),
                             class: 'action-icon create-removal-ticket',
                             title: l(:label_create_removal_ticket), target: '_blank' %>
