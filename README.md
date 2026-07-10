@@ -6,41 +6,27 @@ A comprehensive Redmine plugin providing audit utilities, user data integration,
 
 ### Installation
 
-*Note: Prefix `rake` commands with `bundle exec` if using Bundler*
+*Note: Prefix `rake` commands with `bundle exec` if using Bundler.*
 
-1. Clone plugin to `plugins/nysenate_audit_utils` directory:
+1. Clone the plugin to the `plugins/nysenate_audit_utils` directory:
    ```bash
    cd /path/to/redmine/plugins
    git clone git@github.com:nysenate/redmine-plugin-nysenate-audit-utils.git nysenate_audit_utils
    ```
-   
-1. Install plugin dependencies:
-      ```bash
-      # If using bundler
-      bundle install
-      ```
-      or
-      ```bash
-      # If not using bundler
-      gem install webmock
-      ```
 
-1. Run plugin migrations (from Redmine root):
+1. Install dependencies with `bundle install` (or `gem install webmock` if not using Bundler).
+
+1. Run plugin migrations from the Redmine root:
    ```bash
    cd /path/to/redmine
    rake redmine:plugins:migrate NAME=nysenate_audit_utils RAILS_ENV=production
    ```
 
-1. (Optional) Run tests to verify installation (from Redmine root):
-   ```bash
-   rake redmine:plugins:test NAME=nysenate_audit_utils
-   ```
+1. Restart Redmine.
 
-1. Restart Redmine
+1. Configure the plugin at **Administration → Plugins → NY Senate Audit Utils → Configure**.
 
-1. Configure the plugin in the UI:
-
-   **Administration → Plugins → NY Senate Audit Utils → Configure**
+(Optional) Verify the install with `rake redmine:plugins:test NAME=nysenate_audit_utils`.
 
 ### Requirements
 
@@ -59,9 +45,9 @@ Configure access to the Employee Self Service API:
 
 ### 2. Custom Field Configuration
 
-The plugin uses custom fields to store user and request data.
-
-Ensure that the following fields exist and are included in desired projects/trackers:
+The plugin stores user and request data in custom fields. Ensure the following
+fields exist and are enabled on the desired projects/trackers, then map them
+under **Administration → Plugins → Configure**:
 
 **User Fields:**
 - `User Type` - List (Employee/Vendor/Volunteer)
@@ -80,282 +66,49 @@ Ensure that the following fields exist and are included in desired projects/trac
 - `Authorizing Users` - User (multiple) — auto-populated on removal tickets (see [Removal Ticket Defaults](#removal-ticket-defaults))
 
 **Reporting Fields:**
-- `BAC #` - Text — legacy BAC system ticket number shown on the Quarterly/Annual report; the field value may be left blank once the legacy system is phased out, but the field mapping must be configured.
+- `BAC #` - Text — legacy BAC ticket number shown on the Quarterly/Annual report. The value may be blank once the legacy system is retired, but the field mapping must still be configured.
 
-Configure field mappings via **Administration → Plugins → Configure**.
-
-#### Auto-Configuration (Recommended)
-
-Click **"Auto-Configure All Fields"** to automatically detect fields by name.
-
-
-#### Manual Configuration
-
-If auto-detection fails, manually select field IDs from dropdowns in plugin settings.
-
-#### Validation
-
-After configuration, check status indicators to ensure all required fields are mapped. The system shows:
-- ✓ Configured fields with field names
-- ✗ Missing fields with configuration prompts
+Use **"Auto-Configure All Fields"** to detect fields by name; if auto-detection
+fails, select field IDs manually. Status indicators (✓ / ✗) confirm which
+required fields are mapped.
 
 #### Removal Ticket Defaults
 
-In the **Removal Ticket Defaults** section of plugin settings, select a single Redmine user
-to auto-populate as both the **Requested By** and **Authorizing Users** fields whenever a
-removal ticket is created from the Daily Report. Leave it unset to leave those fields blank.
-This requires the `Requested By` and `Authorizing Users` custom fields to be mapped above.
+Select a single Redmine user to auto-populate as both the **Requested By** and
+**Authorizing Users** fields whenever a removal ticket is created from the Daily
+Report. Leave it unset to leave those fields blank. Requires the `Requested By`
+and `Authorizing Users` fields to be mapped above.
 
 ### 3. Project Module
 
-Enable the Audit Utils module per-project:
-
-1. Go to **Projects → \*your project name\* → Settings** and scroll to the **Modules** section.
-2. Enable the **Audit Utils** module to activate all audit utilities features:
-   - Daily/weekly/monthly report generation and viewing
-   - User search and autofill functionality (employees, vendors, volunteers, etc.)
-   - Ticket packet creation (PDF + attachments in zip format)
-   - Tracked user management (vendors, volunteers, contractors, etc.)
+Enable the **Audit Utils** module per-project at **Projects → \*your project\*
+→ Settings → Modules** to activate the reporting, autofill, packet creation, and
+tracked-user features described below.
 
 ### 4. Permissions
 
-Configure role permissions under **Administration → Roles and Permissions**:
+Under **Administration → Roles and Permissions**, grant roles the desired
+permissions in the **Audit Utils** group:
 
-Edit the desired role(s) so that they grant the following permissions under **Audit Utils**:
 - **View audit reports** - Access to daily/weekly/monthly reports
 - **Export audit reports** - Export reports to CSV
 - **Use user autofill** - User search and autofill functionality
 - **Create ticket packets** - Generate ticket packets (PDF + attachments)
 - **Manage Vendors/Volunteers** - Create/edit/delete vendor, volunteer, and contractor records
 
-Assign the role(s) to the applicable user(s) in project member settings:  **Projects → \*your project name\* → Settings → Members**
+Assign the role(s) to users under **Projects → \*your project\* → Settings → Members**.
 
 ### 5. Email Reporting Configuration (Optional)
 
-Configure default recipients for automated email delivery of audit reports:
+Set **Default Report Recipients** (comma-separated email addresses) in the
+**Email Reporting Configuration** section of the plugin settings. This is the
+default recipient list for all report rake tasks; individual tasks can override
+it with a `recipients` parameter. Schedule reports with cron jobs (see
+[Rake Tasks](#rake-tasks)).
+
+Redmine's email delivery must be configured in `config/configuration.yml`
+before the email-sending rake tasks will work. Example SMTP configuration:
 
-1. Go to **Administration → Plugins → NY Senate Audit Utils → Configure**
-2. Scroll to the **Email Reporting Configuration** section
-3. Enter **Default Report Recipients**: Comma-separated email addresses for all automated reports
-
-**Note**: This sets the default recipient list used by all report rake tasks. Individual rake tasks can override this by providing a `recipients` parameter. Scheduled reports must be configured using cron jobs (see [Scheduled Email Reports](#scheduled-email-reports) below).
-
-## Features
-
-### Reporting
-
-Access via project menu: **Reports → Audit Utils**
-
-- **Daily Reports**: Account status of employees with status changes. Two modes:
-  - **Last Business Day** (default): single date picker, defaults to today. Covers the previous business day at 00:00 → selected date at 00:00. If the selected date is a Monday, the range starts at the previous Friday at 00:00 so the prior weekend is included.
-  - **Date Range**: explicit start/end date pickers (range runs 00:00 → 00:00).
-  - Ticket-creation actions are embedded in the row's **Current Status** and **Open Tickets** columns (all shown to users with permission to add issues). Every new ticket opens in its own tab, pre-filled with that account holder's information re-fetched live from ESS, left unsaved for review; the ticket's tracker is auto-detected as the project tracker carrying the Account Holder custom fields, and the daily report (CSV for the same date range) is seeded as a pending attachment (remove it before saving if you don't want it).
-    - **Current Status** lists each target system the account holder has on its own line. Next to each is a **View last ticket** icon (opens the most recent Add/Delete ticket for that system) and, for *active* accounts, a **Create removal ticket** icon. The removal ticket is pre-filled with **Account Action = Delete**, the **Target System** set, the **Requested By** and **Authorizing Users** fields set to the user configured under [Removal Ticket Defaults](#removal-ticket-defaults) (when configured), a subject of `<request code>: Remove <target system> account for <account holder name>` (the request code is the system's Delete code, omitted if the system has no configured code), and a matching description. It also pre-fills an overridable **Related issue** field on the new-issue form, seeded with the granting ticket (the same one the **View last ticket** icon opens) and defaulting to a "relates to" relationship; the user can change the issue number or relation type, or clear the field to skip linking. The relation is created after the ticket is saved. An invalid or non-visible issue number does not block ticket creation — the ticket is created and a warning is shown. The removal icon is greyed out for active systems that already have an open removal ticket, and is absent for inactive accounts.
-    - **Open Tickets** lists each open ticket on its own line and ends with a **Create New** link that opens a blank (Add) account-request ticket pre-filled with the account holder's information.
-- **Weekly Reports**: Closed tickets from the previous full week (Sunday–Sunday), ordered by close date
-- **Quarterly / Annual Reports**: Closed tickets for a single target system, feeding the SFMS Quarterly Audit and the SFS Annual (Account & Roles Validation) Audit. A **System** selector switches between:
-  - **SFMS** (Oracle/SFMS, request codes `USR*`): a dropdown of *offset* audit quarters (Nov 1–Jan 31, Feb 1–Apr 30, May 1–Jul 31, Aug 1–Oct 31), defaulting to the most recently completed quarter; an explicit start/end range overrides it.
-  - **SFS** (request codes `SFS*`): pick an **end date**; the start auto-fills to one year prior (override allowed).
-
-  CSV columns match the legacy audit spreadsheet for direct Access import: `RequestType, FullName, Userid, Office, EntryDate, CompletedDate, BacNumber, SenDevNumber, Description` (`SenDevNumber` is the Redmine ticket #; `BacNumber` comes from the **BAC #** custom field — see [Custom Field Configuration](#custom-field-configuration)). View-only/CSV download; no scheduled email.
-- **Monthly Reports**: Account status snapshot; defaults to the last complete month, active accounts only
-- **Account Holder Access Report**: Listing of account access across every target system — one row per account (account holder × system), ordered by account holder name. Each account carries a derived active/inactive status, determined the same way as the Monthly report (the latest closed Add/Delete ticket for that account holder + system). Columns: Account Holder Name, Account Holder Type, Account Holder Username, Account Holder Office, Target System, Account Status, Request Code (the request code of the latest Add ticket). Supports four filters, all of which apply to the CSV export as well: a search filter (matches Account Holder Name or Username, with matches highlighted in the web view); an Account Holder Type filter (All, Non-employee, Employee, Vendor, Volunteer); a Target System filter (defaults to All Systems, or any one configured system); and an Account Status filter (defaults to Active Only, with All Statuses and Inactive Only options — inactive accounts are flagged in the web view when shown). View-only with a CSV export; no scheduled email.
-
-All on-screen reports are paginated using Redmine's standard pagination
-control (page links and per-page selector, matching the issue list). Sorting
-and filters are preserved across pages. CSV exports always contain the full,
-unpaginated dataset for further analysis.
-
-#### Scheduled Email Reports
-
-Reports can be automatically generated and emailed on a schedule using rake tasks and cron jobs:
-
-- **Daily Reports**: Employee status changes with account information
-- **Weekly Reports**: Closed tickets from the previous full week
-- **Monthly Reports**: Monthly or current account status snapshots
-- **All-Systems Monthly Reports**: Monthly snapshot ZIP containing one CSV per target system
-
-Each report is delivered as an email with the full data attached as a CSV file. See the [Rake Tasks](#rake-tasks) section for available tasks and options.
-
-### Ticket Packet Creation
-
-Generate audit-ready zip packages containing:
-- Ticket PDF with all details
-- All file attachments
-
-**Access:**
-- **Single ticket**: "Create Packet" button on issue detail page
-- **Bulk creation**: Right-click context menu on issue list (select multiple issues)
-
-### Tracked User Management
-
-Manage non-employee tracked users (vendors, volunteers, contractors, etc.) through the admin interface:
-
-**Access:** **Administration → Manage Vendors/Volunteers** (admin-only)
-
-**Features:**
-- Create, edit, and delete vendor records
-- Auto-generated vendor IDs (V1, V2, V3, etc.)
-- Search and filter tracked user list
-- Manage tracked user details: name, email, phone, location, status
-
-**Note:** Employee data is read-only from the ESS API and cannot be modified locally.
-
-### User Autofill
-
-- Real-time user search widget on issue pages with type selection (Employee, Vendor, Volunteer)
-- Employee data sourced from ESS API; vendor and volunteer data managed locally
-- Automatic population of configured custom fields
-- AJAX-based search interface
-
-### Request Code Mapping
-
-Automatic request type classification based on Account Action and Target System combinations.
-
-### ESS Integration
-
-Library providing:
-- Employee search and retrieval via ESS REST API
-- Employee Status change tracking (appointments, terminations, transfers, etc.)
-
-## Rake Tasks
-
-The plugin provides rake tasks for generating and emailing audit reports. Run these on a cron schedule to automate report delivery (see your system's crontab documentation).
-
-**Important**: All rake tasks must be run from the Redmine root directory.
-
-Each successful rake run also archives a copy of the generated CSV/ZIP to the selected project's **Files** repository (with a timestamped filename) for audit trail. If the project does not have the Files module enabled, archiving is skipped with a warning and the email is still sent.
-
-Every email-sending task accepts a `no_email` flag (`1`, `true`, or `yes`) that suppresses the email entirely. The report is still generated and archived to project Files, and `recipients` are not required in this mode. This is useful for generating/archiving a report without notifying anyone, or for testing.
-
-### Available Tasks
-
-#### Send Daily Report
-
-Generates and emails the daily report showing employees with status changes.
-
-```bash
-# Default: Last Business Day mode for today (covers yesterday → today; Mondays cover Fri → Mon)
-rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV=production
-
-# Last Business Day mode for a specific date
-rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" mode="business_day" end_date="2026-05-18" RAILS_ENV=production
-
-# Explicit date range
-rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" mode="range" start_date="2026-05-15" end_date="2026-05-17" RAILS_ENV=production
-```
-
-**Options:**
-- `project_id` (required): Project identifier or numeric ID
-- `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
-- `mode` (optional): `business_day` (default) or `range`
-  - `business_day`: uses `end_date` only (default today). Range = previous business day 00:00 → `end_date` 00:00. Monday `end_date` extends back to the previous Friday.
-  - `range`: uses `start_date` and `end_date` explicitly.
-- `start_date` (optional, range mode only): Start date in YYYY-MM-DD format (defaults to yesterday)
-- `end_date` (optional): End date in YYYY-MM-DD format (defaults to today)
-- `no_email` (optional): `1`, `true`, or `yes` to skip sending the email (report is still archived to project Files)
-
-#### Send Weekly Report
-
-Generates and emails the weekly report showing closed tickets. Defaults to the previous full week (Sunday–Sunday), filtered by ticket close date.
-
-```bash
-rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV=production
-```
-
-**Options:**
-- `project_id` (required): Project identifier or numeric ID
-- `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
-- `start_date` (optional): Start of date range in YYYY-MM-DD format (defaults to previous Sunday)
-- `end_date` (optional): End of date range in YYYY-MM-DD format (defaults to most recent Sunday)
-- `no_email` (optional): `1`, `true`, or `yes` to skip sending the email (report is still archived to project Files)
-
-#### Send Monthly Report
-
-Generates and emails the monthly report showing account statuses for a target system.
-
-```bash
-rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_system="Oracle / SFMS" RAILS_ENV=production
-```
-
-**Options:**
-- `project_id` (required): Project identifier or numeric ID
-- `target_system` (required): Target system name (e.g., "Oracle / SFMS", "AIX", "SFS")
-- `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
-- `mode` (optional): "current" (live snapshot) or "monthly" (end-of-month snapshot, default: "monthly")
-- `month` (optional): Month number 1-12 (for monthly mode, default: current month)
-- `year` (optional): Year (for monthly mode, default: current year)
-- `no_email` (optional): `1`, `true`, or `yes` to skip sending the email (report is still archived to project Files)
-
-#### Audit Account Holder Info
-
-Reconciles cached **Account Holder** custom field values on tickets
-(Account Holder Name, Email, Phone, Status, UID, Office) against the
-authoritative data source for each Account Holder:
-
-- ESS API for Employees
-- `tracked_users` table for Vendors and Volunteers
-
-Only tickets whose tracker has both the Account Holder Type and ID custom
-fields enabled are audited; tickets on other trackers are ignored.
-
-For each distinct (Account Holder Type, Account Holder ID) appearing on
-in-scope issues the task fetches the current authoritative record,
-diffs it against the cached custom field values, and writes back any
-drifted fields. Changes are recorded in the ticket's **History / Property
-Changes** view (with watcher email notifications suppressed). Tickets that
-can't be matched to an account holder are listed as **Unmatched** (and
-flagged "review needed" in the summary), including any missing the Account
-Holder Type and/or ID needed for the lookup.
-
-Produces a single CSV which is:
-1. Emailed to the configured recipients (see email behavior below).
-2. Archived to the project's Files repository.
-
-The email is only sent when the audit finds changes or unmatched tickets.
-When a run turns up nothing actionable, no email is sent (the CSV is still
-archived); pass `force_email=1` to send the email regardless. This applies
-to dry runs too.
-
-If email delivery fails the archive still runs and the operator is
-warned, so the audit record is never lost.
-
-```bash
-# Apply mode (default): writes corrections to tickets
-rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" RAILS_ENV=production
-
-# Dry run: report drift without changing any tickets
-rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" dry_run=1 RAILS_ENV=production
-```
-
-**Options:**
-- `project_id` (required): Project identifier or numeric ID
-- `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
-- `dry_run` (optional): `1`, `true`, or `yes` to skip writes and only report drift
-- `force_email` (optional): `1`, `true`, or `yes` to always send the email even when there are no changes or unmatched tickets
-- `no_email` (optional): `1`, `true`, or `yes` to never send the email (report is still archived to project Files); takes precedence over `force_email`
-
-#### Send All-Systems Monthly Report
-
-Generates and emails the monthly report for **all configured target systems** as a single ZIP attachment containing one CSV per system.
-
-```bash
-rake nysenate_audit_utils:send_all_systems_monthly_report project_id="bachelp-2" RAILS_ENV=production
-```
-
-**Options:**
-- `project_id` (required): Project identifier or numeric ID
-- `recipients` (optional): Comma-separated list of email addresses (uses configured default if not provided)
-- `mode` (optional): "current" (live snapshot) or "monthly" (end-of-month snapshot, default: "monthly")
-- `month` (optional): Month number 1-12 (for monthly mode, default: current month)
-- `year` (optional): Year (for monthly mode, default: current year)
-- `no_email` (optional): `1`, `true`, or `yes` to skip sending the email (report is still archived to project Files)
-
-### Email Configuration
-
-**Important**: Ensure Redmine's email delivery is properly configured in `config/configuration.yml` before using these rake tasks.
-
-Example SMTP configuration:
 ```yaml
 production:
   email_delivery:
@@ -373,3 +126,160 @@ Test email delivery with Redmine's built-in test:
 ```bash
 bundle exec rake redmine:email:test[admin_login] RAILS_ENV=production
 ```
+
+## Features
+
+### Reporting
+
+Access via the project menu: **Reports → Audit Utils**. Report types:
+
+- **Daily Reports**: Employees with recent status changes, with inline actions
+  to create pre-filled account-request and removal tickets. Two modes — *Last
+  Business Day* (default, single date) and *Date Range* (explicit start/end).
+- **Weekly Reports**: Tickets closed during the previous full week (Sunday–Sunday).
+- **Quarterly / Annual Reports**: Closed tickets for a single target system,
+  feeding the SFMS Quarterly Audit and the SFS Annual Audit, with CSV columns
+  matching the legacy audit spreadsheet.
+- **Monthly Reports**: Account status snapshot for a target system.
+- **Account Holder Access Report**: One row per account (account holder ×
+  system) showing derived active/inactive status, filterable by search, account
+  holder type, target system, and status.
+
+On-screen reports use Redmine's standard pagination (preserving sort and
+filters); CSV exports always contain the full, unpaginated dataset.
+
+Reports can also be generated and emailed on a schedule via the rake tasks
+described in [Rake Tasks](#rake-tasks).
+
+### Ticket Packet Creation
+
+Generate audit-ready zip packages containing a ticket's PDF plus all its
+attachments. Available as a **Create Packet** button on the issue detail page,
+or in bulk from the issue-list context menu.
+
+### Tracked User Management
+
+Manage non-employee tracked users (vendors, volunteers, contractors) at
+**Administration → Manage Vendors/Volunteers** (admin-only): create, edit, and
+delete records with auto-generated IDs (V1, V2, …). Employee data is read-only
+from the ESS API.
+
+### User Autofill
+
+Real-time user search on issue pages with type selection (Employee, Vendor,
+Volunteer), automatically populating the configured custom fields. Employee data
+comes from the ESS API; vendor and volunteer data is managed locally.
+
+### Request Code Mapping
+
+Automatic request-type classification based on Account Action and Target System
+combinations.
+
+### ESS Integration
+
+Employee search, retrieval, and status-change tracking (appointments,
+terminations, transfers) via the ESS REST API.
+
+## Rake Tasks
+
+The plugin provides rake tasks for generating and emailing audit reports; run
+them on a cron schedule to automate delivery. **Run all tasks from the Redmine
+root directory.**
+
+Each successful run archives a copy of the generated CSV/ZIP to the project's
+**Files** repository (timestamped) for the audit trail. If the Files module is
+disabled, archiving is skipped with a warning and the email is still sent.
+
+Every email-sending task accepts a `no_email` flag (`1`, `true`, or `yes`) that
+suppresses the email; the report is still generated and archived, and
+`recipients` are not required in that mode.
+
+### Send Daily Report
+
+Generates and emails the daily report of employees with status changes.
+
+```bash
+# Default: Last Business Day mode for today (covers yesterday → today; Mondays cover Fri → Mon)
+rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" RAILS_ENV=production
+
+# Explicit date range
+rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" mode="range" start_date="2026-05-15" end_date="2026-05-17" RAILS_ENV=production
+```
+
+**Options:**
+- `project_id` (required): Project identifier or numeric ID
+- `recipients` (optional): Comma-separated email addresses (defaults to configured recipients)
+- `mode` (optional): `business_day` (default, uses `end_date` only) or `range` (uses `start_date` and `end_date`)
+- `start_date` (optional, range mode): YYYY-MM-DD (defaults to yesterday)
+- `end_date` (optional): YYYY-MM-DD (defaults to today)
+- `no_email` (optional): skip sending the email (report is still archived)
+
+### Send Weekly Report
+
+Generates and emails the report of tickets closed in the previous full week (Sunday–Sunday, by close date).
+
+```bash
+rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV=production
+```
+
+**Options:**
+- `project_id` (required): Project identifier or numeric ID
+- `recipients` (optional): Comma-separated email addresses (defaults to configured recipients)
+- `start_date` (optional): YYYY-MM-DD (defaults to previous Sunday)
+- `end_date` (optional): YYYY-MM-DD (defaults to most recent Sunday)
+- `no_email` (optional): skip sending the email (report is still archived)
+
+### Send Monthly Report
+
+Generates and emails the account-status snapshot for a target system.
+
+```bash
+rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_system="Oracle / SFMS" RAILS_ENV=production
+```
+
+**Options:**
+- `project_id` (required): Project identifier or numeric ID
+- `target_system` (required): Target system name (e.g. "Oracle / SFMS", "AIX", "SFS")
+- `recipients` (optional): Comma-separated email addresses (defaults to configured recipients)
+- `mode` (optional): `monthly` (end-of-month snapshot, default) or `current` (live snapshot)
+- `month` (optional): 1–12, for monthly mode (defaults to current month)
+- `year` (optional): for monthly mode (defaults to current year)
+- `no_email` (optional): skip sending the email (report is still archived)
+
+### Send All-Systems Monthly Report
+
+Generates and emails a ZIP containing one monthly-snapshot CSV per configured target system.
+
+```bash
+rake nysenate_audit_utils:send_all_systems_monthly_report project_id="bachelp-2" RAILS_ENV=production
+```
+
+**Options:**
+- `project_id` (required): Project identifier or numeric ID
+- `recipients` (optional): Comma-separated email addresses (defaults to configured recipients)
+- `mode` (optional): `monthly` (default) or `current`
+- `month` (optional): 1–12, for monthly mode (defaults to current month)
+- `year` (optional): for monthly mode (defaults to current year)
+- `no_email` (optional): skip sending the email (report is still archived)
+
+### Audit Account Holder Info
+
+Reconciles cached Account Holder custom field values on tickets against the
+authoritative source (ESS for Employees, `tracked_users` for Vendors/Volunteers)
+and writes back any drift, recording changes in each ticket's history. The email
+is sent only when the run finds changes or unmatched tickets.
+
+```bash
+# Apply mode (default): writes corrections to tickets
+rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" RAILS_ENV=production
+
+# Dry run: report drift without changing any tickets
+rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" dry_run=1 RAILS_ENV=production
+```
+
+**Options:**
+- `project_id` (required): Project identifier or numeric ID
+- `recipients` (optional): Comma-separated email addresses (defaults to configured recipients)
+- `dry_run` (optional): skip writes and only report drift
+- `force_email` (optional): always send the email, even with no changes or unmatched tickets
+- `no_email` (optional): never send the email (report is still archived); takes precedence over `force_email`
