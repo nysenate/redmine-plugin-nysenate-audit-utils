@@ -74,6 +74,7 @@
         <%= sort_header_tag('user_type', caption: 'Account Holder Type', class: 'col-type') %>
         <%= sort_header_tag('user_name', caption: 'Account Holder Name', class: 'col-name') %>
         <%= sort_header_tag('user_uid', caption: 'Account Holder Username', class: 'col-uid') %>
+        <%= sort_header_tag('user_office', caption: 'Acct Holder Office', class: 'col-office') %>
         <th class="col-system">Target System</th>
         <th class="col-code">Request Code</th>
       </tr>
@@ -103,6 +104,7 @@
             <% uid = row[:user_uid] || '—' %>
             <%= @search.present? ? highlight_tokens(uid, [@search]) : uid %>
           </td>
+          <td class="col-office"><%= row[:user_office].presence || '—' %></td>
           <td class="col-system">
             <% row[:accounts].each do |acct| %>
               <div class="account-line">
@@ -133,7 +135,7 @@
   /* Few columns — cap the width so the table doesn't stretch full-page,
      and left-justify the text values for readability. */
   table.list.account-holder-access {
-    max-width: 1000px;
+    max-width: 1150px;
   }
 
   /* Left-justify only the Account Holder Name column. */

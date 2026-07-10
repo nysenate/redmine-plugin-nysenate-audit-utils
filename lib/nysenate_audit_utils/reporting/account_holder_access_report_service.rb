@@ -59,39 +59,47 @@ module NysenateAuditUtils
       def enrich_with_user_names(statuses)
         @user_names = {}
         @user_uids = {}
+        @user_offices = {}
 
         user_name_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_name_field_id')
         user_uid_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_uid_field_id')
-        return unless user_name_field_id || user_uid_field_id
+        user_office_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_location_field_id')
+        return unless user_name_field_id || user_uid_field_id || user_office_field_id
 
         issue_ids = statuses.map { |status| status[:issue_id] }.compact.uniq
         return if issue_ids.empty?
 
-        field_ids = [user_name_field_id, user_uid_field_id].compact
+        field_ids = [user_name_field_id, user_uid_field_id, user_office_field_id].compact
         CustomValue
           .where(customized_type: 'Issue', customized_id: issue_ids, custom_field_id: field_ids)
           .each do |cv|
-            if cv.custom_field_id == user_name_field_id
+            case cv.custom_field_id
+            when user_name_field_id
               @user_names[cv.customized_id] = cv.value
-            elsif cv.custom_field_id == user_uid_field_id
+            when user_uid_field_id
               @user_uids[cv.customized_id] = cv.value
+            when user_office_field_id
+              @user_offices[cv.customized_id] = cv.value
             end
           end
       rescue StandardError => e
         Rails.logger.error("Failed to enrich with user data: #{e.message}")
         @user_names = {}
         @user_uids = {}
+        @user_offices = {}
       end
 
       def build_report_data(statuses)
         @user_names ||= {}
         @user_uids ||= {}
+        @user_offices ||= {}
 
         rows = statuses.map do |status|
           {
             user_name: @user_names[status[:issue_id]],
             user_id: status[:user_id],
             user_uid: @user_uids[status[:issue_id]],
+            user_office: @user_offices[status[:issue_id]],
             user_type: status[:user_type],
             account_type: status[:account_type],
             request_code: status[:request_code],

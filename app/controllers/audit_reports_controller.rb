@@ -378,7 +378,8 @@ class AuditReportsController < ApplicationController
     sort_update({
       'user_name' => 'user_name',
       'user_type' => 'user_type',
-      'user_uid' => 'user_uid'
+      'user_uid' => 'user_uid',
+      'user_office' => 'user_office'
     })
 
     @report_data = sort_report_data(@report_data) if @report_data.present?
@@ -537,6 +538,7 @@ class AuditReportsController < ApplicationController
         user_name: row[:user_name],
         user_type: row[:user_type],
         user_uid: row[:user_uid],
+        user_office: row[:user_office],
         user_id: row[:user_id],
         accounts: []
       }
