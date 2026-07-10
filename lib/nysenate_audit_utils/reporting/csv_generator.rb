@@ -250,6 +250,7 @@ module NysenateAuditUtils
             'Account Holder Type',
             'Account Holder Username',
             'Target System',
+            'Account Status',
             'Request Code'
           ]
 
@@ -259,6 +260,7 @@ module NysenateAuditUtils
               row[:user_type],
               row[:user_uid],
               row[:account_type],
+              row[:status]&.capitalize,
               row[:request_code]
             ]
           end

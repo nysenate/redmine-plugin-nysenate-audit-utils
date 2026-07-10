@@ -358,6 +358,10 @@ class AuditReportsController < ApplicationController
     # and the CSV export reflect them). Blank search / blank type = no filtering.
     @search = params[:search].to_s.strip
     @user_type_filter = params[:user_type].presence
+    @target_system_filter = params[:target_system].presence
+    # Account access status: default to active only (preserves prior behavior);
+    # 'all' shows active + inactive, 'inactive' shows inactive only.
+    @account_status_filter = params[:account_status].presence || 'active'
 
     service = NysenateAuditUtils::Reporting::AccountHolderAccessReportService.new(project: @project)
     @report_data = service.generate
@@ -504,6 +508,8 @@ class AuditReportsController < ApplicationController
   # so both outputs honour the same filtered set.
   def filter_account_holder_access_data(rows)
     rows = rows.select { |r| holder_type_match?(r[:user_type]) } if @user_type_filter
+    rows = rows.select { |r| r[:account_type] == @target_system_filter } if @target_system_filter
+    rows = rows.select { |r| r[:status] == @account_status_filter } unless @account_status_filter == 'all'
     if @search.present?
       q = @search.downcase
       rows = rows.select do |r|
@@ -537,6 +543,7 @@ class AuditReportsController < ApplicationController
       grouped[key][:accounts] << {
         account_type: row[:account_type],
         request_code: row[:request_code],
+        status: row[:status],
         issue_id: row[:issue_id]
       }
     end

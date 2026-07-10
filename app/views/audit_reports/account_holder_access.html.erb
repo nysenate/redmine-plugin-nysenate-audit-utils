@@ -1,7 +1,7 @@
 <% html_title(l(:label_audit_account_holder_access_report)) -%>
 
 <div class="contextual">
-  <%= link_to "Export CSV", account_holder_access_project_audit_reports_path(@project, search: @search, user_type: @user_type_filter, format: :csv), class: "icon icon-download" %>
+  <%= link_to "Export CSV", account_holder_access_project_audit_reports_path(@project, search: @search, user_type: @user_type_filter, target_system: @target_system_filter, account_status: @account_status_filter, format: :csv), class: "icon icon-download" %>
   <%= link_to "Back to Reports", project_audit_reports_path(@project), class: "icon icon-cancel" %>
 </div>
 
@@ -28,8 +28,28 @@
           onchange: "this.form.submit();" %>
     </p>
     <p>
+      <%= label_tag :target_system, "Target System" %>
+      <%= select_tag :target_system,
+          options_for_select(
+            [['All Systems', '']] +
+              (NysenateAuditUtils::CustomFieldConfiguration.target_system_field&.possible_values || []),
+            @target_system_filter
+          ),
+          onchange: "this.form.submit();" %>
+    </p>
+    <p>
+      <%= label_tag :account_status, "Account Status" %>
+      <%= select_tag :account_status,
+          options_for_select([
+            ['Active Only', 'active'],
+            ['All Statuses', 'all'],
+            ['Inactive Only', 'inactive']
+          ], @account_status_filter),
+          onchange: "this.form.submit();" %>
+    </p>
+    <p>
       <label></label>
-      <% if @search.blank? && @user_type_filter.blank? %>
+      <% if @search.blank? && @user_type_filter.blank? && @target_system_filter.blank? && @account_status_filter == 'active' %>
         <span class="button-small disabled-link">Reset</span>
       <% else %>
         <%= link_to "Reset", account_holder_access_project_audit_reports_path(@project), class: "button-small" %>
@@ -40,12 +60,12 @@
 
 <% if @report_count.nil? || @report_count.zero? %>
   <p class="nodata">
-    No active account access found.
+    No account access found.
   </p>
 <% else %>
   <p class="report-info">
     Showing <%= pluralize(@report_count, 'account holder') %> with <%= pluralize(@account_count, 'total account') %> across all target systems
-    <strong>(current state)</strong><% if @search.present? || @user_type_filter.present? %> <em>(filtered)</em><% end %>.
+    <strong>(current state)</strong><% if @search.present? || @user_type_filter.present? || @target_system_filter.present? || @account_status_filter != 'active' %> <em>(filtered)</em><% end %>.
   </p>
 
   <table class="list issues account-holder-access <%= sort_css_classes %>">
@@ -85,7 +105,9 @@
           </td>
           <td class="col-system">
             <% row[:accounts].each do |acct| %>
-              <div class="account-line"><%= acct[:account_type] %></div>
+              <div class="account-line">
+                <%= acct[:account_type] %><% if @account_status_filter != 'active' && acct[:status] == 'inactive' %> <span class="account-status-inactive">(inactive)</span><% end %>
+              </div>
             <% end %>
           </td>
           <td class="col-code">
@@ -135,6 +157,13 @@
 
   table.list.account-holder-access .account-line + .account-line {
     margin-top: 0.25em;
+  }
+
+  /* Flag inactive access when the report includes it (all/inactive filters). */
+  .account-status-inactive {
+    color: #a00;
+    font-size: 0.85em;
+    font-style: italic;
   }
 
   .report-info {

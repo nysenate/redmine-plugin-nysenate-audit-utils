@@ -44,25 +44,29 @@ class AccountHolderAccessReportServiceTest < ActiveSupport::TestCase
     assert_includes result.map { |r| r[:account_type] }, 'AIX'
   end
 
-  test 'generate excludes inactive accounts (latest action Delete)' do
+  test 'generate includes inactive accounts with their status (latest action Delete)' do
     create_closed_test_issue('11111', 'Active User', 'SFS', 'Add', 2.days.ago)
     create_closed_test_issue('22222', 'Removed User', 'SFS', 'Delete', 1.day.ago)
 
     service = NysenateAuditUtils::Reporting::AccountHolderAccessReportService.new(project: @project)
     result = service.generate
 
-    assert_equal 1, result.size
-    assert_equal '11111', result.first[:user_id]
+    # Status filtering is the controller's job; the service surfaces both.
+    assert_equal 2, result.size
+    by_user = result.index_by { |r| r[:user_id] }
+    assert_equal 'active', by_user['11111'][:status]
+    assert_equal 'inactive', by_user['22222'][:status]
   end
 
-  test 'generate excludes account when latest Add is superseded by a Delete' do
+  test 'generate marks account inactive when latest Add is superseded by a Delete' do
     create_closed_test_issue('11111', 'Alice', 'NYSDS', 'Add', 5.days.ago)
     create_closed_test_issue('11111', 'Alice', 'NYSDS', 'Delete', 1.day.ago)
 
     service = NysenateAuditUtils::Reporting::AccountHolderAccessReportService.new(project: @project)
     result = service.generate
 
-    assert_equal [], result
+    assert_equal 1, result.size
+    assert_equal 'inactive', result.first[:status]
   end
 
   test 'generate includes an account on each system the holder has active' do
@@ -136,7 +140,7 @@ class AccountHolderAccessReportServiceTest < ActiveSupport::TestCase
     service = NysenateAuditUtils::Reporting::AccountHolderAccessReportService.new(project: @project)
     row = service.generate.first
 
-    %i[user_name user_id user_uid user_type account_type request_code issue_id].each do |key|
+    %i[user_name user_id user_uid user_type account_type request_code status issue_id].each do |key|
       assert row.key?(key), "expected row to include #{key}"
     end
   end

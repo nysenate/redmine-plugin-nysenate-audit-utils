@@ -2,12 +2,13 @@
 
 module NysenateAuditUtils
   module Reporting
-    # Builds the Account Holder Access Report: a listing of all currently active
-    # account access across every target system. "Active" is determined the same
-    # way as the Monthly report — the latest closed Add/Delete ticket for an
-    # account holder + target system. If the latest is "Add" the account is
-    # active; "Delete" makes it inactive. One row per active account
-    # (account holder x system), ordered by account holder name.
+    # Builds the Account Holder Access Report: a listing of account access across
+    # every target system, each row carrying a derived active/inactive status.
+    # Status is determined the same way as the Monthly report — the latest closed
+    # Add/Delete ticket for an account holder + target system. If the latest is
+    # "Add" the account is active; "Delete" makes it inactive. One row per account
+    # (account holder x system), ordered by account holder name. The controller is
+    # responsible for filtering by status (defaulting to active only).
     class AccountHolderAccessReportService
       attr_reader :project, :errors
 
@@ -19,7 +20,7 @@ module NysenateAuditUtils
       # Main entry point - generates the report
       # @return [Array<Hash>, nil] Array of report row hashes or nil on error
       def generate
-        statuses = fetch_active_statuses
+        statuses = fetch_statuses
         enrich_with_user_names(statuses)
         build_report_data(statuses)
       rescue StandardError => e
@@ -40,18 +41,16 @@ module NysenateAuditUtils
         target_system_field&.possible_values || []
       end
 
-      # Gather the active account statuses for every configured target system.
-      # Reuses AccountTrackingService#get_account_statuses_by_system, which
-      # already returns one status per account holder with the request code of
-      # the latest Add/Delete ticket.
-      def fetch_active_statuses
+      # Gather the account statuses (active and inactive) for every configured
+      # target system. Reuses AccountTrackingService#get_account_statuses_by_system,
+      # which already returns one status per account holder with the request code
+      # of the latest Add/Delete ticket. Status filtering is left to the controller.
+      def fetch_statuses
         service = NysenateAuditUtils::AccountTracking::AccountTrackingService.new
         as_of_time = Time.current
 
         target_systems.flat_map do |system|
-          service
-            .get_account_statuses_by_system(system, as_of_time: as_of_time, project: @project)
-            .select { |status| status[:status] == 'active' }
+          service.get_account_statuses_by_system(system, as_of_time: as_of_time, project: @project)
         end
       end
 
@@ -96,6 +95,7 @@ module NysenateAuditUtils
             user_type: status[:user_type],
             account_type: status[:account_type],
             request_code: status[:request_code],
+            status: status[:status],
             issue_id: status[:issue_id]
           }
         end

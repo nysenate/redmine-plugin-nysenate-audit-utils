@@ -721,6 +721,7 @@ class AuditReportsControllerTest < ActionController::TestCase
         user_type: 'Employee',
         account_type: 'Oracle / SFMS',
         request_code: 'USRA',
+        status: 'active',
         issue_id: 1
       }
     ]
@@ -744,11 +745,11 @@ class AuditReportsControllerTest < ActionController::TestCase
     mock_report_data = [
       {
         user_name: 'John Doe', user_id: '12345', user_uid: 'jdoe', user_type: 'Employee',
-        account_type: 'AIX', request_code: 'AIXA', issue_id: 1
+        account_type: 'AIX', request_code: 'AIXA', status: 'active', issue_id: 1
       },
       {
         user_name: 'John Doe', user_id: '12345', user_uid: 'jdoe', user_type: 'Employee',
-        account_type: 'Oracle / SFMS', request_code: 'USRA', issue_id: 2
+        account_type: 'Oracle / SFMS', request_code: 'USRA', status: 'active', issue_id: 2
       }
     ]
 
@@ -800,6 +801,7 @@ class AuditReportsControllerTest < ActionController::TestCase
         user_type: 'Employee',
         account_type: 'Oracle / SFMS',
         request_code: 'USRA',
+        status: 'active',
         issue_id: 1
       }
     ]
@@ -817,15 +819,28 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_match /USRA/, response.body
   end
 
-  # Two holders of different types, used by the filter tests below.
+  # Two holders of different types (both active), used by the filter tests below.
   ACCOUNT_HOLDER_ACCESS_MIXED = [
     {
       user_name: 'John Doe', user_id: '12345', user_uid: 'jdoe', user_type: 'Employee',
-      account_type: 'Oracle / SFMS', request_code: 'USRA', issue_id: 1
+      account_type: 'Oracle / SFMS', request_code: 'USRA', status: 'active', issue_id: 1
     },
     {
       user_name: 'Jane Smith', user_id: '67890', user_uid: 'jsmith', user_type: 'Vendor',
-      account_type: 'AIX', request_code: 'AIXA', issue_id: 2
+      account_type: 'AIX', request_code: 'AIXA', status: 'active', issue_id: 2
+    }
+  ].freeze
+
+  # One active holder on Oracle / SFMS and one inactive holder on AIX, used by
+  # the target-system and account-status filter tests.
+  ACCOUNT_HOLDER_ACCESS_BY_STATUS = [
+    {
+      user_name: 'Active Al', user_id: '12345', user_uid: 'aal', user_type: 'Employee',
+      account_type: 'Oracle / SFMS', request_code: 'USRA', status: 'active', issue_id: 1
+    },
+    {
+      user_name: 'Inactive Ida', user_id: '67890', user_uid: 'iida', user_type: 'Employee',
+      account_type: 'AIX', request_code: 'AIXD', status: 'inactive', issue_id: 2
     }
   ].freeze
 
@@ -900,6 +915,73 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_response :success
     assert_match /John Doe/, response.body
     assert_no_match /Jane Smith/, response.body
+  end
+
+  test "should default account holder access to active accounts only" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_BY_STATUS.map(&:dup))
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1 }
+    assert_response :success
+    assert_select 'table.list.issues tbody tr', 1
+    assert_select 'tbody', text: /Active Al/
+    assert_select 'tbody', text: /Inactive Ida/, count: 0
+  end
+
+  test "should show inactive accounts only when account_status is inactive" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_BY_STATUS.map(&:dup))
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1, account_status: 'inactive' }
+    assert_response :success
+    assert_select 'table.list.issues tbody tr', 1
+    assert_select 'tbody', text: /Inactive Ida/
+    assert_select 'tbody', text: /Active Al/, count: 0
+    assert_select 'span.account-status-inactive'
+  end
+
+  test "should show all accounts when account_status is all" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_BY_STATUS.map(&:dup))
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1, account_status: 'all' }
+    assert_response :success
+    assert_select 'table.list.issues tbody tr', 2
+    assert_select 'tbody', text: /Active Al/
+    assert_select 'tbody', text: /Inactive Ida/
+  end
+
+  test "should filter account holder access by target system" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_BY_STATUS.map(&:dup))
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    # 'all' status so the inactive AIX holder is not filtered out by status first.
+    get :account_holder_access, params: { project_id: 1, account_status: 'all', target_system: 'AIX' }
+    assert_response :success
+    assert_select 'table.list.issues tbody tr', 1
+    assert_select 'tbody', text: /Inactive Ida/
+    assert_select 'tbody', text: /Active Al/, count: 0
+  end
+
+  test "should apply account_status filter to account holder access CSV export" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_BY_STATUS.map(&:dup))
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1, account_status: 'inactive' }, format: :csv
+    assert_response :success
+    assert_match /Account Status/, response.body
+    assert_match /Inactive Ida/, response.body
+    assert_no_match /Active Al/, response.body
   end
 
   test "should require view_audit_reports permission for account holder access report" do
