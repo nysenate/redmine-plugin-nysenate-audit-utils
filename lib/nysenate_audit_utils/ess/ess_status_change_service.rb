@@ -10,6 +10,7 @@ module NysenateAuditUtils
 
           changes = response['result'] || []
           changes.map { |change_data| EssStatusChange.new(change_data) }
+                 .select { |change| EssStatusChange::TRANSACTION_CODES.key?(change.transaction_code) }
         end
 
         private

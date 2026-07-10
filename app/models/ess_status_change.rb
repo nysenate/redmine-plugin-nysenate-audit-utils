@@ -11,11 +11,8 @@ class EssStatusChange
 
   TRANSACTION_CODES = {
     'APP' => 'Employee appointment/hiring',
-    'LOC' => 'Location change',
     'NAM' => 'Name change',
-    'PHO' => 'Phone number change',
     'RTP' => 'Re-appointment',
-    'LIN' => 'Line number',
     'EMP' => 'Termination',
     'RSH' => 'Responsibility center change'
   }.freeze

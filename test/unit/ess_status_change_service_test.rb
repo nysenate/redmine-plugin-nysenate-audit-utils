@@ -117,6 +117,23 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
     assert_equal [], changes
   end
 
+  def test_changes_for_date_range_filters_out_disallowed_transaction_codes
+    api_response = {
+      'success' => true,
+      'result' => [
+        sample_status_change_data(12345, 'jsmith', 'John', 'Smith', 'APP'),
+        # 'PHO' is not in TRANSACTION_CODES and must be filtered out
+        sample_status_change_data(12346, 'mjones', 'Mary', 'Jones', 'PHO'),
+        sample_status_change_data(12347, 'bdoe', 'Bob', 'Doe', 'EMP')
+      ]
+    }
+    @api_client_mock.expects(:get).returns(api_response)
+
+    changes = NysenateAuditUtils::Ess::EssStatusChangeService.changes_for_date_range('2023-08-15')
+
+    assert_equal %w[APP EMP], changes.map(&:transaction_code)
+  end
+
   private
 
   def sample_status_change_data(id, uid, first_name, last_name, transaction_code)

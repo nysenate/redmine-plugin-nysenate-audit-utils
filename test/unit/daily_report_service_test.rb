@@ -116,7 +116,7 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     early = DateTime.new(2025, 1, 10, 9, 0, 0)
     late  = DateTime.new(2025, 1, 15, 9, 0, 0)
     changes = [
-      create_mock_status_change(employee_id: 12345, transaction_code: 'PHO', post_date_time: late, notes: 'new phone'),
+      create_mock_status_change(employee_id: 12345, transaction_code: 'NAM', post_date_time: late, notes: 'name changed'),
       create_mock_status_change(employee_id: 12345, transaction_code: 'APP', post_date_time: early, notes: 'hired')
     ]
     NysenateAuditUtils::Ess::EssStatusChangeService.stubs(:changes_for_date_range).returns(changes)
@@ -126,7 +126,7 @@ class DailyReportServiceTest < ActiveSupport::TestCase
 
     assert_equal [
       { code: 'APP', notes: 'hired' },
-      { code: 'PHO', notes: 'new phone' }
+      { code: 'NAM', notes: 'name changed' }
     ], result.first[:status_changes]
   end
 
@@ -264,7 +264,7 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     # Two changes for same employee
     changes = [
       create_mock_status_change(employee_id: 12345, transaction_code: 'APP'),
-      create_mock_status_change(employee_id: 12345, transaction_code: 'PHO')
+      create_mock_status_change(employee_id: 12345, transaction_code: 'NAM')
     ]
 
     NysenateAuditUtils::Ess::EssStatusChangeService.stubs(:changes_for_date_range).returns(changes)
@@ -277,7 +277,7 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     assert_equal 12345, result.first[:user_id]
     assert_equal [
       { code: 'APP', notes: nil },
-      { code: 'PHO', notes: nil }
+      { code: 'NAM', notes: nil }
     ], result.first[:status_changes]
   end
 
@@ -288,7 +288,7 @@ class DailyReportServiceTest < ActiveSupport::TestCase
 
     changes = [
       create_mock_status_change(employee_id: 12345, transaction_code: 'APP', post_date_time: early_date),
-      create_mock_status_change(employee_id: 12345, transaction_code: 'PHO', post_date_time: late_date)
+      create_mock_status_change(employee_id: 12345, transaction_code: 'NAM', post_date_time: late_date)
     ]
 
     NysenateAuditUtils::Ess::EssStatusChangeService.stubs(:changes_for_date_range).returns(changes)
