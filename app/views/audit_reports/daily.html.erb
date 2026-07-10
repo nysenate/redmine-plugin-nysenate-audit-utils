@@ -417,17 +417,34 @@
 
   .account-status-line,
   .open-ticket-line {
-    display: block;
+    display: flex;
+    align-items: center;
     line-height: 1.6;
     white-space: nowrap;
   }
 
-  .account-status-line .action-icon {
-    margin-left: 0.4em;
-    vertical-align: middle;
+  /* Center sprite icons against their adjacent text rather than letting the
+     inline default baseline drop them slightly below the codes/links. */
+  .account-status-line .action-icon,
+  .open-ticket-line .action-icon {
+    display: inline-flex;
+    align-items: center;
   }
 
-  .open-ticket-line.create-new-line {
+  /* Reserve a consistent width for the code so the trailing action icons line
+     up in a vertical column across rows regardless of code length. */
+  .account-status-line .account-status-name {
+    min-width: 2.7em;
+  }
+
+  .account-status-line .action-icon {
+    margin-left: 0.4em;
+  }
+
+  /* Only add spacing above the "new ticket" icon when open ticket lines
+     actually precede it. On thin rows with no open tickets the margin would
+     otherwise drop the lone icon below the other top-aligned columns. */
+  .open-ticket-line + .open-ticket-line.create-new-line {
     margin-top: 0.3em;
   }
 
