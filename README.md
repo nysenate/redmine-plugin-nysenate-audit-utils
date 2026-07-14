@@ -14,7 +14,12 @@ A comprehensive Redmine plugin providing audit utilities, user data integration,
    git clone git@github.com:nysenate/redmine-plugin-nysenate-audit-utils.git nysenate_audit_utils
    ```
 
-1. Install dependencies with `bundle install` (or `gem install webmock` if not using Bundler).
+1. (Optional) Install dependencies required to run tests. Run from Redmine root.
+   ```bash
+   cd /path/to/redmine
+   bundle install
+   npx playwright install chromium
+   ```
 
 1. Run plugin migrations from the Redmine root:
    ```bash
@@ -26,7 +31,7 @@ A comprehensive Redmine plugin providing audit utilities, user data integration,
 
 1. Configure the plugin at **Administration → Plugins → NY Senate Audit Utils → Configure**.
 
-(Optional) Verify the install with `rake redmine:plugins:test NAME=nysenate_audit_utils`.
+(Optional, if test deps were installed) Verify the install with `rake redmine:plugins:test NAME=nysenate_audit_utils`.
 
 ### Requirements
 
@@ -283,3 +288,26 @@ rake nysenate_audit_utils:audit_account_holder_info project_id="bachelp-2" dry_r
 - `dry_run` (optional): skip writes and only report drift
 - `force_email` (optional): always send the email, even with no changes or unmatched tickets
 - `no_email` (optional): never send the email (report is still archived); takes precedence over `force_email`
+
+## Testing
+
+Run the unit/functional suite from the Redmine root:
+
+```bash
+bundle exec rake redmine:plugins:test NAME=nysenate_audit_utils
+```
+
+### End-to-end (browser) tests
+
+The plugin includes Capybara system tests (`test/system/`) that drive a real
+browser via **Playwright** and stub the ESS API in-process with WebMock. These
+require the Playwright browser binary from the optional install step above
+(`npx playwright install chromium`).
+
+Run just the system tests from the Redmine root:
+
+```bash
+bundle exec rails test plugins/nysenate_audit_utils/test/system
+```
+
+Tests run headless by default; set `PLAYWRIGHT_HEADFUL=1` to watch the browser.
