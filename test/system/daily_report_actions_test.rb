@@ -38,6 +38,11 @@ class DailyReportActionsTest < AuditUtilsSystemTestCase
   }.freeze
 
   setup do
+    # attach_daily_report writes a container-less Attachment diskfile via the
+    # process-global Attachment.storage_path shared with the in-process Puma
+    # thread; point it at the throwaway tmp dir so the save succeeds.
+    set_tmp_attachments_directory
+
     @project, @tracker, @field_map = setup_audit_utils_project
     stub_ess_status_changes
     stub_ess_employee_lookup_full(900101, EMPLOYEE_900101)
@@ -74,6 +79,16 @@ class DailyReportActionsTest < AuditUtilsSystemTestCase
       # Pre-filled Account Holder Name persisted onto the saved issue.
       assert_text 'Doodlewick, Ulric F.'
     end
+
+    # The launch link carried the report window (from_date/to_date), so
+    # AccountRequestsController#attach_daily_report should have generated the
+    # daily-report CSV and attached it to the saved ticket. Verify the browser
+    # -driven flow actually wires the attachment up (not just the field prefill).
+    created = Issue.order(:id).last
+    assert_equal 'E2E create ticket for Doodlewick', created.subject
+    assert created.attachments.any? { |a| a.filename =~ /\Adaily_report_\d{8}\.csv\z/ },
+           'expected the report-launched ticket to carry a daily_report_*.csv attachment ' \
+           "(got: #{created.attachments.map(&:filename).inspect})"
   end
 
   # 6. "Remove access" button -> pre-filled removal ticket -------------------

@@ -128,6 +128,26 @@ class MonthlyReportTest < AuditUtilsSystemTestCase
     end
   end
 
+  # 4c. Month/year selector drives the snapshot cutoff: moving the snapshot to
+  #     BEFORE the seeded account's close date (2020-01-15) empties the report.
+  #     Exercises the interactive dropdowns (each auto-submits on change), not
+  #     just a URL param, and proves the `closed_on <= as_of_time` cutoff moves.
+  def test_monthly_month_selector_changes_snapshot_cutoff
+    visit monthly_path(target_system: 'Oracle / SFMS')
+
+    # Default monthly snapshot (current month) is well after 2020 -> holder shows.
+    within('table.list.issues') { assert_text 'Ada Testwell' }
+
+    # Roll the snapshot back to the beginning of January 2020 (cutoff
+    # 2020-01-01), which precedes Ada's 2020-01-15 grant, so no account exists
+    # yet. Both selects auto-submit; the second reload lands on the empty state.
+    select '2020', from: 'year'
+    select 'January', from: 'month'
+
+    assert_selector 'p.nodata', text: /No account data found/
+    assert_no_text 'Ada Testwell'
+  end
+
   private
 
   def monthly_path(params = {})
