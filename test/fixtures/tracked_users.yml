@@ -5,10 +5,10 @@ vendor_one:
   name: Fixture Vendor One
   email: vendor1@example.com
   phone: '555-1001'
-  location:Building A
+  location: Building A
   status: Active
-  created_at: <%= 2.days.ago.to_s(:db) %>
-  updated_at: <%= 1.day.ago.to_s(:db) %>
+  created_at: <%= 2.days.ago.to_fs(:db) %>
+  updated_at: <%= 1.day.ago.to_fs(:db) %>
 
 vendor_two:
   user_type: Vendor
@@ -16,10 +16,10 @@ vendor_two:
   name: Fixture Vendor Two
   email: vendor2@example.com
   phone: '555-1002'
-  location:Building B
+  location: Building B
   status: Active
-  created_at: <%= 3.days.ago.to_s(:db) %>
-  updated_at: <%= 2.days.ago.to_s(:db) %>
+  created_at: <%= 3.days.ago.to_fs(:db) %>
+  updated_at: <%= 2.days.ago.to_fs(:db) %>
 
 vendor_inactive:
   user_type: Vendor
@@ -27,8 +27,8 @@ vendor_inactive:
   name: Fixture Vendor Inactive
   email: vendor3@example.com
   status: Inactive
-  created_at: <%= 5.days.ago.to_s(:db) %>
-  updated_at: <%= 4.days.ago.to_s(:db) %>
+  created_at: <%= 5.days.ago.to_fs(:db) %>
+  updated_at: <%= 4.days.ago.to_fs(:db) %>
 
 volunteer_one:
   user_type: Volunteer
@@ -36,10 +36,10 @@ volunteer_one:
   name: Fixture Volunteer One
   email: volunteer1@example.com
   phone: '555-2001'
-  location:Building C
+  location: Building C
   status: Active
-  created_at: <%= 2.days.ago.to_s(:db) %>
-  updated_at: <%= 1.day.ago.to_s(:db) %>
+  created_at: <%= 2.days.ago.to_fs(:db) %>
+  updated_at: <%= 1.day.ago.to_fs(:db) %>
 
 volunteer_inactive:
   user_type: Volunteer
@@ -47,5 +47,5 @@ volunteer_inactive:
   name: Fixture Volunteer Inactive
   email: volunteer2@example.com
   status: Inactive
-  created_at: <%= 5.days.ago.to_s(:db) %>
-  updated_at: <%= 4.days.ago.to_s(:db) %>
+  created_at: <%= 5.days.ago.to_fs(:db) %>
+  updated_at: <%= 4.days.ago.to_fs(:db) %>
