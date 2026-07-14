@@ -85,13 +85,13 @@ class PacketCreationTest < AuditUtilsSystemTestCase
       assert_link 'Create Multi Packet'
     end
 
-    # NOTE: the hook builds the link with a bare `confirm:` option, which modern
-    # Rails renders as an inert `confirm="..."` attribute (not `data-confirm`),
-    # so @rails/ujs shows NO dialog -- the click POSTs straight through and the
-    # response streams the zip download. (Don't wrap this in accept_confirm; no
-    # modal appears -> Capybara::ModalNotFound.)
+    # The hook builds the link with `data: { confirm: ... }`, so @rails/ujs shows
+    # a confirmation dialog before POSTing; accept it, then the response streams
+    # the zip download.
     entries = downloaded_zip_entries('multi_packet_*.zip') do
-      within('#context-menu') { click_link 'Create Multi Packet' }
+      accept_confirm do
+        within('#context-menu') { click_link 'Create Multi Packet' }
+      end
     end
 
     assert_includes entries, "packet_#{issue1.id}/ticket_#{issue1.id}.pdf",

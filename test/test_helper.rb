@@ -51,10 +51,6 @@ class NysenateAuditUtilsTestCase < ActiveSupport::TestCase
     project.enabled_module_names += ['audit_utils']
     project.save!
   end
-
-  def grant_packet_creation_permission(role)
-    role.add_permission! :create_packet
-  end
 end
 
 # Include Audit Utils test helpers in all tests

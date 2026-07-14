@@ -35,7 +35,7 @@ class IssueContextMenuHook < Redmine::Hook::ViewListener
           },
           method: :post,
           class: 'icon icon-package',
-          confirm: l(:text_create_multi_packet_confirm, count: issues.size)
+          data: { confirm: l(:text_create_multi_packet_confirm, count: issues.size) }
         )
       end
     end

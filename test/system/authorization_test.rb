@@ -75,25 +75,23 @@ class AuthorizationTest < AuditUtilsSystemTestCase
   end
 
   # ===========================================================================
-  # 2. CSV export -- gated by :view_audit_reports (NOT :export_audit_reports)
+  # 2. CSV export -- gated by :view_audit_reports
   # ===========================================================================
   #
-  # FINDING: each report's CSV comes from its own report action rendered with
+  # Each report's CSV comes from its own report action rendered with
   # `format: :csv` (e.g. AuditReportsController#weekly's `format.csv` block), so
   # it is protected by :view_audit_reports -- the SAME `before_action :authorize`
-  # that guards the HTML report. The :export_audit_reports permission maps to
-  # `audit_reports: [:export]`, an action that does NOT exist in the controller,
-  # so it gates nothing reachable.
+  # that guards the HTML report. There is no separate export permission.
   #
   # NOTE ON TECHNIQUE: we can't `visit` the `.csv` URL to assert a 403 -- the
   # Playwright driver fires "Download is starting" for ANY navigation to a
   # text/csv response (the denied 403 carries a text/csv content type too). So
-  # the denial is proven on the HTML report (the export-only user is refused the
-  # whole report, hence its CSV), and the positive control downloads the CSV via
-  # the on-page "Export CSV" link (a click-triggered download the driver handles).
-  def test_csv_export_is_gated_by_view_not_export_permission
-    # :export_audit_reports alone unlocks nothing on the report (and thus no CSV).
-    log_in_with_permissions([:export_audit_reports])
+  # the denial is proven on the HTML report (a member without the permission is
+  # refused the whole report, hence its CSV), and the positive control downloads
+  # the CSV via the on-page "Export CSV" link (a click-triggered download).
+  def test_csv_export_is_gated_by_view_audit_reports
+    # A member without :view_audit_reports gets neither the report nor its CSV.
+    log_in_with_permissions([])
     visit weekly_report_url
     assert_text NOT_AUTHORIZED_TEXT
     assert_no_link 'Export CSV'
@@ -131,21 +129,19 @@ class AuthorizationTest < AuditUtilsSystemTestCase
   end
 
   # ===========================================================================
-  # 4. Create Packet button
+  # 4. Create Packet button -- gated by issue/attachment visibility
   # ===========================================================================
   #
-  # FINDING: the "Create Packet" button is NOT gated by :create_packet. It is
+  # Packet creation is deliberately not a separate permission. The button is
   # injected by AttachmentsHelperPatch, which shows it whenever the issue has
   # attachments the user may view (`attachments_visible?` -> :view_issues). The
-  # PacketCreationController likewise authorizes via `@issue.visible?` /
-  # `attachments_visible?`, not the :create_packet permission, and the context
-  # menu hook checks :view_issues. So :create_packet -> `packet_creation:
-  # [:create, :create_multi_packet]` is effectively dead for UI gating.
+  # PacketCreationController authorizes via `@issue.visible?` /
+  # `attachments_visible?`, and the context-menu hook checks :view_issues.
   #
-  # This test documents the ACTUAL gate: a member with only :view_issues (no
-  # :create_packet) sees the button on an issue WITH attachments, and the button
-  # is absent on an issue WITHOUT attachments even though nothing else changed.
-  def test_create_packet_button_tracks_view_issues_and_attachments_not_create_packet
+  # This test documents that gate: a member with only :view_issues sees the
+  # button on an issue WITH attachments, and the button is absent on an issue
+  # WITHOUT attachments even though nothing else changed.
+  def test_create_packet_button_tracks_view_issues_and_attachments
     set_tmp_attachments_directory
     issue_with_attachment = seed_issue('Packet gating - with attachment')
     Attachment.create!(container: issue_with_attachment,
@@ -204,8 +200,7 @@ class AuthorizationTest < AuditUtilsSystemTestCase
     # setup re-enables it; tests are otherwise hermetic on unique logins.
     EnabledModule.where(project_id: @project.id, name: 'audit_utils').delete_all
 
-    log_in_with_permissions(%i[view_audit_reports export_audit_reports
-                               use_user_autofill create_packet
+    log_in_with_permissions(%i[view_audit_reports use_user_autofill
                                manage_tracked_users add_issues view_issues])
 
     # Report + tracked-user actions are forbidden (module-scoped permissions are

@@ -95,11 +95,13 @@ tracked-user features described below.
 Under **Administration → Roles and Permissions**, grant roles the desired
 permissions in the **Audit Utils** group:
 
-- **View audit reports** - Access to daily/weekly/monthly reports
-- **Export audit reports** - Export reports to CSV
+- **View audit reports** - Access to daily/weekly/monthly reports (also gates their CSV export)
 - **Use user autofill** - User search and autofill functionality
-- **Create ticket packets** - Generate ticket packets (PDF + attachments)
 - **Manage Vendors/Volunteers** - Create/edit/delete vendor, volunteer, and contractor records
+
+Ticket packet creation (the **Create Packet** button and bulk context-menu
+action) is not a separate permission — it follows issue and attachment
+visibility (**View issues**), matching Redmine's own gating.
 
 Assign the role(s) to users under **Projects → \*your project\* → Settings → Members**.
 
@@ -166,8 +168,8 @@ or in bulk from the issue-list context menu.
 
 Manage non-employee tracked users (vendors, volunteers, contractors) at
 **Administration → Manage Vendors/Volunteers** (admin-only): create, edit, and
-delete records with auto-generated IDs (V1, V2, …). Employee data is read-only
-from the ESS API.
+delete records with auto-generated numeric IDs (starting at 500001, i.e. a
+500,000 offset). Employee data is read-only from the ESS API.
 
 ### User Autofill
 

@@ -153,7 +153,7 @@ class PacketCreationControllerTest < Redmine::ControllerTest
     @project.save!
     
     role = Role.find(1)
-    role.add_permission! :create_packet
+    role.add_permission! :view_issues
     
     # Create an attachment with a missing file
     attachment = Attachment.new(
@@ -190,7 +190,7 @@ class PacketCreationControllerTest < Redmine::ControllerTest
     @project.save!
     
     role = Role.find(1)
-    role.add_permission! :create_packet
+    role.add_permission! :view_issues
     
     # Capture log output
     log_output = StringIO.new

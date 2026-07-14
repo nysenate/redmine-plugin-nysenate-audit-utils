@@ -9,7 +9,6 @@ Rails.application.routes.draw do
         get :monthly
         get :monthly_zip
         get :account_holder_access
-        get :export
       end
     end
   end

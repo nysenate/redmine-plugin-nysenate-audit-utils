@@ -33,15 +33,16 @@ Redmine::Plugin.register :nysenate_audit_utils do
 
   # Consolidated project module for all audit utils functionality
   project_module :audit_utils do
-    # Reporting permissions
+    # Reporting permissions (CSV export is served by each report action via
+    # format.csv, so it is gated by :view_audit_reports along with the report).
     permission :view_audit_reports, { audit_reports: [:index, :daily, :weekly, :periodic, :monthly, :monthly_zip, :account_holder_access] }
-    permission :export_audit_reports, { audit_reports: [:export] }
 
     # User autofill permissions
     permission :use_user_autofill, { user_search: [:search, :field_mappings] }
 
-    # Packet creation permissions
-    permission :create_packet, { packet_creation: [:create, :create_multi_packet] }
+    # NOTE: packet creation is intentionally NOT a separate permission. The
+    # Create Packet button and controller follow issue/attachment visibility
+    # (:view_issues via attachments_visible?), matching Redmine's own gating.
 
     # Tracked user management permissions
     permission :manage_tracked_users, { tracked_users: [:index, :new, :create, :edit, :update, :destroy] }
