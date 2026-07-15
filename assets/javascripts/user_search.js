@@ -60,10 +60,26 @@ function initializeUserSearch() {
       userSearchState.selectedType = this.value;
       console.log('User type changed to:', userSearchState.selectedType);
       updatePlaceholder();
-      hideResults();
       hideError();
-      // Clear search input and results when type changes
-      searchInput.value = '';
+
+      // Persist the entered search term across type changes. Cancel any
+      // in-flight request/timeout for the previous type and re-run the
+      // search against the newly selected type when the term is long enough.
+      if (userSearchState.searchTimeout) {
+        clearTimeout(userSearchState.searchTimeout);
+        userSearchState.searchTimeout = null;
+      }
+      if (userSearchState.currentRequest) {
+        userSearchState.currentRequest.abort();
+        userSearchState.currentRequest = null;
+      }
+
+      const query = searchInput.value.trim();
+      if (query.length >= 2) {
+        performSearch(query);
+      } else {
+        hideResults();
+      }
     };
     radio.addEventListener('change', typeChangeHandler);
     userSearchState.listeners.push({ element: radio, event: 'change', handler: typeChangeHandler });
