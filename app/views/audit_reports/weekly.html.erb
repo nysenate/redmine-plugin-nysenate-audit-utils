@@ -14,13 +14,12 @@
 <%= form_tag(weekly_project_audit_reports_path(@project), method: :get, class: "report-filters") do %>
   <label>
     From:
-    <%= date_field_tag :start_date, @from_date.to_date.iso8601 %>
+    <%= date_field_tag :start_date, @from_date.to_date.iso8601, onchange: "this.form.requestSubmit();" %>
   </label>
   <label>
     To:
-    <%= date_field_tag :end_date, @to_date.to_date.iso8601 %>
+    <%= date_field_tag :end_date, @to_date.to_date.iso8601, onchange: "this.form.requestSubmit();" %>
   </label>
-  <%= submit_tag "Apply", name: nil %>
   <% weekly_at_default = params[:start_date].blank? && params[:end_date].blank? %>
   <% if weekly_at_default %>
     <span class="button-small disabled-link">Reset to Default</span>
