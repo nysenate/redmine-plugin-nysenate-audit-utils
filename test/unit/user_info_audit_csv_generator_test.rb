@@ -169,13 +169,13 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
         {
           issue_id: 10, subject: 'Add Oracle', user_type: 'Employee', user_id: '12345',
           account_holder_name: 'Jane Doe',
-          field: 'User Email', old_value: 'old@example.com', new_value: 'new@example.com',
+          field: 'Account Holder Email', old_value: 'old@example.com', new_value: 'new@example.com',
           applied: true
         },
         {
           issue_id: 11, subject: 'Add AIX', user_type: 'Employee', user_id: '12345',
           account_holder_name: 'Jane Doe',
-          field: 'User Phone', old_value: '555-0000', new_value: '555-1111',
+          field: 'Account Holder Phone', old_value: '555-0000', new_value: '555-1111',
           applied: false
         }
       ]
@@ -197,7 +197,7 @@ class UserInfoAuditCsvGeneratorTest < ActiveSupport::TestCase
         {
           issue_id: 10, subject: 'Add Oracle', user_type: 'Employee', user_id: '12345',
           account_holder_name: 'Jane Doe',
-          field: 'User Email', old_value: 'old@example.com', new_value: 'new@example.com',
+          field: 'Account Holder Email', old_value: 'old@example.com', new_value: 'new@example.com',
           applied: true
         }
       ]

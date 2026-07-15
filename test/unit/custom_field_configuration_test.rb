@@ -81,19 +81,19 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     })
 
     # Mock custom fields exist for each ID
-    CustomField.stubs(:find_by).with(id: 1, type: 'IssueCustomField').returns(CustomField.new(id: 1, name: 'User Type'))
-    CustomField.stubs(:find_by).with(id: 2, type: 'IssueCustomField').returns(CustomField.new(id: 2, name: 'User ID'))
-    CustomField.stubs(:find_by).with(id: 3, type: 'IssueCustomField').returns(CustomField.new(id: 3, name: 'User Name'))
-    CustomField.stubs(:find_by).with(id: 4, type: 'IssueCustomField').returns(CustomField.new(id: 4, name: 'User Email'))
-    CustomField.stubs(:find_by).with(id: 5, type: 'IssueCustomField').returns(CustomField.new(id: 5, name: 'User Phone'))
-    CustomField.stubs(:find_by).with(id: 6, type: 'IssueCustomField').returns(CustomField.new(id: 6, name: 'User Status'))
-    CustomField.stubs(:find_by).with(id: 7, type: 'IssueCustomField').returns(CustomField.new(id: 7, name: 'User UID'))
-    CustomField.stubs(:find_by).with(id: 8, type: 'IssueCustomField').returns(CustomField.new(id: 8, name: 'User Office'))
+    CustomField.stubs(:find_by).with(id: 1, type: 'IssueCustomField').returns(CustomField.new(id: 1, name: 'Account Holder Type'))
+    CustomField.stubs(:find_by).with(id: 2, type: 'IssueCustomField').returns(CustomField.new(id: 2, name: 'Account Holder ID'))
+    CustomField.stubs(:find_by).with(id: 3, type: 'IssueCustomField').returns(CustomField.new(id: 3, name: 'Account Holder Name'))
+    CustomField.stubs(:find_by).with(id: 4, type: 'IssueCustomField').returns(CustomField.new(id: 4, name: 'Account Holder Email'))
+    CustomField.stubs(:find_by).with(id: 5, type: 'IssueCustomField').returns(CustomField.new(id: 5, name: 'Account Holder Phone'))
+    CustomField.stubs(:find_by).with(id: 6, type: 'IssueCustomField').returns(CustomField.new(id: 6, name: 'Account Holder Status'))
+    CustomField.stubs(:find_by).with(id: 7, type: 'IssueCustomField').returns(CustomField.new(id: 7, name: 'Account Holder UID'))
+    CustomField.stubs(:find_by).with(id: 8, type: 'IssueCustomField').returns(CustomField.new(id: 8, name: 'Account Holder Location'))
     CustomField.stubs(:find_by).with(id: 9, type: 'IssueCustomField').returns(CustomField.new(id: 9, name: 'Account Action'))
     CustomField.stubs(:find_by).with(id: 10, type: 'IssueCustomField').returns(CustomField.new(id: 10, name: 'Target System'))
     CustomField.stubs(:find_by).with(id: 11, type: 'IssueCustomField').returns(CustomField.new(id: 11, name: 'BAC #'))
     CustomField.stubs(:find_by).with(id: 12, type: 'IssueCustomField').returns(CustomField.new(id: 12, name: 'Requested By'))
-    CustomField.stubs(:find_by).with(id: 13, type: 'IssueCustomField').returns(CustomField.new(id: 13, name: 'Authorizing Users'))
+    CustomField.stubs(:find_by).with(id: 13, type: 'IssueCustomField').returns(CustomField.new(id: 13, name: 'Authorizing User(s)'))
 
     errors = NysenateAuditUtils::CustomFieldConfiguration.validate
     assert_empty errors
@@ -107,7 +107,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     })
 
     errors = NysenateAuditUtils::CustomFieldConfiguration.validate
-    assert_includes errors, "Required field 'User ID' (user_id_field_id) is not configured"
+    assert_includes errors, "Required field 'Account Holder ID' (user_id_field_id) is not configured"
   end
 
   def test_valid_with_complete_configuration
@@ -129,19 +129,19 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     })
 
     # Mock custom fields exist for each ID
-    CustomField.stubs(:find_by).with(id: 1, type: 'IssueCustomField').returns(CustomField.new(id: 1, name: 'User Type'))
-    CustomField.stubs(:find_by).with(id: 2, type: 'IssueCustomField').returns(CustomField.new(id: 2, name: 'User ID'))
-    CustomField.stubs(:find_by).with(id: 3, type: 'IssueCustomField').returns(CustomField.new(id: 3, name: 'User Name'))
-    CustomField.stubs(:find_by).with(id: 4, type: 'IssueCustomField').returns(CustomField.new(id: 4, name: 'User Email'))
-    CustomField.stubs(:find_by).with(id: 5, type: 'IssueCustomField').returns(CustomField.new(id: 5, name: 'User Phone'))
-    CustomField.stubs(:find_by).with(id: 6, type: 'IssueCustomField').returns(CustomField.new(id: 6, name: 'User Status'))
-    CustomField.stubs(:find_by).with(id: 7, type: 'IssueCustomField').returns(CustomField.new(id: 7, name: 'User UID'))
-    CustomField.stubs(:find_by).with(id: 8, type: 'IssueCustomField').returns(CustomField.new(id: 8, name: 'User Office'))
+    CustomField.stubs(:find_by).with(id: 1, type: 'IssueCustomField').returns(CustomField.new(id: 1, name: 'Account Holder Type'))
+    CustomField.stubs(:find_by).with(id: 2, type: 'IssueCustomField').returns(CustomField.new(id: 2, name: 'Account Holder ID'))
+    CustomField.stubs(:find_by).with(id: 3, type: 'IssueCustomField').returns(CustomField.new(id: 3, name: 'Account Holder Name'))
+    CustomField.stubs(:find_by).with(id: 4, type: 'IssueCustomField').returns(CustomField.new(id: 4, name: 'Account Holder Email'))
+    CustomField.stubs(:find_by).with(id: 5, type: 'IssueCustomField').returns(CustomField.new(id: 5, name: 'Account Holder Phone'))
+    CustomField.stubs(:find_by).with(id: 6, type: 'IssueCustomField').returns(CustomField.new(id: 6, name: 'Account Holder Status'))
+    CustomField.stubs(:find_by).with(id: 7, type: 'IssueCustomField').returns(CustomField.new(id: 7, name: 'Account Holder UID'))
+    CustomField.stubs(:find_by).with(id: 8, type: 'IssueCustomField').returns(CustomField.new(id: 8, name: 'Account Holder Location'))
     CustomField.stubs(:find_by).with(id: 9, type: 'IssueCustomField').returns(CustomField.new(id: 9, name: 'Account Action'))
     CustomField.stubs(:find_by).with(id: 10, type: 'IssueCustomField').returns(CustomField.new(id: 10, name: 'Target System'))
     CustomField.stubs(:find_by).with(id: 11, type: 'IssueCustomField').returns(CustomField.new(id: 11, name: 'BAC #'))
     CustomField.stubs(:find_by).with(id: 12, type: 'IssueCustomField').returns(CustomField.new(id: 12, name: 'Requested By'))
-    CustomField.stubs(:find_by).with(id: 13, type: 'IssueCustomField').returns(CustomField.new(id: 13, name: 'Authorizing Users'))
+    CustomField.stubs(:find_by).with(id: 13, type: 'IssueCustomField').returns(CustomField.new(id: 13, name: 'Authorizing User(s)'))
 
     assert NysenateAuditUtils::CustomFieldConfiguration.valid?
   end
@@ -156,10 +156,10 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
 
   def test_autoconfigure_field_success
     # Mock custom field exists with expected name
-    field = CustomField.new(id: 42, name: 'User ID')
+    field = CustomField.new(id: 42, name: 'Account Holder ID')
     CustomField.stubs(:where).with(
       type: 'IssueCustomField',
-      name: 'User ID'
+      name: 'Account Holder ID'
     ).returns([field])
 
     # Mock Setting update
@@ -181,24 +181,24 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
 
   def test_autoconfigure_all
     # Mock some fields exist
-    user_type_field = CustomField.new(id: 1, name: 'User Type')
-    user_id_field = CustomField.new(id: 2, name: 'User ID')
+    user_type_field = CustomField.new(id: 1, name: 'Account Holder Type')
+    user_id_field = CustomField.new(id: 2, name: 'Account Holder ID')
     account_action_field = CustomField.new(id: 3, name: 'Account Action')
 
     # Stub where to return arrays that respond correctly to .first
-    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Type').returns([user_type_field])
-    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User ID').returns([user_id_field])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Account Holder Type').returns([user_type_field])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Account Holder ID').returns([user_id_field])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'BAC #').returns([])
-    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Name').returns([])
-    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Email').returns([])
-    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Phone').returns([])
-    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Status').returns([])
-    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User UID').returns([])
-    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'User Office').returns([])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Account Holder Name').returns([])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Account Holder Email').returns([])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Account Holder Phone').returns([])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Account Holder Status').returns([])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Account Holder UID').returns([])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Account Holder Location').returns([])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Account Action').returns([account_action_field])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Target System').returns([])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Requested By').returns([])
-    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Authorizing Users').returns([])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Authorizing User(s)').returns([])
 
     Setting.stubs(:plugin_nysenate_audit_utils=)
 
@@ -212,15 +212,15 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
 
   def test_field_status_configured
     CustomField.stubs(:find_by).with(id: 2, type: 'IssueCustomField').returns(
-      CustomField.new(id: 2, name: 'User ID')
+      CustomField.new(id: 2, name: 'Account Holder ID')
     )
 
     status = NysenateAuditUtils::CustomFieldConfiguration.field_status('user_id_field_id')
 
     assert status[:configured]
     assert_equal 2, status[:field_id]
-    assert_equal 'User ID', status[:field_name]
-    assert_equal 'User ID', status[:expected_name]
+    assert_equal 'Account Holder ID', status[:field_name]
+    assert_equal 'Account Holder ID', status[:expected_name]
     assert status[:required]
   end
 

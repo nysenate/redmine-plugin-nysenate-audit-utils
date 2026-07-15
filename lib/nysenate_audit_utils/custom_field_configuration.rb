@@ -8,14 +8,14 @@ module NysenateAuditUtils
     # Structure: { setting_key => { name:, description:, required: } }
     FIELD_DEFINITIONS = {
       'user_type_field_id' => {
-        name: 'User Type',
-        description: 'User type field (Employee, Vendor, etc.) for multi-type support',
+        name: 'Account Holder Type',
+        description: 'Account Holder type field (Employee, Vendor, etc.) for multi-type support',
         required: true,
         category: :autofill
       },
       'user_id_field_id' => {
-        name: 'User ID',
-        description: 'User ID field for reports and tracking',
+        name: 'Account Holder ID',
+        description: 'Account Holder ID field for reports and tracking',
         required: true,
         category: :reporting
       },
@@ -27,38 +27,38 @@ module NysenateAuditUtils
         category: :reporting
       },
       'user_name_field_id' => {
-        name: 'User Name',
-        description: 'User name field for autofill',
+        name: 'Account Holder Name',
+        description: 'Account Holder name field for autofill',
         required: true,
         category: :autofill
       },
       'user_email_field_id' => {
-        name: 'User Email',
-        description: 'User email field for autofill',
+        name: 'Account Holder Email',
+        description: 'Account Holder email field for autofill',
         required: true,
         category: :autofill
       },
       'user_phone_field_id' => {
-        name: 'User Phone',
-        description: 'User phone field for autofill',
+        name: 'Account Holder Phone',
+        description: 'Account Holder phone field for autofill',
         required: true,
         category: :autofill
       },
       'user_status_field_id' => {
-        name: 'User Status',
-        description: 'User status field for autofill',
+        name: 'Account Holder Status',
+        description: 'Account Holder status field for autofill',
         required: true,
         category: :autofill
       },
       'user_uid_field_id' => {
-        name: 'User UID',
-        description: 'User UID field for autofill',
+        name: 'Account Holder UID',
+        description: 'Account Holder UID field for autofill',
         required: true,
         category: :autofill
       },
       'user_location_field_id' => {
-        name: 'User Office',
-        description: 'User office field for autofill',
+        name: 'Account Holder Location',
+        description: 'Account Holder office field for autofill',
         required: true,
         category: :autofill
       },
@@ -81,8 +81,8 @@ module NysenateAuditUtils
         category: :request_codes
       },
       'authorizing_users_field_id' => {
-        name: 'Authorizing Users',
-        description: 'Authorizing Users (multiple users) field, auto-populated on removal tickets',
+        name: 'Authorizing User(s)',
+        description: 'Authorizing User(s) (multiple users) field, auto-populated on removal tickets',
         required: true,
         category: :request_codes
       }

@@ -80,14 +80,14 @@ module AuditTestHelpers
   # @return [Hash] Hash of field name symbols to CustomField objects
   def setup_standard_bachelp_fields(tracker = nil)
     fields = {
-      user_type: create_or_find_field('User Type', 'list', ['Employee', 'Vendor'], tracker),
-      user_id: create_or_find_field('User ID', 'string', [], tracker),
-      user_name: create_or_find_field('User Name', 'string', [], tracker),
-      user_email: create_or_find_field('User Email', 'string', [], tracker),
-      user_phone: create_or_find_field('User Phone', 'string', [], tracker),
-      user_location: create_or_find_field('User Office', 'string', [], tracker),
-      user_status: create_or_find_field('User Status', 'string', [], tracker),
-      user_uid: create_or_find_field('User UID', 'string', [], tracker),
+      user_type: create_or_find_field('Account Holder Type', 'list', ['Employee', 'Vendor'], tracker),
+      user_id: create_or_find_field('Account Holder ID', 'string', [], tracker),
+      user_name: create_or_find_field('Account Holder Name', 'string', [], tracker),
+      user_email: create_or_find_field('Account Holder Email', 'string', [], tracker),
+      user_phone: create_or_find_field('Account Holder Phone', 'string', [], tracker),
+      user_location: create_or_find_field('Account Holder Location', 'string', [], tracker),
+      user_status: create_or_find_field('Account Holder Status', 'string', [], tracker),
+      user_uid: create_or_find_field('Account Holder UID', 'string', [], tracker),
       account_action: create_or_find_field('Account Action', 'list',
         ['Add', 'Delete', 'Update Account & Privileges', 'Update Privileges Only', 'Update Account Only'], tracker),
       target_system: create_or_find_field('Target System', 'list',

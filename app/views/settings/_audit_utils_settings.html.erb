@@ -237,18 +237,18 @@
       <div class="box tabular settings">
         <p style="margin: 1em 0 0.5em 0; padding: 0;">
           Select the Redmine user auto-populated as both the <strong>Requested By</strong>
-          and <strong>Authorizing Users</strong> fields when a removal ticket is created from
+          and <strong>Authorizing User(s)</strong> fields when a removal ticket is created from
           the Daily Report. Leave unset to leave these fields blank. Requires the "Requested By"
-          and "Authorizing Users" custom fields to be mapped above.
+          and "Authorizing User(s)" custom fields to be mapped above.
         </p>
 
         <p>
-          <%= content_tag 'label', 'Requested By / Authorizing User' %>
+          <%= content_tag 'label', 'Requested By / Authorizing User(s)' %>
           <%= select_tag 'settings[removal_ticket_requester_user_id]',
                 options_for_select([['-- Select User --', '']] +
                   User.active.sorted.map { |u| [u.name, u.id] },
                   @settings['removal_ticket_requester_user_id']) %>
-          <em class="info">The single user applied to Requested By and Authorizing Users on removal tickets</em>
+          <em class="info">The single user applied to Requested By and Authorizing User(s) on removal tickets</em>
         </p>
       </div>
     </div>

@@ -166,7 +166,7 @@ class DailyReportActionsTest < AuditUtilsSystemTestCase
   # user) custom fields and register their IDs in plugin settings.
   def configure_removal_defaults_fields
     requested_by = find_or_create_user_field('Requested By', multiple: false)
-    authorizing  = find_or_create_user_field('Authorizing Users', multiple: true)
+    authorizing  = find_or_create_user_field('Authorizing User(s)', multiple: true)
 
     Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(
       'requested_by_field_id' => requested_by.id.to_s,

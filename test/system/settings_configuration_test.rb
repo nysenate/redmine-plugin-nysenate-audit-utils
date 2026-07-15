@@ -43,7 +43,7 @@ class SettingsConfigurationTest < AuditUtilsSystemTestCase
     open_all_config_sections
 
     # Pre-state: representative rows are unconfigured.
-    assert_field_row_status 'User Type', configured: false
+    assert_field_row_status 'Account Holder Type', configured: false
     assert_field_row_status 'Account Action', configured: false
     assert_field_row_status 'Target System', configured: false
 
@@ -55,7 +55,7 @@ class SettingsConfigurationTest < AuditUtilsSystemTestCase
 
     # Status indicators now show a green check with the detected field name.
     open_all_config_sections
-    assert_field_row_status 'User Type', configured: true
+    assert_field_row_status 'Account Holder Type', configured: true
     assert_field_row_status 'Account Action', configured: true
     assert_field_row_status 'Target System', configured: true
   end

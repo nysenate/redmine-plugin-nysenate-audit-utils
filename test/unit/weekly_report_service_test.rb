@@ -222,7 +222,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
 
   test "should include user_name in report data when configured" do
     user_name_field = IssueCustomField.create!(
-      name: 'User Name',
+      name: 'Account Holder Name',
       field_format: 'string',
       is_for_all: true,
       trackers: Tracker.all
@@ -258,7 +258,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
 
   test "should include office in report data when configured" do
     location_field = IssueCustomField.create!(
-      name: 'User Office',
+      name: 'Account Holder Location',
       field_format: 'string',
       is_for_all: true,
       trackers: Tracker.all
@@ -294,7 +294,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
 
   test "should include user_type in report data when configured" do
     user_type_field = IssueCustomField.create!(
-      name: 'User Type',
+      name: 'Account Holder Type',
       field_format: 'string',
       is_for_all: true,
       trackers: Tracker.all
