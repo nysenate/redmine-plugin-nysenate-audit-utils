@@ -1,13 +1,13 @@
 <% html_title("SFMS Quarterly / SFS Annual Report") -%>
 
 <div class="contextual">
-  <%= link_to "Export CSV", periodic_project_audit_reports_path(@project,
+  <%= link_to sprite_icon('download', "Export CSV"), periodic_project_audit_reports_path(@project,
         format: :csv,
         system: @system,
         start_date: @from_date.to_date.iso8601,
         end_date: @to_date.to_date.iso8601),
       class: "icon icon-download" %>
-  <%= link_to "Back to Reports", project_audit_reports_path(@project), class: "icon icon-cancel" %>
+  <%= link_to sprite_icon('cancel', "Back to Reports"), project_audit_reports_path(@project), class: "icon icon-cancel" %>
 </div>
 
 <h2>SFMS Quarterly / SFS Annual Report</h2>
