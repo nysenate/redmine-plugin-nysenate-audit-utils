@@ -176,6 +176,12 @@ function initializeUserSearch() {
 
     userSearchState.currentRequest.onreadystatechange = function() {
       if (this.readyState === XMLHttpRequest.DONE) {
+        // Ignore aborted requests (status 0) — normal cancellation when the
+        // user keeps typing; onerror handles genuine network failures.
+        if (this.status === 0) {
+          return;
+        }
+
         hideLoading();
 
         if (this.status === 200) {
