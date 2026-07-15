@@ -58,6 +58,19 @@
   </fieldset>
 <% end %>
 
+<script>
+  // The filter form submits as a full-page GET reload. On reload the browser
+  // restores focus to the search box but drops the caret to the start of the
+  // text; put it back at the end of the search term.
+  (function () {
+    var searchInput = document.getElementById('search');
+    if (searchInput && searchInput.value.length) {
+      searchInput.focus();
+      searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+    }
+  })();
+</script>
+
 <% if @report_count.nil? || @report_count.zero? %>
   <p class="nodata">
     No account access found.
