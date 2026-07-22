@@ -140,7 +140,7 @@ class AccountHolderAccessReportServiceTest < ActiveSupport::TestCase
     service = NysenateAuditUtils::Reporting::AccountHolderAccessReportService.new(project: @project)
     row = service.generate.first
 
-    %i[user_name user_id user_uid user_type account_type request_code status issue_id].each do |key|
+    [:user_name, :user_id, :user_uid, :user_type, :account_type, :request_code, :status, :issue_id].each do |key|
       assert row.key?(key), "expected row to include #{key}"
     end
   end

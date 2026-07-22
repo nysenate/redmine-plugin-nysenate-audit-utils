@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../../test_helper', __FILE__)
+require File.expand_path('../test_helper', __dir__)
 
 # Proves the Phase 2 seeding contract: a container-less attachment created by the
 # AccountRequestsController is attached to the issue by core's save_attachments

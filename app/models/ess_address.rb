@@ -47,6 +47,7 @@ class EssAddress
 
   def full_zip
     return nil if zip5.blank?
+
     zip4.present? ? "#{zip5}-#{zip4}" : zip5
   end
 

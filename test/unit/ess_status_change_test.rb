@@ -1,4 +1,6 @@
-require File.expand_path('../../test_helper', __FILE__)
+# frozen_string_literal: true
+
+require File.expand_path('../test_helper', __dir__)
 
 class EssStatusChangeTest < ActiveSupport::TestCase
   def test_should_initialize_from_api_response
@@ -30,16 +32,16 @@ class EssStatusChangeTest < ActiveSupport::TestCase
       transaction_code: 'INVALID'
     )
 
-    refute status_change.valid?
+    assert_not status_change.valid?
     assert status_change.errors[:transaction_code].present?
 
-    EssStatusChange::TRANSACTION_CODES.keys.each do |code|
+    EssStatusChange::TRANSACTION_CODES.each_key do |code|
       status_change = EssStatusChange.new(
         transaction_code: code,
         employee_data: valid_employee_data
       )
       status_change.instance_variable_set(:@employee, EssEmployee.new(valid_employee_data))
-      
+
       assert status_change.valid?, "#{code} should be valid"
     end
   end
@@ -49,7 +51,7 @@ class EssStatusChangeTest < ActiveSupport::TestCase
       transaction_code: 'APP'
     )
 
-    refute status_change.valid?
+    assert_not status_change.valid?
     assert status_change.errors[:employee].present?
   end
 
@@ -101,7 +103,7 @@ class EssStatusChangeTest < ActiveSupport::TestCase
     test_cases.each do |input, expected|
       api_data = valid_api_data.merge('postDateTime' => input)
       status_change = EssStatusChange.new(api_data)
-      
+
       if expected
         assert_equal expected.to_s, status_change.post_date_time.to_s
       else
@@ -113,7 +115,7 @@ class EssStatusChangeTest < ActiveSupport::TestCase
   def test_should_handle_invalid_datetime_gracefully
     api_data = valid_api_data.merge('postDateTime' => 'invalid-date')
     status_change = EssStatusChange.new(api_data)
-    
+
     assert_nil status_change.post_date_time
   end
 
@@ -134,8 +136,8 @@ class EssStatusChangeTest < ActiveSupport::TestCase
 
   def valid_api_data
     valid_employee_data.merge({
-      'transactionCode' => 'APP',
+                                'transactionCode' => 'APP',
       'postDateTime' => '2023-08-15T10:30:00Z'
-    })
+                              })
   end
 end

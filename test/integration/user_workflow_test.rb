@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative '../test_helper'
 
 class UserWorkflowTest < Redmine::IntegrationTest
@@ -54,7 +56,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
     )
 
     # Create second vendor for search tests
-    @test_vendor_2 = TrackedUser.create!(
+    @test_vendor2 = TrackedUser.create!(
       user_type: 'Vendor',
       user_id: 500_002,
       name: 'Acme Industries',
@@ -83,7 +85,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
     get '/user_search/search', params: { q: 'Workflow', type: 'Vendor', project_id: @project.id }
     assert_response :success
 
-    json = JSON.parse(response.body)
+    json = response.parsed_body
     assert json['users'].present?, "Expected users array, got: #{json.inspect}"
     assert_equal 1, json['users'].size, "Expected 1 user, got #{json['users'].size}: #{json['users'].inspect}"
     assert_equal 'Vendor', json['type']
@@ -133,7 +135,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
     get '/user_search/search', params: { q: 'Test Vendor', type: 'Vendor', project_id: @project.id }
     assert_response :success
 
-    json = JSON.parse(response.body)
+    json = response.parsed_body
     assert json['users'].present?, "Expected users array, got: #{json.inspect}"
     assert_equal 'Vendor', json['type']
     assert json['users'].any? { |s| s['name'] == 'Test Vendor Corp' }, "Expected to find 'Test Vendor Corp', got: #{json['users'].map { |s| s['name'] }.inspect}"
@@ -234,7 +236,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
     get '/user_search/search', params: { q: 'Test Vendor', type: 'Vendor', project_id: @project.id }
     assert_response :success
 
-    json = JSON.parse(response.body)
+    json = response.parsed_body
     result = json['users'].first
 
     # Verify all fields are present

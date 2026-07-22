@@ -185,11 +185,15 @@ module NysenateAuditUtils
         dangling_actions = action_suffixes.keys.reject { |k| current_account_actions.include?(k) }
 
         if dangling_systems.any?
-          warnings << "Request Codes: #{dangling_systems.size} Target System mapping#{dangling_systems.size > 1 ? 's exist' : ' exists'} for removed custom field value#{dangling_systems.size > 1 ? 's' : ''}"
+          count = dangling_systems.size
+          warnings << "Request Codes: #{count} Target System mapping#{count > 1 ? 's exist' : ' exists'} " \
+                      "for removed custom field value#{count > 1 ? 's' : ''}"
         end
 
         if dangling_actions.any?
-          warnings << "Request Codes: #{dangling_actions.size} Account Action mapping#{dangling_actions.size > 1 ? 's exist' : ' exists'} for removed custom field value#{dangling_actions.size > 1 ? 's' : ''}"
+          count = dangling_actions.size
+          warnings << "Request Codes: #{count} Account Action mapping#{count > 1 ? 's exist' : ' exists'} " \
+                      "for removed custom field value#{count > 1 ? 's' : ''}"
         end
 
         # Determine overall status

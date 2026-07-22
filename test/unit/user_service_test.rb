@@ -1,4 +1,6 @@
-require File.expand_path('../../test_helper', __FILE__)
+# frozen_string_literal: true
+
+require File.expand_path('../test_helper', __dir__)
 
 class UserServiceTest < ActiveSupport::TestCase
   def setup
@@ -29,8 +31,8 @@ class UserServiceTest < ActiveSupport::TestCase
       limit: 20,
       offset: 0
     ).returns([
-      { user_type: 'Employee', user_id: '12345', name: 'John Doe' }
-    ])
+                { user_type: 'Employee', user_id: '12345', name: 'John Doe' }
+              ])
 
     results = @service.search('john', type: 'Employee')
 
@@ -58,8 +60,8 @@ class UserServiceTest < ActiveSupport::TestCase
       limit: 20,
       offset: 0
     ).returns([
-      { user_type: 'Vendor', user_id: 500_001, name: 'Acme Corp' }
-    ])
+                { user_type: 'Vendor', user_id: 500_001, name: 'Acme Corp' }
+              ])
 
     results = @service.search('acme', type: 'Vendor')
 
@@ -75,8 +77,8 @@ class UserServiceTest < ActiveSupport::TestCase
       limit: 20,
       offset: 0
     ).returns([
-      { user_type: 'Volunteer', user_id: 500_101, name: 'Jane Volunteer' }
-    ])
+                { user_type: 'Volunteer', user_id: 500_101, name: 'Jane Volunteer' }
+              ])
 
     results = @service.search('jane', type: 'Volunteer')
 

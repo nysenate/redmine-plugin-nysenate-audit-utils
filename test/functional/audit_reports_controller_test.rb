@@ -1,7 +1,11 @@
-require File.expand_path('../../test_helper', __FILE__)
+# frozen_string_literal: true
+
+require File.expand_path('../test_helper', __dir__)
 
 class AuditReportsControllerTest < ActionController::TestCase
   fixtures :users, :roles, :issues, :projects, :trackers, :issue_statuses, :enumerations, :members, :member_roles, :enabled_modules
+
+  XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
   def setup
     @request.session[:user_id] = 1 # Admin user
@@ -180,8 +184,8 @@ class AuditReportsControllerTest < ActionController::TestCase
         office: 'Senate Office A',
         request_code: 'RC1',
         updated_on: Time.current,
-        created_on: Time.current - 5.days,
-        closed_on: Time.current - 1.day
+        created_on: 5.days.ago,
+        closed_on: 1.day.ago
       },
       {
         issue_id: 2,
@@ -192,9 +196,9 @@ class AuditReportsControllerTest < ActionController::TestCase
         user_name: 'Jane Smith',
         office: 'Personnel',
         request_code: 'RC2',
-        updated_on: Time.current - 1.day,
-        created_on: Time.current - 6.days,
-        closed_on: Time.current - 2.days
+        updated_on: 1.day.ago,
+        created_on: 6.days.ago,
+        closed_on: 2.days.ago
       }
     ]
   end
@@ -639,7 +643,7 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_match /monthly_reports_all_systems_current\.zip/, response.headers['Content-Disposition']
 
     zip_content = response.body
-    assert zip_content.length > 0
+    assert !zip_content.empty?
 
     Zip::InputStream.open(StringIO.new(zip_content)) do |zip|
       entries = []
@@ -1008,8 +1012,6 @@ class AuditReportsControllerTest < ActionController::TestCase
 
   # --- Excel (.xlsx) export tests ------------------------------------------
 
-  XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-
   # Assert the response is an attachment .xlsx workbook (valid zip container).
   def assert_xlsx_response(filename_pattern)
     assert_response :success
@@ -1022,10 +1024,10 @@ class AuditReportsControllerTest < ActionController::TestCase
   test "should export daily report as Excel" do
     service_mock = mock('service')
     service_mock.expects(:generate).returns([
-      { user_name: 'Doe, John', status_changes: [{ code: 'APP', notes: nil }],
-        account_statuses: [], open_requests: [], office: 'IT', office_location: nil,
-        user_id: '12345', user_uid: 'jdoe', post_date: '2025-01-15' }
-    ])
+                                              { user_name: 'Doe, John', status_changes: [{ code: 'APP', notes: nil }],
+                                                account_statuses: [], open_requests: [], office: 'IT', office_location: nil,
+                                                user_id: '12345', user_uid: 'jdoe', post_date: '2025-01-15' }
+                                            ])
     service_mock.stubs(:from_date).returns(Date.today - 1.day)
     service_mock.stubs(:to_date).returns(Date.today)
     service_mock.stubs(:success?).returns(true)
@@ -1045,9 +1047,9 @@ class AuditReportsControllerTest < ActionController::TestCase
   test "should export monthly report as Excel" do
     service_mock = mock('service')
     service_mock.expects(:generate).returns([
-      { user_id: '12345', user_name: 'John Doe', status: 'active', account_action: 'Add',
-        closed_on: Date.today - 1.day, request_code: 'RC1', issue_id: 1 }
-    ])
+                                              { user_id: '12345', user_name: 'John Doe', status: 'active', account_action: 'Add',
+                                                closed_on: Date.today - 1.day, request_code: 'RC1', issue_id: 1 }
+                                            ])
     service_mock.stubs(:success?).returns(true)
     NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
 
@@ -1058,9 +1060,9 @@ class AuditReportsControllerTest < ActionController::TestCase
   test "should export account holder access report as Excel" do
     service_mock = mock('service')
     service_mock.expects(:generate).returns([
-      { user_name: 'John Doe', user_id: '12345', user_uid: 'jdoe', user_type: 'Employee',
-        account_type: 'Oracle / SFMS', request_code: 'USRA', status: 'active', issue_id: 1 }
-    ])
+                                              { user_name: 'John Doe', user_id: '12345', user_uid: 'jdoe', user_type: 'Employee',
+                                                account_type: 'Oracle / SFMS', request_code: 'USRA', status: 'active', issue_id: 1 }
+                                            ])
     service_mock.stubs(:success?).returns(true)
     NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
 

@@ -1,4 +1,6 @@
-require File.expand_path('../../test_helper', __FILE__)
+# frozen_string_literal: true
+
+require File.expand_path('../test_helper', __dir__)
 
 class EssEmployeeServiceTest < ActiveSupport::TestCase
   def setup
@@ -16,10 +18,10 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
     }
 
     @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
-      term: 'smith',
+                                          term: 'smith',
       limit: 20,
       offset: 0
-    }).returns(api_response)
+                                        }).returns(api_response)
 
     employees = NysenateAuditUtils::Ess::EssEmployeeService.search('smith')
 
@@ -37,10 +39,10 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
 
     # Plugin uses 0-based offset=100, which translates to ESS 1-based offset=101
     @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
-      term: 'test',
+                                          term: 'test',
       limit: 50,
       offset: 101
-    }).returns(api_response)
+                                        }).returns(api_response)
 
     employees = NysenateAuditUtils::Ess::EssEmployeeService.search('test', limit: 50, offset: 100)
 
@@ -49,37 +51,37 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
 
   def test_search_validates_limit_bounds
     @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
-      term: 'test',
+                                          term: 'test',
       limit: 20,
       offset: 0
-    }).returns({'success' => true, 'result' => []})
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssEmployeeService.search('test', limit: 0)
 
     @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
-      term: 'test',
+                                          term: 'test',
       limit: 1000,
       offset: 0
-    }).returns({'success' => true, 'result' => []})
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssEmployeeService.search('test', limit: 5000)
   end
 
   def test_search_validates_offset_bounds
     @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
-      term: 'test',
+                                          term: 'test',
       limit: 20,
       offset: 0
-    }).returns({'success' => true, 'result' => []})
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssEmployeeService.search('test', offset: -10)
   end
 
   def test_search_omits_empty_term_param
     @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
-      limit: 20,
+                                          limit: 20,
       offset: 0
-    }).returns({'success' => true, 'result' => []})
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssEmployeeService.search('')
   end
@@ -153,10 +155,10 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
   def test_offset_translation_zero_offset_stays_zero
     # Special case: offset=0 maps to ESS offset=0 (positions 1-20)
     @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
-      term: 'test',
+                                          term: 'test',
       limit: 20,
       offset: 0
-    }).returns({'success' => true, 'result' => []})
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssEmployeeService.search('test', offset: 0)
   end
@@ -164,10 +166,10 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
   def test_offset_translation_first_page_to_second_page
     # Plugin offset=20 (records 20-39) → ESS offset=21 (positions 21-40)
     @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
-      term: 'test',
+                                          term: 'test',
       limit: 20,
       offset: 21
-    }).returns({'success' => true, 'result' => []})
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssEmployeeService.search('test', offset: 20)
   end
@@ -175,10 +177,10 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
   def test_offset_translation_second_page_to_third_page
     # Plugin offset=40 (records 40-59) → ESS offset=41 (positions 41-60)
     @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
-      term: 'test',
+                                          term: 'test',
       limit: 20,
       offset: 41
-    }).returns({'success' => true, 'result' => []})
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssEmployeeService.search('test', offset: 40)
   end
@@ -188,10 +190,10 @@ class EssEmployeeServiceTest < ActiveSupport::TestCase
     # Without translation: plugin offset=20 → ESS offset=20 → duplicate at position 20
     # With translation: plugin offset=20 → ESS offset=21 → no duplicate
     @api_client_mock.expects(:get).with('/api/v1/redmine/employee/search', {
-      term: 'richard',
+                                          term: 'richard',
       limit: 20,
       offset: 21
-    }).returns({'success' => true, 'result' => []})
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssEmployeeService.search('richard', limit: 20, offset: 20)
   end

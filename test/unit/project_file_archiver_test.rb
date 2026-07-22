@@ -18,13 +18,11 @@ class ProjectFileArchiverTest < NysenateAuditUtilsTestCase
 
   def archive(**overrides)
     NysenateAuditUtils::Reporting::ProjectFileArchiver.archive(
-      **{
-        project: @project,
+      project: @project,
         filename: 'report.csv',
         content: "a,b,c\n1,2,3\n",
         content_type: 'text/csv',
-        description: 'Test report'
-      }.merge(overrides)
+        description: 'Test report', **overrides
     )
   end
 

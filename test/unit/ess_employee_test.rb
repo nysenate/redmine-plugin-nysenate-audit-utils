@@ -1,4 +1,6 @@
-require File.expand_path('../../test_helper', __FILE__)
+# frozen_string_literal: true
+
+require File.expand_path('../test_helper', __dir__)
 
 class EssEmployeeTest < ActiveSupport::TestCase
   def test_should_initialize_from_api_response
@@ -121,7 +123,7 @@ class EssEmployeeTest < ActiveSupport::TestCase
   def test_should_validate_required_fields
     employee = EssEmployee.new
 
-    refute employee.valid?
+    assert_not employee.valid?
     assert employee.errors[:employee_id].present?
     assert employee.errors[:first_name].present?
     assert employee.errors[:last_name].present?
@@ -131,7 +133,7 @@ class EssEmployeeTest < ActiveSupport::TestCase
   def test_should_validate_employee_id_is_positive
     employee = EssEmployee.new(employee_id: -1, first_name: 'John', last_name: 'Smith', full_name: 'John Smith')
 
-    refute employee.valid?
+    assert_not employee.valid?
     assert employee.errors[:employee_id].present?
   end
 
@@ -144,7 +146,7 @@ class EssEmployeeTest < ActiveSupport::TestCase
       email: 'invalid-email'
     )
 
-    refute employee.valid?
+    assert_not employee.valid?
     assert employee.errors[:email].present?
   end
 
@@ -185,10 +187,10 @@ class EssEmployeeTest < ActiveSupport::TestCase
     assert employee.has_uid?
 
     employee = EssEmployee.new(uid: '')
-    refute employee.has_uid?
+    assert_not employee.has_uid?
 
     employee = EssEmployee.new(uid: nil)
-    refute employee.has_uid?
+    assert_not employee.has_uid?
   end
 
   def test_has_email_returns_true_when_email_present
@@ -196,10 +198,10 @@ class EssEmployeeTest < ActiveSupport::TestCase
     assert employee.has_email?
 
     employee = EssEmployee.new(email: '')
-    refute employee.has_email?
+    assert_not employee.has_email?
 
     employee = EssEmployee.new(email: nil)
-    refute employee.has_email?
+    assert_not employee.has_email?
   end
 
   def test_contact_info_combines_email_and_phone
@@ -298,8 +300,8 @@ class EssEmployeeTest < ActiveSupport::TestCase
 
     employee = EssEmployee.new(api_data)
 
-    refute employee.has_location?
-    refute employee.has_resp_center_head?
+    assert_not employee.has_location?
+    assert_not employee.has_resp_center_head?
     assert_nil employee.location
     assert_nil employee.resp_center_head
     assert_nil employee.resp_center_display_name
@@ -308,7 +310,7 @@ class EssEmployeeTest < ActiveSupport::TestCase
 
   def test_has_resp_center_head_returns_correct_value
     employee = EssEmployee.new
-    refute employee.has_resp_center_head?
+    assert_not employee.has_resp_center_head?
 
     location = EssLocation.new(
       resp_center_head: EssResponsibilityCenterHead.new(

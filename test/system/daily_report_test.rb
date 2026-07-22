@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../../system_test_helper', __FILE__)
+require File.expand_path('../system_test_helper', __dir__)
 
 # End-to-end browser tests for the Daily Report:
 #   * the Reports (Audit Reports) landing/index page and its report links,
@@ -112,7 +112,7 @@ class DailyReportTest < AuditUtilsSystemTestCase
   # Stub the ESS statusChanges endpoint with an empty (but successful) result so
   # the daily report renders its empty state rather than an error page.
   def stub_ess_status_changes_empty
-    stub_request(:get, %r{\A#{Regexp.escape(ESS_BASE_URL)}api/v1/redmine/statusChanges})
+    stub_request(:get, %r{\A#{Regexp.escape(ESS_BASE_URL)}api/v1/redmine/statusChanges}o)
       .to_return(
         status: 200,
         headers: { 'Content-Type' => 'application/json' },

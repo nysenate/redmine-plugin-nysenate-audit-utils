@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../../system_test_helper', __FILE__)
+require File.expand_path('../system_test_helper', __dir__)
 
 # End-to-end (browser) authorization tests for the Audit Utils plugin.
 #
@@ -46,7 +46,8 @@ class AuthorizationTest < AuditUtilsSystemTestCase
     assert_text NOT_AUTHORIZED_TEXT
   end
 
-  def test_reports_allowed_with_view_audit_reports_permission # positive control
+  # positive control
+  def test_reports_allowed_with_view_audit_reports_permission
     log_in_with_permissions([:view_audit_reports])
 
     visit reports_index_url
@@ -177,7 +178,8 @@ class AuthorizationTest < AuditUtilsSystemTestCase
     end
   end
 
-  def test_tracked_users_allowed_with_manage_permission # positive control
+  # positive control
+  def test_tracked_users_allowed_with_manage_permission
     log_in_with_permissions([:manage_tracked_users])
 
     visit tracked_users_url
@@ -200,8 +202,7 @@ class AuthorizationTest < AuditUtilsSystemTestCase
     # setup re-enables it; tests are otherwise hermetic on unique logins.
     EnabledModule.where(project_id: @project.id, name: 'audit_utils').delete_all
 
-    log_in_with_permissions(%i[view_audit_reports use_user_autofill
-                               manage_tracked_users add_issues view_issues])
+    log_in_with_permissions([:view_audit_reports, :use_user_autofill, :manage_tracked_users, :add_issues, :view_issues])
 
     # Report + tracked-user actions are forbidden (module-scoped permissions are
     # inert when the module is disabled).

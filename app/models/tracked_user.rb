@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class TrackedUser < ActiveRecord::Base
+class TrackedUser < ApplicationRecord
   self.table_name = 'tracked_users'
 
   VALID_TYPES = %w[Vendor Volunteer].freeze

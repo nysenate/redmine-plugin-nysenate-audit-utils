@@ -1,0 +1,44 @@
+# RuboCop configuration for the nysenate_audit_utils plugin.
+#
+# Inherits Redmine's project-wide ruleset (TargetRubyVersion, style tweaks,
+# rubocop-rails / rubocop-performance, etc.) so plugin code is held to the
+# same standard as core.
+#
+# NOTE ON RUNNING: Redmine's root config excludes `**/plugins/**/*`, and
+# RuboCop applies that exclude when you point it at a *directory* — so
+# `rubocop plugins/nysenate_audit_utils` (or a bare `rubocop` from within the
+# plugin) inspects 0 files. Explicit *file paths*, however, bypass Exclude and
+# still resolve to this config. Use the committed helper, which feeds the file
+# list explicitly:
+#
+#   plugins/nysenate_audit_utils/bin/rubocop           # lint the plugin
+#   plugins/nysenate_audit_utils/bin/rubocop -A        # autocorrect
+#   plugins/nysenate_audit_utils/bin/rubocop path.rb   # lint specific files
+inherit_from: ../../.rubocop.yml
+
+AllCops:
+  SuggestExtensions: false
+
+# OpenStruct is a convenient, readable stand-in for API response objects and
+# stubs in tests; the Style/OpenStructUse guidance (favor Struct/class) is
+# aimed at production code, not test scaffolding.
+Style/OpenStructUse:
+  Exclude:
+    - 'test/**/*'
+
+# Printing progress from seeds and migrations is idiomatic (Redmine core does
+# the same); the "use Rails.logger" guidance targets request/runtime code.
+Rails/Output:
+  Exclude:
+    - 'db/**/*'
+
+# Already-applied migrations are historical records — don't rewrite them to
+# collapse alter queries (mirrors core's per-migration exclusions).
+Rails/BulkChangeTable:
+  Exclude:
+    - 'db/migrate/**/*'
+
+# Redmine has no ApplicationMailer base class (its mailers inherit
+# ActionMailer::Base directly), so this cop's suggestion doesn't apply.
+Rails/ApplicationMailer:
+  Enabled: false

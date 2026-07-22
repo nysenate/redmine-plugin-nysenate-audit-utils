@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../../test_helper', __FILE__)
+require File.expand_path('../test_helper', __dir__)
 
 class AccountRequestsControllerTest < Redmine::ControllerTest
   fixtures :users, :roles, :projects, :trackers, :projects_trackers, :issue_statuses,

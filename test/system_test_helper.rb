@@ -23,9 +23,9 @@
 # ---------------------------------------------------------------------------
 
 # Pulls in core test_helper, webmock/minitest, and AuditTestHelpers.
-require File.expand_path('../test_helper', __FILE__)
+require File.expand_path('test_helper', __dir__)
 # Core's Capybara/system-test base (defines ApplicationSystemTestCase).
-require File.expand_path('../../../../test/application_system_test_case', __FILE__)
+require File.expand_path('../../../test/application_system_test_case', __dir__)
 
 require 'capybara/playwright'
 require 'csv'
@@ -53,7 +53,7 @@ class AuditUtilsSystemTestCase < ApplicationSystemTestCase
   driven_by :playwright
 
   # Where the plugin's JSON fixtures live (reused from functional tests).
-  FIXTURES_PATH = File.expand_path('../fixtures', __FILE__)
+  FIXTURES_PATH = File.expand_path('fixtures', __dir__)
 
   ESS_BASE_URL = 'https://ess.test.local/'
   ESS_API_KEY  = 'test-api-key'
@@ -154,7 +154,7 @@ class AuditUtilsSystemTestCase < ApplicationSystemTestCase
   # Also covers the config page's "Test ESS Connection" button, which hits the
   # same endpoint.
   def stub_ess_employee_search(fixture: 'employee_search_response.json')
-    stub_request(:get, %r{\A#{Regexp.escape(ESS_BASE_URL)}api/v1/redmine/employee/search})
+    stub_request(:get, %r{\A#{Regexp.escape(ESS_BASE_URL)}api/v1/redmine/employee/search}o)
       .to_return(
         status: 200,
         headers: { 'Content-Type' => 'application/json' },
@@ -166,13 +166,13 @@ class AuditUtilsSystemTestCase < ApplicationSystemTestCase
   # Stub the ESS employee-search endpoint to fail, for the config page's
   # "Test ESS Connection" error path.
   def stub_ess_connection_failure(status: 500)
-    stub_request(:get, %r{\A#{Regexp.escape(ESS_BASE_URL)}api/v1/redmine/employee/search})
+    stub_request(:get, %r{\A#{Regexp.escape(ESS_BASE_URL)}api/v1/redmine/employee/search}o)
       .to_return(status: status, body: 'ESS unavailable')
   end
 
   # Stub the ESS status-changes endpoint used by the Daily Report.
   def stub_ess_status_changes(fixture: 'status_changes_response.json')
-    stub_request(:get, %r{\A#{Regexp.escape(ESS_BASE_URL)}api/v1/redmine/statusChanges})
+    stub_request(:get, %r{\A#{Regexp.escape(ESS_BASE_URL)}api/v1/redmine/statusChanges}o)
       .to_return(
         status: 200,
         headers: { 'Content-Type' => 'application/json' },
@@ -210,7 +210,7 @@ class AuditUtilsSystemTestCase < ApplicationSystemTestCase
   # temp files.
   def downloaded_files(filename = '*')
     Dir.glob(File.join(Capybara.save_path.to_s, filename))
-       .reject { |f| f =~ /\.(tmp|crdownload|part)\z/ }
+       .grep_v(/\.(tmp|crdownload|part)\z/)
        .sort_by { |f| File.mtime(f) }
   end
 

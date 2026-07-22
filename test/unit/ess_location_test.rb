@@ -62,7 +62,7 @@ class EssLocationTest < ActiveSupport::TestCase
       address: nil
     )
 
-    refute location.has_address?
+    assert_not location.has_address?
     assert_nil location.address
     assert_nil location.full_address
   end
@@ -74,7 +74,7 @@ class EssLocationTest < ActiveSupport::TestCase
       resp_center_head: nil
     )
 
-    refute location.has_resp_center_head?
+    assert_not location.has_resp_center_head?
     assert_nil location.resp_center_head
   end
 
@@ -111,8 +111,8 @@ class EssLocationTest < ActiveSupport::TestCase
     nil_location = EssLocation.new(active: nil)
 
     assert active_location.active?
-    refute inactive_location.active?
-    refute nil_location.active?
+    assert_not inactive_location.active?
+    assert_not nil_location.active?
   end
 
   def test_to_hash_should_include_all_fields
@@ -189,6 +189,6 @@ class EssLocationTest < ActiveSupport::TestCase
       location_description: long_string
     )
 
-    refute location.valid?
+    assert_not location.valid?
   end
 end

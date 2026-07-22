@@ -79,7 +79,7 @@ module NysenateAuditUtils
         return unless user_name_field_id || user_uid_field_id
 
         # Build a hash of issue_id => user_name for quick lookup
-        issue_ids = @account_statuses.map { |status| status[:issue_id] }.compact.uniq
+        issue_ids = @account_statuses.filter_map { |status| status[:issue_id] }.uniq
         return if issue_ids.empty?
 
         # Fetch custom values for user names, UIDs, and types in a single query
@@ -107,7 +107,7 @@ module NysenateAuditUtils
       end
 
       def build_report_data
-        return [] if @account_statuses.nil? || @account_statuses.empty?
+        return [] if @account_statuses.blank?
 
         @user_names ||= {}
         @user_uids ||= {}
@@ -133,7 +133,12 @@ module NysenateAuditUtils
         report_data = filter_by_status(report_data)
 
         # Sort by user_id for consistency
-        report_data.sort_by { |row| row[:user_id].to_i rescue row[:user_id].to_s }  # Handle both numeric and prefixed IDs
+        # Handle both numeric and prefixed IDs
+        report_data.sort_by do |row|
+          row[:user_id].to_i
+        rescue
+          row[:user_id].to_s
+        end
       end
 
       # Filter report data by account status

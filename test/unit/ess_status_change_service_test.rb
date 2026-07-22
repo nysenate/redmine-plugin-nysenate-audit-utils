@@ -1,4 +1,6 @@
-require File.expand_path('../../test_helper', __FILE__)
+# frozen_string_literal: true
+
+require File.expand_path('../test_helper', __dir__)
 
 class EssStatusChangeServiceTest < ActiveSupport::TestCase
   def setup
@@ -16,8 +18,8 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
     }
 
     @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
-      from: '2023-08-15'
-    }).returns(api_response)
+                                          from: '2023-08-15'
+                                        }).returns(api_response)
 
     changes = NysenateAuditUtils::Ess::EssStatusChangeService.changes_for_date_range('2023-08-15')
 
@@ -29,9 +31,9 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
 
   def test_changes_for_date_range_with_date_range
     @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
-      from: '2023-08-15',
+                                          from: '2023-08-15',
       to: '2023-08-16'
-    }).returns({'success' => true, 'result' => []})
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssStatusChangeService.changes_for_date_range('2023-08-15', '2023-08-16')
   end
@@ -43,8 +45,8 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
       expected_from = 1.day.ago.strftime('%Y-%m-%d')
 
       @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
-        from: expected_from
-      }).returns({'success' => true, 'result' => []})
+                                            from: expected_from
+                                          }).returns({'success' => true, 'result' => []})
 
       NysenateAuditUtils::Ess::EssStatusChangeService.changes_for_date_range
     end
@@ -53,8 +55,8 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
   def test_changes_for_date_range_formats_date_objects
     date = Date.parse('2023-08-15')
     @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
-      from: '2023-08-15'
-    }).returns({'success' => true, 'result' => []})
+                                          from: '2023-08-15'
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssStatusChangeService.changes_for_date_range(date)
   end
@@ -62,27 +64,27 @@ class EssStatusChangeServiceTest < ActiveSupport::TestCase
   def test_changes_for_date_range_formats_time_objects
     time = Time.zone.parse('2023-08-15 14:30:45')
     @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
-      from: '2023-08-15'
-    }).returns({'success' => true, 'result' => []})
+                                          from: '2023-08-15'
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssStatusChangeService.changes_for_date_range(time)
   end
 
   def test_changes_for_date_range_formats_datetime_objects
     datetime = DateTime.parse('2023-08-15 14:30:45 UTC')
-    
+
     # Allow any datetime format since the exact format may vary
     @api_client_mock.expects(:get).with(anything, anything).returns({'success' => true, 'result' => []})
 
     result = NysenateAuditUtils::Ess::EssStatusChangeService.changes_for_date_range(datetime)
-    
+
     assert_equal [], result
   end
 
   def test_changes_for_date_range_passes_string_dates_unchanged
     @api_client_mock.expects(:get).with('/api/v1/redmine/statusChanges', {
-      from: '2023-08-15'
-    }).returns({'success' => true, 'result' => []})
+                                          from: '2023-08-15'
+                                        }).returns({'success' => true, 'result' => []})
 
     NysenateAuditUtils::Ess::EssStatusChangeService.changes_for_date_range('2023-08-15')
   end

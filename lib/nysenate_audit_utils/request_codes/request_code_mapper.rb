@@ -51,7 +51,7 @@ module NysenateAuditUtils
 
         # Get all actions that map to this suffix
         actions = @reverse_action_suffixes[suffix]
-        return nil if actions.nil? || actions.empty?
+        return nil if actions.blank?
 
         # If multiple actions map to the same suffix, choose based on field priority order
         account_action = prioritize_action(actions)
@@ -66,7 +66,7 @@ module NysenateAuditUtils
       # @return [Array<String>] Array of all request codes
       def all_codes
         codes = []
-        @system_prefixes.each do |_system, prefix|
+        @system_prefixes.each_value do |prefix|
           @action_suffixes.values.uniq.each do |suffix|
             codes << prefix + suffix
           end

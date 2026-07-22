@@ -5,8 +5,6 @@ module NysenateAuditUtils
     # Service for tracking account status history based on closed issues
     # Determines current active/inactive status of user accounts across different systems
     class AccountTrackingService
-      # Account actions that indicate an active account
-      ACTIVE_ACTIONS = ['Add'].freeze
       # Account action that indicates an inactive account
       INACTIVE_ACTION = 'Delete'
       # Only Add and Delete are used to determine account status; Update actions are ignored
@@ -218,7 +216,7 @@ module NysenateAuditUtils
         mapper = request_code_mapper
         user_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_type_field_id
 
-        issues_by_account_type.filter_map do |account_type, issue_data_list|
+        statuses = issues_by_account_type.filter_map do |account_type, issue_data_list|
           # Only Add/Delete issues determine account status; skip account types with no relevant issues
           relevant_issues = issue_data_list.select { |d| RELEVANT_ACTIONS.include?(d[:account_action]) }
           next if relevant_issues.empty?
@@ -228,8 +226,8 @@ module NysenateAuditUtils
 
           # Get user_type from the latest issue
           user_type = if user_type_field_id && latest_issue[:issue]
-                           get_custom_field_value(latest_issue[:issue], user_type_field_id)
-                         end
+                        get_custom_field_value(latest_issue[:issue], user_type_field_id)
+                      end
 
           {
             user_id: user_id,
@@ -241,7 +239,10 @@ module NysenateAuditUtils
             account_action: latest_issue[:account_action],
             request_code: mapper.get_request_code(latest_issue[:account_action], account_type)
           }
-        end.sort_by { |status| status[:account_type] } # Sort by account type for consistent output
+        end
+
+        # Sort by account type for consistent output
+        statuses.sort_by { |status| status[:account_type] }
       end
 
       # Build open request data from issues
@@ -254,7 +255,7 @@ module NysenateAuditUtils
         mapper = request_code_mapper
         user_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_type_field_id
 
-        issues.map do |issue|
+        requests = issues.filter_map do |issue|
           target_system = get_custom_field_value(issue, target_system_field_id)
           account_action = get_custom_field_value(issue, account_action_field_id)
           user_type = get_custom_field_value(issue, user_type_field_id) if user_type_field_id
@@ -270,21 +271,20 @@ module NysenateAuditUtils
             issue_id: issue.id,
             request_code: mapper.get_request_code(account_action, target_system)
           }
-        end.compact.sort_by { |request| request[:account_type] }
+        end
+
+        requests.sort_by { |request| request[:account_type] }
       end
 
       # Determine if an account is active or inactive based on the account action
       # @param account_action [String] The Account Action value
       # @return [String] "active" or "inactive"
       def determine_status(account_action)
-        if account_action == INACTIVE_ACTION
-          'inactive'
-        elsif ACTIVE_ACTIONS.include?(account_action)
-          'active'
-        else
-          # Default to active for any unrecognized action
-          'active'
-        end
+        return 'inactive' if account_action == INACTIVE_ACTION
+
+        # Everything else (e.g. Add, and any unrecognized action) defaults
+        # to active.
+        'active'
       end
 
       # Get custom field value from an issue
@@ -329,7 +329,7 @@ module NysenateAuditUtils
           .joins(:status)
           .where(issue_statuses: { is_closed: true })
           .where.not(closed_on: nil)
-          .where('issues.closed_on <= ?', as_of_time)
+          .where(issues: { closed_on: ..as_of_time })
 
         # Filter by project if provided
         query = query.where(project_id: project.id) if project
@@ -342,7 +342,7 @@ module NysenateAuditUtils
         user_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.user_type_field_id
 
         # Extract data from issues and their custom values
-        closed_issues.map do |issue|
+        closed_issues.filter_map do |issue|
           user_id = get_custom_field_value(issue, user_id_field_id)
           account_action = get_custom_field_value(issue, account_action_field_id)
           user_type = get_custom_field_value(issue, user_type_field_id) if user_type_field_id
@@ -357,7 +357,7 @@ module NysenateAuditUtils
             issue_id: issue.id,
             closed_on: issue.closed_on
           }
-        end.compact
+        end
       end
 
       # Build account status data grouped by user

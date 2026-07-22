@@ -20,7 +20,7 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     reports = { 'Oracle / SFMS' => [MONTHLY_ROW] }
     result = NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(reports, 'current')
     assert_kind_of String, result
-    assert result.length > 0
+    assert !result.empty?
   end
 
   def test_generate_all_systems_zip_contains_one_csv_per_system

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../../test_helper', __FILE__)
+require File.expand_path('../test_helper', __dir__)
 
 class CustomFieldConfigurationTest < ActiveSupport::TestCase
   def setup
@@ -65,7 +65,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
   def test_validate_with_all_required_fields
     # Mock all required fields as configured (all 11 fields)
     Setting.stubs(:plugin_nysenate_audit_utils).returns({
-      'user_type_field_id' => 1,
+                                                          'user_type_field_id' => 1,
       'user_id_field_id' => 2,
       'user_name_field_id' => 3,
       'user_email_field_id' => 4,
@@ -78,7 +78,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
       'bac_number_field_id' => 11,
       'requested_by_field_id' => 12,
       'authorizing_users_field_id' => 13
-    })
+                                                        })
 
     # Mock custom fields exist for each ID
     CustomField.stubs(:find_by).with(id: 1, type: 'IssueCustomField').returns(CustomField.new(id: 1, name: 'Account Holder Type'))
@@ -102,9 +102,9 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
   def test_validate_with_missing_required_field
     # Mock missing user_id field
     Setting.stubs(:plugin_nysenate_audit_utils).returns({
-      'account_action_field_id' => 2,
+                                                          'account_action_field_id' => 2,
       'target_system_field_id' => 3
-    })
+                                                        })
 
     errors = NysenateAuditUtils::CustomFieldConfiguration.validate
     assert_includes errors, "Required field 'Account Holder ID' (user_id_field_id) is not configured"
@@ -113,7 +113,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
   def test_valid_with_complete_configuration
     # Mock all required fields as configured (all 11 fields)
     Setting.stubs(:plugin_nysenate_audit_utils).returns({
-      'user_type_field_id' => 1,
+                                                          'user_type_field_id' => 1,
       'user_id_field_id' => 2,
       'user_name_field_id' => 3,
       'user_email_field_id' => 4,
@@ -126,7 +126,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
       'bac_number_field_id' => 11,
       'requested_by_field_id' => 12,
       'authorizing_users_field_id' => 13
-    })
+                                                        })
 
     # Mock custom fields exist for each ID
     CustomField.stubs(:find_by).with(id: 1, type: 'IssueCustomField').returns(CustomField.new(id: 1, name: 'Account Holder Type'))
@@ -148,10 +148,10 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
 
   def test_valid_with_incomplete_configuration
     Setting.stubs(:plugin_nysenate_audit_utils).returns({
-      'user_name_field_id' => 2
-    })
+                                                          'user_name_field_id' => 2
+                                                        })
 
-    refute NysenateAuditUtils::CustomFieldConfiguration.valid?
+    assert_not NysenateAuditUtils::CustomFieldConfiguration.valid?
   end
 
   def test_autoconfigure_field_success
@@ -176,7 +176,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:where).returns([])
 
     result = NysenateAuditUtils::CustomFieldConfiguration.autoconfigure_field('user_id_field_id')
-    refute result
+    assert_not result
   end
 
   def test_autoconfigure_all
@@ -229,38 +229,38 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
 
     status = NysenateAuditUtils::CustomFieldConfiguration.field_status('user_id_field_id')
 
-    refute status[:configured]
+    assert_not status[:configured]
     assert_nil status[:field_id]
   end
 
   def test_configuration_status
     Setting.stubs(:plugin_nysenate_audit_utils).returns({
-      'user_type_field_id' => 1,
+                                                          'user_type_field_id' => 1,
       'user_id_field_id' => 2,
       'user_name_field_id' => 3,
       'account_action_field_id' => 4
-      # target_system_field_id missing, bac_number_field_id missing,
-      # and only 3 of 8 autofill fields configured
-    })
+                                                          # target_system_field_id missing, bac_number_field_id missing,
+                                                          # and only 3 of 8 autofill fields configured
+                                                        })
 
     status = NysenateAuditUtils::CustomFieldConfiguration.configuration_status
 
     # reporting category holds user_id (configured) and bac_number (not configured)
     assert_equal 1, status[:reporting][:configured]
     assert_equal 2, status[:reporting][:total]
-    refute status[:reporting][:complete]
+    assert_not status[:reporting][:complete]
 
     # user_id is in reporting category, so autofill has user_type, user_name, email, phone, status, uid, office = 7 total
     # Of those, user_type and user_name are configured = 2 configured
     assert_equal 2, status[:autofill][:configured]
     assert_equal 7, status[:autofill][:total]
-    refute status[:autofill][:complete]
+    assert_not status[:autofill][:complete]
 
     # request_codes holds account_action (configured), target_system, requested_by,
     # and authorizing_users (all not configured)
     assert_equal 1, status[:request_codes][:configured]
     assert_equal 4, status[:request_codes][:total]
-    refute status[:request_codes][:complete]
+    assert_not status[:request_codes][:complete]
   end
 
   def test_fields_by_category

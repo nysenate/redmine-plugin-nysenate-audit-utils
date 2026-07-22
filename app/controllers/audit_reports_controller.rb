@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'csv'
 
 class AuditReportsController < ApplicationController
@@ -45,13 +47,13 @@ class AuditReportsController < ApplicationController
     # Set up sorting
     sort_init 'post_date', 'asc'
     sort_update({
-      'employee_name' => 'employee_name',
+                  'employee_name' => 'employee_name',
       'status_changes' => 'status_changes',
       'office' => 'office',
       'office_location' => 'office_location',
       'employee_id' => 'employee_id',
       'post_date' => 'post_date'
-    })
+                })
 
     # Apply sorting to report data
     if @report_data.present?
@@ -117,7 +119,7 @@ class AuditReportsController < ApplicationController
     # Set up sorting
     sort_init 'updated_on', 'desc'
     sort_update({
-      'issue_id' => 'issue_id',
+                  'issue_id' => 'issue_id',
       'subject' => 'subject',
       'status' => 'status',
       'user_id' => 'user_id',
@@ -129,7 +131,7 @@ class AuditReportsController < ApplicationController
       'updated_on' => 'updated_on',
       'created_on' => 'created_on',
       'closed_on' => 'closed_on'
-    })
+                })
 
     # Apply sorting to report data
     @report_data = sort_report_data(@report_data) if @report_data.present?
@@ -189,7 +191,7 @@ class AuditReportsController < ApplicationController
 
     sort_init 'closed_on', 'desc'
     sort_update({
-      'request_code' => 'request_code',
+                  'request_code' => 'request_code',
       'user_name' => 'user_name',
       'user_uid' => 'user_uid',
       'office' => 'office',
@@ -198,7 +200,7 @@ class AuditReportsController < ApplicationController
       'bac_number' => 'bac_number',
       'issue_id' => 'issue_id',
       'subject' => 'subject'
-    })
+                })
     @report_data = sort_report_data(@report_data) if @report_data.present?
 
     respond_to do |format|
@@ -293,7 +295,7 @@ class AuditReportsController < ApplicationController
     # Set up sorting
     sort_init 'user_name', 'asc'
     sort_update({
-      'user_name' => 'user_name',
+                  'user_name' => 'user_name',
       'user_id' => 'user_id',
       'user_type' => 'user_type',
       'user_uid' => 'user_uid',
@@ -301,7 +303,7 @@ class AuditReportsController < ApplicationController
       'account_action' => 'account_action',
       'closed_on' => 'closed_on',
       'issue_id' => 'issue_id'
-    })
+                })
 
     # Apply sorting
     if @report_data.present?
@@ -429,11 +431,11 @@ class AuditReportsController < ApplicationController
     # Only holder-level columns are sortable; target system / request code are
     # squished into a single grouped row in the web view, so they aren't sorted.
     sort_update({
-      'user_name' => 'user_name',
+                  'user_name' => 'user_name',
       'user_type' => 'user_type',
       'user_uid' => 'user_uid',
       'user_office' => 'user_office'
-    })
+                })
 
     @report_data = sort_report_data(@report_data) if @report_data.present?
     @report_data = filter_account_holder_access_data(@report_data) if @report_data.present?
@@ -630,8 +632,8 @@ class AuditReportsController < ApplicationController
 
       # status_changes is an array of {code:, note:}; sort by joined codes
       if sort_key.to_sym == :status_changes
-        a_val = a_val.is_a?(Array) ? a_val.map { |c| c[:code] }.join(',') : a_val
-        b_val = b_val.is_a?(Array) ? b_val.map { |c| c[:code] }.join(',') : b_val
+        a_val = a_val.map { |c| c[:code] }.join(',') if a_val.is_a?(Array)
+        b_val = b_val.map { |c| c[:code] }.join(',') if b_val.is_a?(Array)
       end
 
       # Handle nil values - push them to the end

@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+#
+# Lint (or autocorrect) the nysenate_audit_utils plugin with RuboCop.
+#
+# Why this wrapper exists:
+#   * Redmine's root .rubocop.yml excludes `**/plugins/**/*`, so pointing
+#     RuboCop at the plugin *directory* inspects nothing. Passing explicit
+#     *file paths* bypasses that Exclude while still picking up the plugin's
+#     own .rubocop.yml (which inherits the Redmine ruleset).
+#   * The plugin ships its own Gemfile (merged into Redmine's bundle at load
+#     time), so `bundle exec` from inside the plugin resolves the wrong
+#     Gemfile. We force BUNDLE_GEMFILE to the Redmine root.
+#
+# Usage:
+#   bin/rubocop              # lint every Ruby file in the plugin
+#   bin/rubocop -A           # lint + unsafe-autocorrect everything
+#   bin/rubocop -a           # lint + safe-autocorrect everything
+#   bin/rubocop path/to.rb   # lint only the given files (extra args pass through)
+set -euo pipefail
+
+plugin_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+redmine_root="$(cd "$plugin_dir/../.." && pwd)"
+export BUNDLE_GEMFILE="$redmine_root/Gemfile"
+
+# Split args into rubocop flags (leading dashes) and explicit path args.
+flags=()
+paths=()
+for arg in "$@"; do
+  case "$arg" in
+    -*) flags+=("$arg") ;;
+    *)  paths+=("$arg") ;;
+  esac
+done
+
+# Default target: every Ruby file in the plugin except vendored gems.
+if [ ${#paths[@]} -eq 0 ]; then
+  while IFS= read -r -d '' f; do paths+=("$f"); done \
+    < <(find "$plugin_dir" -name '*.rb' -not -path '*/vendor/*' -print0)
+fi
+
+exec bundle exec rubocop "${flags[@]}" "${paths[@]}"

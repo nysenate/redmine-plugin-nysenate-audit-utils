@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../../system_test_helper', __FILE__)
+require File.expand_path('../system_test_helper', __dir__)
 
 # Browser end-to-end tests for the Account Holder Access Report.
 #
@@ -278,7 +278,7 @@ class AccountHolderAccessReportTest < AuditUtilsSystemTestCase
       custom_field_values: values
     )
     # closed_on must be set for the report's closed-ticket query.
-    Issue.where(id: issue.id).update_all(closed_on: Time.current - 1.day)
+    Issue.where(id: issue.id).update_all(closed_on: 1.day.ago)
     issue.reload
   end
 end

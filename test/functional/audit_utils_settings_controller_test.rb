@@ -177,7 +177,7 @@ class AuditUtilsSettingsControllerTest < ActionController::TestCase
 
     delete :delete_dangling_mapping, params: { type: 'system', value: 'test' }
 
-    assert_response 403
+    assert_response :forbidden
   end
 
   test 'should require admin for delete_all_dangling_mappings' do
@@ -187,6 +187,6 @@ class AuditUtilsSettingsControllerTest < ActionController::TestCase
 
     delete :delete_all_dangling_mappings, params: { type: 'system' }
 
-    assert_response 403
+    assert_response :forbidden
   end
 end

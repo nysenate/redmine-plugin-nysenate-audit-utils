@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../../system_test_helper', __FILE__)
+require File.expand_path('../system_test_helper', __dir__)
 
 # Browser end-to-end tests for Ticket Packet Creation.
 #

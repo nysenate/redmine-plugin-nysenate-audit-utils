@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class EssStatusChange
   include ActiveModel::Model
   include ActiveModel::Attributes
@@ -6,7 +8,7 @@ class EssStatusChange
   attribute :transaction_code, :string
   attribute :post_date_time, :datetime
   attribute :notes, :string
-  
+
   attr_reader :employee
 
   TRANSACTION_CODES = {
@@ -29,8 +31,8 @@ class EssStatusChange
       @employee = EssEmployee.new(attributes[:employee_data])
       super(attributes.except(:employee_data))
     else
-      super(attributes)
-      @employee = nil unless @employee
+      super
+      @employee ||= nil
     end
   end
 
@@ -40,11 +42,11 @@ class EssStatusChange
 
   def to_hash
     employee.to_hash.merge({
-      transaction_code: transaction_code,
+                             transaction_code: transaction_code,
       transaction_description: transaction_description,
       post_date_time: post_date_time,
       notes: notes
-    })
+                           })
   end
 
   private
@@ -64,7 +66,7 @@ class EssStatusChange
 
   def parse_datetime(datetime_string)
     return nil if datetime_string.blank?
-    
+
     begin
       DateTime.parse(datetime_string)
     rescue ArgumentError

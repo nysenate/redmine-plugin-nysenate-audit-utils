@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../../system_test_helper', __FILE__)
+require File.expand_path('../system_test_helper', __dir__)
 
 # End-to-end tests for the Account Holder search/autofill widget behaviour that
 # the smoke test in user_autofill_test.rb does NOT cover:

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module NysenateAuditUtils
   module Ess
     class EssStatusChangeService
@@ -26,9 +28,7 @@ module NysenateAuditUtils
           case datetime
           when String
             datetime
-          when Date
-            datetime.strftime('%Y-%m-%d')
-          when Time, DateTime
+          when Date, Time, DateTime
             datetime.strftime('%Y-%m-%d')
           else
             datetime.to_s

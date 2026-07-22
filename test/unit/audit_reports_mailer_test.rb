@@ -276,10 +276,12 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
   def test_all_systems_monthly_report_current_mode
     reports_by_system = {
       'Oracle / SFMS' => [
-        { user_id: '111', user_name: 'Alice', user_type: 'Employee', user_uid: 'alice', status: 'active', account_action: 'Add', closed_on: Date.parse('2026-03-01'), request_code: 'OAA', issue_id: 10 }
+        { user_id: '111', user_name: 'Alice', user_type: 'Employee', user_uid: 'alice', status: 'active', account_action: 'Add', closed_on: Date.parse('2026-03-01'), request_code: 'OAA',
+issue_id: 10 }
       ],
       'AIX' => [
-        { user_id: '222', user_name: 'Bob', user_type: 'Employee', user_uid: 'bob', status: 'inactive', account_action: 'Delete', closed_on: Date.parse('2026-02-15'), request_code: 'AAD', issue_id: 20 }
+        { user_id: '222', user_name: 'Bob', user_type: 'Employee', user_uid: 'bob', status: 'inactive', account_action: 'Delete', closed_on: Date.parse('2026-02-15'), request_code: 'AAD',
+issue_id: 20 }
       ]
     }
     mode = 'current'
@@ -313,7 +315,8 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
   def test_all_systems_monthly_report_monthly_mode
     reports_by_system = {
       'SFS' => [
-        { user_id: '333', user_name: 'Carol', user_type: 'Employee', user_uid: 'carol', status: 'active', account_action: 'Add', closed_on: Date.parse('2026-01-10'), request_code: 'SAA', issue_id: 30 }
+        { user_id: '333', user_name: 'Carol', user_type: 'Employee', user_uid: 'carol', status: 'active', account_action: 'Add', closed_on: Date.parse('2026-01-10'), request_code: 'SAA',
+issue_id: 30 }
       ]
     }
     mode = 'monthly'
@@ -347,5 +350,4 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
 
     assert_equal recipients, mail.to
   end
-
 end

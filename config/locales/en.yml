@@ -20,6 +20,14 @@ en:
   field_related_issue: "Related issue"
   warning_related_issue_not_linked: "Could not link issue #%{id}; the ticket was created without a related issue."
 
+  # Settings / autoconfiguration flash messages
+  error_autoconfigure_all_failed: "Failed to autoconfigure any fields. Please configure them manually."
+  error_no_field_specified: "No field specified for autoconfiguration"
+  error_invalid_delete_dangling_mapping: "Invalid parameters for deleting dangling mapping"
+  error_invalid_delete_dangling_mappings: "Invalid parameters for deleting dangling mappings"
+  warning_no_dangling_mappings: "No dangling mappings found"
+  error_no_issues_selected: "No issues selected"
+
   # Packet creation labels
   button_create_packet: "Create Packet"
   button_create_packet_title: "Download ticket packet (PDF + attachments)"

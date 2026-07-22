@@ -468,8 +468,8 @@ module NysenateAuditUtils::AccountTracking
       assert_includes result.map { |r| r[:issue_id] }, old_issue2.id
 
       # Verify recent issues are excluded
-      refute_includes result.map { |r| r[:issue_id] }, recent_issue1.id
-      refute_includes result.map { |r| r[:issue_id] }, recent_issue2.id
+      assert_not_includes result.map { |r| r[:issue_id] }, recent_issue1.id
+      assert_not_includes result.map { |r| r[:issue_id] }, recent_issue2.id
     end
 
     test 'get_account_statuses_by_system includes issue closed exactly at cutoff time' do

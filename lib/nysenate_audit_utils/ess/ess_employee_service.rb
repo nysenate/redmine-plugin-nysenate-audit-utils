@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module NysenateAuditUtils
   module Ess
     class EssEmployeeService
@@ -13,7 +15,7 @@ module NysenateAuditUtils
         end
 
         def find_by_id(employee_id)
-          return nil unless employee_id.present?
+          return nil if employee_id.blank?
 
           response = api_client.get("/api/v1/redmine/employee/#{employee_id}")
           return nil unless response && response['success']
@@ -41,12 +43,13 @@ module NysenateAuditUtils
           limit = limit.to_i
           return 20 if limit <= 0
           return 1000 if limit > 1000
+
           limit
         end
 
         def validate_offset(offset)
           offset = offset.to_i
-          offset < 0 ? 0 : offset
+          [offset, 0].max
         end
 
         # Translate 0-based offset to ESS API's 1-based offset

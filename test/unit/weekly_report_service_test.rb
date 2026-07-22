@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../../test_helper', __FILE__)
+require File.expand_path('../test_helper', __dir__)
 
 class WeeklyReportServiceTest < ActiveSupport::TestCase
   fixtures :issues, :issue_statuses, :projects, :trackers, :custom_fields, :custom_values
@@ -143,7 +143,11 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
 
   test "should filter issues by project" do
     project1 = Project.find(1)
-    project2 = Project.find(2) rescue Project.create!(name: 'Test Project 2', identifier: 'test-project-2')
+    project2 = begin
+      Project.find(2)
+    rescue
+      Project.create!(name: 'Test Project 2', identifier: 'test-project-2')
+    end
 
     close_time = 2.days.ago
 

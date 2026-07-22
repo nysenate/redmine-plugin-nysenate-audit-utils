@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../../system_test_helper', __FILE__)
+require File.expand_path('../system_test_helper', __dir__)
 
 # End-to-end browser tests for the Daily Report's per-row action buttons that
 # launch pre-filled account-request tickets (AccountRequestsController#new):

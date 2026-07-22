@@ -12,7 +12,7 @@ vendors = [
     name: 'Acme Corporation',
     email: 'contact@acmecorp.com',
     phone: '555-0101',
-    location:'Building A',
+    location: 'Building A',
     status: 'Active'
   },
   {
@@ -21,7 +21,7 @@ vendors = [
     name: 'Widget Industries LLC',
     email: 'info@widgetind.com',
     phone: '555-0102',
-    location:'Building B',
+    location: 'Building B',
     status: 'Active'
   },
   {
@@ -31,7 +31,7 @@ vendors = [
     email: 'sales@techsolutions.com',
     phone: '555-0103',
     uid: 'techsol',
-    location:'Remote',
+    location: 'Remote',
     status: 'Active'
   },
   {
@@ -40,7 +40,7 @@ vendors = [
     name: 'Global Services Group',
     email: 'hello@globalservices.com',
     phone: '555-0104',
-    location:'Building C',
+    location: 'Building C',
     status: 'Inactive'
   },
   {
@@ -50,7 +50,7 @@ vendors = [
     email: 'contact@entsys.com',
     phone: '555-0105',
     uid: 'entsys',
-    location:'Building A',
+    location: 'Building A',
     status: 'Active'
   },
   {
@@ -59,7 +59,7 @@ vendors = [
     name: 'Premier Consulting',
     email: 'info@premierconsult.com',
     phone: '555-0106',
-    location:'Building D',
+    location: 'Building D',
     status: 'Active'
   },
   {
@@ -68,7 +68,7 @@ vendors = [
     name: 'DataTech Partners',
     email: 'contact@datatechpartners.com',
     phone: '555-0107',
-    location:'Building B',
+    location: 'Building B',
     status: 'Inactive'
   },
   {
@@ -78,7 +78,7 @@ vendors = [
     email: 'support@cloudservices.com',
     phone: '555-0108',
     uid: 'cloudserv',
-    location:'Remote',
+    location: 'Remote',
     status: 'Active'
   }
 ]

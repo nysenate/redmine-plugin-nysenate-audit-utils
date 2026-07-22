@@ -13,7 +13,7 @@ class AuditUtilsSettingsController < ApplicationController
     if result[:failed].empty?
       flash[:notice] = "Successfully autoconfigured #{result[:configured].size} field(s)."
     elsif result[:configured].empty?
-      flash[:error] = "Failed to autoconfigure any fields. Please configure them manually."
+      flash[:error] = l(:error_autoconfigure_all_failed)
     else
       flash[:warning] = "Autoconfigured #{result[:configured].size} field(s), but #{result[:failed].size} field(s) could not be found."
     end
@@ -33,7 +33,7 @@ class AuditUtilsSettingsController < ApplicationController
     setting_key = params[:setting_key]
 
     if setting_key.blank?
-      flash[:error] = "No field specified for autoconfiguration"
+      flash[:error] = l(:error_no_field_specified)
       redirect_to plugin_settings_path('nysenate_audit_utils')
       return
     end
@@ -119,7 +119,7 @@ class AuditUtilsSettingsController < ApplicationController
     mapping_value = params[:value]
 
     if mapping_type.blank? || mapping_value.blank?
-      flash[:error] = "Invalid parameters for deleting dangling mapping"
+      flash[:error] = l(:error_invalid_delete_dangling_mapping)
       redirect_to plugin_settings_path('nysenate_audit_utils')
       return
     end
@@ -173,7 +173,7 @@ class AuditUtilsSettingsController < ApplicationController
     mapping_type = params[:type]
 
     if mapping_type.blank?
-      flash[:error] = "Invalid parameters for deleting dangling mappings"
+      flash[:error] = l(:error_invalid_delete_dangling_mappings)
       redirect_to plugin_settings_path('nysenate_audit_utils')
       return
     end
@@ -199,7 +199,7 @@ class AuditUtilsSettingsController < ApplicationController
     dangling_keys = mapping_type == 'system' ? request_codes_status[:dangling_systems] : request_codes_status[:dangling_actions]
 
     if dangling_keys.empty?
-      flash[:warning] = "No dangling mappings found"
+      flash[:warning] = l(:warning_no_dangling_mappings)
       redirect_to plugin_settings_path('nysenate_audit_utils')
       return
     end

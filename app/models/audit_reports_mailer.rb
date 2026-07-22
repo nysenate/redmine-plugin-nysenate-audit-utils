@@ -10,7 +10,6 @@ class AuditReportsMailer < ActionMailer::Base
     ::Mailer.default_url_options
   end
 
-
   # Send daily report email with CSV attachment
   #
   # @param recipients [Array<String>, String] Email address(es) to send to
@@ -59,11 +58,13 @@ class AuditReportsMailer < ActionMailer::Base
     @from_date = from_date
     @to_date = to_date
     @ticket_count = report_data.size
-    @report_url = weekly_project_audit_reports_url(
-      project_id,
-      start_date: from_date.to_date.to_s,
-      end_date: to_date.to_date.to_s
-    ) if project_id
+    if project_id
+      @report_url = weekly_project_audit_reports_url(
+        project_id,
+        start_date: from_date.to_date.to_s,
+        end_date: to_date.to_date.to_s
+      )
+    end
 
     # Generate and attach both Excel and CSV (Excel first)
     xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_weekly_xlsx(
@@ -103,7 +104,10 @@ class AuditReportsMailer < ActionMailer::Base
     if project_id
       url_params = { target_system: target_system, mode: mode }
       url_params[:status_filter] = status_filter if status_filter
-      url_params.merge!(month: selected_month_num, year: selected_year) if mode != 'current'
+      if mode != 'current'
+        url_params[:month] = selected_month_num
+        url_params[:year] = selected_year
+      end
       @report_url = monthly_project_audit_reports_url(project_id, url_params)
     end
 
@@ -125,10 +129,10 @@ class AuditReportsMailer < ActionMailer::Base
 
     # Build subject line
     email_subject = if mode == 'current'
-                "Monthly Audit Report - #{target_system} - Current State"
-              else
-                "Monthly Audit Report - #{target_system} - #{Date::MONTHNAMES[selected_month_num]} #{selected_year}"
-              end
+                      "Monthly Audit Report - #{target_system} - Current State"
+                    else
+                      "Monthly Audit Report - #{target_system} - #{Date::MONTHNAMES[selected_month_num]} #{selected_year}"
+                    end
 
     mail(
       from: Setting.mail_from,
@@ -188,7 +192,10 @@ class AuditReportsMailer < ActionMailer::Base
     if project_id
       url_params = { mode: mode }
       url_params[:status_filter] = status_filter if status_filter
-      url_params.merge!(month: selected_month_num, year: selected_year) if mode != 'current'
+      if mode != 'current'
+        url_params[:month] = selected_month_num
+        url_params[:year] = selected_year
+      end
       @report_url = monthly_project_audit_reports_url(project_id, url_params)
     end
 

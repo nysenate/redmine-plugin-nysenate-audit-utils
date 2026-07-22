@@ -1,8 +1,9 @@
-require File.expand_path('../../test_helper', __FILE__)
+# frozen_string_literal: true
+
+require File.expand_path('../test_helper', __dir__)
 require 'webmock/minitest'
 
 class EssApiClientTest < ActiveSupport::TestCase
-
   def setup
     WebMock.enable!
     @client = NysenateAuditUtils::Ess::EssApiClient.new('https://api.test.com', 'test-key-123')
@@ -18,10 +19,10 @@ class EssApiClientTest < ActiveSupport::TestCase
   def test_get_successful_request
     stub_request(:get, "https://api.test.com/redmine/employee/search")
       .with(headers: {
-        'X-API-Key' => 'test-key-123',
+              'X-API-Key' => 'test-key-123',
         'Content-Type' => 'application/json',
         'Accept' => 'application/json'
-      })
+            })
       .to_return(status: 200, body: @employee_search_fixture, headers: {})
 
     result = @client.get('/redmine/employee/search')

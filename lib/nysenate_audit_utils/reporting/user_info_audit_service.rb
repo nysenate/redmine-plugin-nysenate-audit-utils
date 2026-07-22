@@ -16,7 +16,7 @@ module NysenateAuditUtils
     class UserInfoAuditService
       # Subset of normalized-user keys that map to issue custom fields we sync.
       # (user_type / user_id are the lookup keys; we do not overwrite them.)
-      SYNCED_FIELDS = %i[name email phone status uid location].freeze
+      SYNCED_FIELDS = [:name, :email, :phone, :status, :uid, :location].freeze
 
       # Maps normalized-user key -> CustomFieldConfiguration setting key.
       FIELD_SETTING_KEYS = {

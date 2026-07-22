@@ -66,7 +66,7 @@ module NysenateAuditUtils
         user_office_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_location_field_id')
         return unless user_name_field_id || user_uid_field_id || user_office_field_id
 
-        issue_ids = statuses.map { |status| status[:issue_id] }.compact.uniq
+        issue_ids = statuses.filter_map { |status| status[:issue_id] }.uniq
         return if issue_ids.empty?
 
         field_ids = [user_name_field_id, user_uid_field_id, user_office_field_id].compact

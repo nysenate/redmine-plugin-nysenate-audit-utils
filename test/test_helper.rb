@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 # Load the Redmine helper
-require File.expand_path('../../../../test/test_helper', __FILE__)
+require File.expand_path('../../../test/test_helper', __dir__)
 
 # Load webmock for API testing
 require 'webmock/minitest'
 
 # Load Audit Utils-specific test helpers
-require File.expand_path('../audit_test_helpers', __FILE__)
+require File.expand_path('audit_test_helpers', __dir__)
 
 # Load plugin test support
 class NysenateAuditUtilsTestCase < ActiveSupport::TestCase

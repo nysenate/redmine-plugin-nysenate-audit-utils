@@ -50,26 +50,24 @@ class UserSearchController < ApplicationController
   end
 
   def field_mappings
-    begin
-      # Get field IDs from unified configuration
-      field_ids = NysenateAuditUtils::CustomFieldConfiguration.autofill_field_ids
+    # Get field IDs from unified configuration
+    field_ids = NysenateAuditUtils::CustomFieldConfiguration.autofill_field_ids
 
-      # Build field ID mappings for the frontend in Redmine's expected format
-      # Converts { user_id: 123, name: 124 } to { user_id_field: "issue_custom_field_values_123", ... }
-      mappings = {}
-      field_ids.each do |key, field_id|
-        if field_id
-          # Add _field suffix to match frontend expectations
-          frontend_key = "#{key}_field"
-          mappings[frontend_key] = "issue_custom_field_values_#{field_id}"
-        end
+    # Build field ID mappings for the frontend in Redmine's expected format
+    # Converts { user_id: 123, name: 124 } to { user_id_field: "issue_custom_field_values_123", ... }
+    mappings = {}
+    field_ids.each do |key, field_id|
+      if field_id
+        # Add _field suffix to match frontend expectations
+        frontend_key = "#{key}_field"
+        mappings[frontend_key] = "issue_custom_field_values_#{field_id}"
       end
-
-      render json: { field_mappings: mappings }
-    rescue => e
-      logger.error "Field mappings error: #{e.message}"
-      render json: { error: "Could not load field mappings" }, status: :internal_server_error
     end
+
+    render json: { field_mappings: mappings }
+  rescue => e
+    logger.error "Field mappings error: #{e.message}"
+    render json: { error: "Could not load field mappings" }, status: :internal_server_error
   end
 
   private
@@ -90,7 +88,7 @@ class UserSearchController < ApplicationController
   end
 
   def find_project
-    return nil unless params[:project_id].present?
+    return nil if params[:project_id].blank?
 
     Project.find_by(id: params[:project_id])
   end

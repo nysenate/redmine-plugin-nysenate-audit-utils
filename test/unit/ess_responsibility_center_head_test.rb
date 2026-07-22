@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path('../../test_helper', __FILE__)
+require File.expand_path('../test_helper', __dir__)
 
 class EssResponsibilityCenterHeadTest < ActiveSupport::TestCase
   def test_should_initialize_from_api_response
@@ -32,7 +32,7 @@ class EssResponsibilityCenterHeadTest < ActiveSupport::TestCase
 
     resp_center = EssResponsibilityCenterHead.new(attrs)
 
-    refute resp_center.active
+    assert_not resp_center.active
     assert_equal 'PERSONNEL', resp_center.code
     assert_equal 'PERSONNEL', resp_center.short_name
     assert_equal 'Personnel Department', resp_center.name
@@ -42,7 +42,7 @@ class EssResponsibilityCenterHeadTest < ActiveSupport::TestCase
   def test_should_validate_required_fields
     resp_center = EssResponsibilityCenterHead.new
 
-    refute resp_center.valid?
+    assert_not resp_center.valid?
     assert resp_center.errors[:code].present?
     assert resp_center.errors[:short_name].present?
     assert resp_center.errors[:name].present?
@@ -67,7 +67,7 @@ class EssResponsibilityCenterHeadTest < ActiveSupport::TestCase
       affiliate_code: 'D' * 11
     )
 
-    refute resp_center.valid?
+    assert_not resp_center.valid?
     assert resp_center.errors[:code].present?
     assert resp_center.errors[:short_name].present?
     assert resp_center.errors[:name].present?
@@ -135,10 +135,10 @@ class EssResponsibilityCenterHeadTest < ActiveSupport::TestCase
     assert resp_center.active?
 
     resp_center = EssResponsibilityCenterHead.new(active: false)
-    refute resp_center.active?
+    assert_not resp_center.active?
 
     resp_center = EssResponsibilityCenterHead.new(active: nil)
-    refute resp_center.active?
+    assert_not resp_center.active?
   end
 
   def test_to_hash_returns_all_attributes

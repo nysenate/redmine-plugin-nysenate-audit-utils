@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Load library files explicitly since Rails autoloading doesn't work well with plugin lib directories
 require_relative 'lib/nysenate_audit_utils/custom_field_configuration'
 require_relative 'lib/nysenate_audit_utils/configuration_status_service'
@@ -63,13 +65,13 @@ Redmine::Plugin.register :nysenate_audit_utils do
        { controller: 'audit_reports', action: 'index' },
        caption: 'Reports',
        param: :project_id,
-       if: Proc.new { |p| p.module_enabled?(:audit_utils) }
+       if: proc { |p| p.module_enabled?(:audit_utils) }
 
   menu :project_menu, :tracked_users,
        { controller: 'tracked_users', action: 'index' },
        caption: 'Manage Vendors/Volunteers',
        param: :project_id,
-       if: Proc.new { |p| p.module_enabled?(:audit_utils) }
+       if: proc { |p| p.module_enabled?(:audit_utils) }
 
   # Consolidated settings
   settings default: {

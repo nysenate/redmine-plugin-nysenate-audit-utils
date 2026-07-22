@@ -77,25 +77,25 @@ module NysenateAuditUtils
           data.each do |row|
             # Format account statuses as comma-separated request codes
             account_status_str = if row[:account_statuses].present?
-              row[:account_statuses].map { |s| s[:request_code] || s[:account_type] }.join(', ')
-            else
-              ''
-            end
+                                   row[:account_statuses].map { |s| s[:request_code] || s[:account_type] }.join(', ')
+                                 else
+                                   ''
+                                 end
 
             # Format open requests as comma-separated request codes
             open_tickets_str = if row[:open_requests].present?
-              row[:open_requests].map { |r| r[:request_code] || r[:account_type] }.join(', ')
-            else
-              ''
-            end
+                                 row[:open_requests].map { |r| r[:request_code] || r[:account_type] }.join(', ')
+                               else
+                                 ''
+                               end
 
             status_changes_str = if row[:status_changes].present?
-              row[:status_changes].map { |sc|
-                sc[:notes].present? ? "#{sc[:code]} - #{sc[:notes]}" : sc[:code]
-              }.join("\n")
-            else
-              ''
-            end
+                                   row[:status_changes].map do |sc|
+                                     sc[:notes].present? ? "#{sc[:code]} - #{sc[:notes]}" : sc[:code]
+                                   end.join("\n")
+                                 else
+                                   ''
+                                 end
 
             csv << [
               row[:user_name],
