@@ -60,6 +60,9 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
 
     visit periodic_url(system: 'sfms')
 
+    # The Excel export link lives next to the CSV link.
+    assert_link 'Export Excel'
+
     # Periodic CSV has NO metadata preamble -- the header IS the first row.
     table = downloaded_csv { click_link 'Export CSV' }
 

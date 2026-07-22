@@ -12,14 +12,24 @@ require_relative 'lib/nysenate_audit_utils/users/user_service'
 require_relative 'lib/nysenate_audit_utils/reporting/daily_report_service'
 require_relative 'lib/nysenate_audit_utils/reporting/account_holder_access_report_service'
 require_relative 'lib/nysenate_audit_utils/reporting/csv_generator'
+require_relative 'lib/nysenate_audit_utils/reporting/xlsx_generator'
 require_relative 'lib/nysenate_audit_utils/reporting/project_file_archiver'
 require_relative 'lib/nysenate_audit_utils/reporting/user_info_audit_service'
 require_relative 'lib/nysenate_audit_utils/reporting/user_info_audit_csv_generator'
+require_relative 'lib/nysenate_audit_utils/reporting/user_info_audit_xlsx_generator'
 require_relative 'lib/nysenate_audit_utils/account_tracking/account_tracking_service'
 require_relative 'lib/nysenate_audit_utils/autofill/employee_mapper'
 require_relative 'lib/nysenate_audit_utils/autofill/hooks'
 require_relative 'lib/nysenate_audit_utils/request_codes/request_code_mapper'
 require_relative 'lib/nysenate_audit_utils/request_codes/formula_helper'
+
+# Register the .xlsx MIME type so report actions can `respond_to { |f| f.xlsx }`
+# and `format: :xlsx` links resolve. Guard against double-registration on reload.
+unless Mime::Type.lookup_by_extension(:xlsx)
+  Mime::Type.register(
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', :xlsx
+  )
+end
 
 Redmine::Plugin.register :nysenate_audit_utils do
   name 'NYSenate Audit Utils Plugin'

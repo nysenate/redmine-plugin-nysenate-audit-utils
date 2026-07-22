@@ -1,8 +1,10 @@
 <% html_title(l(:label_audit_monthly_report)) -%>
 
 <div class="contextual">
-  <%= link_to sprite_icon('download', "Export CSV All Systems"), monthly_zip_project_audit_reports_path(@project, mode: @mode, month: @selected_month_num, year: @selected_year, status_filter: @status_filter), class: "icon icon-download" %>
+  <%= link_to sprite_icon('download', "Export Excel"), monthly_project_audit_reports_path(@project, target_system: @target_system, mode: @mode, month: @selected_month_num, year: @selected_year, status_filter: @status_filter, format: :xlsx), class: "icon icon-download" %>
+  <%= link_to sprite_icon('download', "Export Excel All Systems"), monthly_zip_project_audit_reports_path(@project, mode: @mode, month: @selected_month_num, year: @selected_year, status_filter: @status_filter, format: :xlsx), class: "icon icon-download" %>
   <%= link_to sprite_icon('download', "Export CSV"), monthly_project_audit_reports_path(@project, target_system: @target_system, mode: @mode, month: @selected_month_num, year: @selected_year, status_filter: @status_filter, format: :csv), class: "icon icon-download" %>
+  <%= link_to sprite_icon('download', "Export CSV All Systems"), monthly_zip_project_audit_reports_path(@project, mode: @mode, month: @selected_month_num, year: @selected_year, status_filter: @status_filter), class: "icon icon-download" %>
   <%= link_to sprite_icon('cancel', "Back to Reports"), project_audit_reports_path(@project), class: "icon icon-cancel" %>
 </div>
 

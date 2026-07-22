@@ -126,15 +126,26 @@ END_DESC
       end
     end
 
-    # Archive CSV to project Files
+    # Archive CSV and Excel to project Files
+    archive_timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
+    archive_description = "Daily audit report #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
     archive_report_to_project_files(
       project: project,
-      filename: "daily_report_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv",
+      filename: "daily_report_#{archive_timestamp}.csv",
       content: NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv(
         report_data, from_date: service.from_date, to_date: service.to_date
       ),
       content_type: 'text/csv',
-      description: "Daily audit report #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
+      description: archive_description
+    )
+    archive_report_to_project_files(
+      project: project,
+      filename: "daily_report_#{archive_timestamp}.xlsx",
+      content: NysenateAuditUtils::Reporting::XlsxGenerator.generate_daily_xlsx(
+        report_data, from_date: service.from_date, to_date: service.to_date
+      ),
+      content_type: AuditReportsMailer::XLSX_MIME,
+      description: archive_description
     )
 
     if no_email
@@ -223,15 +234,26 @@ END_DESC
       end
     end
 
-    # Archive CSV to project Files
+    # Archive CSV and Excel to project Files
+    archive_timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
+    archive_description = "Weekly audit report #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
     archive_report_to_project_files(
       project: project,
-      filename: "weekly_report_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv",
+      filename: "weekly_report_#{archive_timestamp}.csv",
       content: NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(
         report_data, from_date: service.from_date, to_date: service.to_date
       ),
       content_type: 'text/csv',
-      description: "Weekly audit report #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
+      description: archive_description
+    )
+    archive_report_to_project_files(
+      project: project,
+      filename: "weekly_report_#{archive_timestamp}.xlsx",
+      content: NysenateAuditUtils::Reporting::XlsxGenerator.generate_weekly_xlsx(
+        report_data, from_date: service.from_date, to_date: service.to_date
+      ),
+      content_type: AuditReportsMailer::XLSX_MIME,
+      description: archive_description
     )
 
     if no_email
@@ -347,16 +369,28 @@ END_DESC
       end
     end
 
-    # Archive CSV to project Files
+    # Archive CSV and Excel to project Files
     filename_suffix = mode == 'current' ? 'current' : "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
+    archive_timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
+    archive_stem = "monthly_report_#{target_system.parameterize}_#{filename_suffix}_#{archive_timestamp}"
+    archive_description = "Monthly audit report - #{target_system} - #{filename_suffix}"
     archive_report_to_project_files(
       project: project,
-      filename: "monthly_report_#{target_system.parameterize}_#{filename_suffix}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv",
+      filename: "#{archive_stem}.csv",
       content: NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
         report_data, as_of_time: as_of_time, target_system: target_system
       ),
       content_type: 'text/csv',
-      description: "Monthly audit report - #{target_system} - #{filename_suffix}"
+      description: archive_description
+    )
+    archive_report_to_project_files(
+      project: project,
+      filename: "#{archive_stem}.xlsx",
+      content: NysenateAuditUtils::Reporting::XlsxGenerator.generate_monthly_xlsx(
+        report_data, as_of_time: as_of_time, target_system: target_system
+      ),
+      content_type: AuditReportsMailer::XLSX_MIME,
+      description: archive_description
     )
 
     if no_email
@@ -469,16 +503,27 @@ END_DESC
       end
     end
 
-    # Archive ZIP to project Files
+    # Archive CSV ZIP and Excel workbook to project Files
     filename_suffix = mode == 'current' ? 'current' : "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
+    archive_timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
+    archive_description = "Monthly audit report - All Systems - #{filename_suffix}"
     archive_report_to_project_files(
       project: project,
-      filename: "monthly_reports_all_systems_#{filename_suffix}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.zip",
+      filename: "monthly_reports_all_systems_#{filename_suffix}_#{archive_timestamp}.zip",
       content: NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(
         reports_by_system, filename_suffix, as_of_time: as_of_time
       ),
       content_type: 'application/zip',
-      description: "Monthly audit report - All Systems - #{filename_suffix}"
+      description: archive_description
+    )
+    archive_report_to_project_files(
+      project: project,
+      filename: "monthly_reports_all_systems_#{filename_suffix}_#{archive_timestamp}.xlsx",
+      content: NysenateAuditUtils::Reporting::XlsxGenerator.generate_all_systems_xlsx(
+        reports_by_system, as_of_time: as_of_time
+      ),
+      content_type: AuditReportsMailer::XLSX_MIME,
+      description: archive_description
     )
 
     total = reports_by_system.values.sum(&:size)
@@ -570,6 +615,9 @@ END_DESC
     csv_data = NysenateAuditUtils::Reporting::UserInfoAuditCsvGenerator.generate(
       result, project: project, dry_run: dry_run
     )
+    xlsx_data = NysenateAuditUtils::Reporting::UserInfoAuditXlsxGenerator.generate(
+      result, project: project, dry_run: dry_run
+    )
 
     # Decide whether to email. By default, skip the email when the audit found
     # nothing actionable (no changes and no unmatched tickets); force_email overrides
@@ -583,7 +631,7 @@ END_DESC
       begin
         Mailer.with_synched_deliveries do
           AuditReportsMailer.deliver_user_info_audit_report(
-            recipient_list, result.summary, csv_data, project.identifier, dry_run
+            recipient_list, result.summary, csv_data, xlsx_data, project.identifier, dry_run
           )
         end
       rescue StandardError => e
@@ -593,17 +641,26 @@ END_DESC
           "#{e.backtrace&.first(10)&.join("\n")}"
         )
         puts "Warning: failed to send Account Holder audit email: #{email_error}"
-        puts 'Continuing to archive CSV so the run is not lost.'
+        puts 'Continuing to archive CSV and Excel so the run is not lost.'
       end
     end
 
     filename_stem = dry_run ? 'account_holder_audit_dryrun' : 'account_holder_audit'
+    archive_timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
+    archive_description = "Account Holder info audit#{dry_run ? ' (dry run)' : ''} for project #{project.identifier}"
     archive_report_to_project_files(
       project: project,
-      filename: "#{filename_stem}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv",
+      filename: "#{filename_stem}_#{archive_timestamp}.csv",
       content: csv_data,
       content_type: 'text/csv',
-      description: "Account Holder info audit#{dry_run ? ' (dry run)' : ''} for project #{project.identifier}"
+      description: archive_description
+    )
+    archive_report_to_project_files(
+      project: project,
+      filename: "#{filename_stem}_#{archive_timestamp}.xlsx",
+      content: xlsx_data,
+      content_type: AuditReportsMailer::XLSX_MIME,
+      description: archive_description
     )
 
     summary = result.summary

@@ -69,6 +69,15 @@ class AuditReportsController < ApplicationController
                   type: 'text/csv',
                   disposition: 'attachment'
       end
+      format.xlsx do
+        xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_daily_xlsx(
+          @report_data, from_date: @from_date, to_date: @to_date
+        )
+        send_data xlsx_data,
+                  filename: "daily_report_#{Date.today.strftime('%Y%m%d')}.xlsx",
+                  type: Mime[:xlsx].to_s,
+                  disposition: 'attachment'
+      end
     end
   rescue ArgumentError => e
     # Handle validation errors
@@ -135,6 +144,15 @@ class AuditReportsController < ApplicationController
                   type: 'text/csv; header=present',
                   filename: "weekly_report_#{Date.current.strftime('%Y%m%d')}.csv"
       end
+      format.xlsx do
+        xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_weekly_xlsx(
+          @report_data, from_date: @from_date, to_date: @to_date
+        )
+        send_data xlsx_data,
+                  type: Mime[:xlsx].to_s,
+                  filename: "weekly_report_#{Date.current.strftime('%Y%m%d')}.xlsx",
+                  disposition: 'attachment'
+      end
     end
   rescue => e
     Rails.logger.error "Weekly report generation failed: #{e.message}"
@@ -186,10 +204,21 @@ class AuditReportsController < ApplicationController
     respond_to do |format|
       format.html { paginate_report_data }
       format.csv do
-        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_periodic_csv(@report_data)
+        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_periodic_csv(
+          @report_data, system: @system, from_date: @from_date, to_date: @to_date
+        )
         send_data csv_data,
                   type: 'text/csv; header=present',
                   filename: "#{@system}_audit_#{@from_date.strftime('%Y%m%d')}_#{@to_date.strftime('%Y%m%d')}.csv"
+      end
+      format.xlsx do
+        xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_periodic_xlsx(
+          @report_data, system: @system, from_date: @from_date, to_date: @to_date
+        )
+        send_data xlsx_data,
+                  type: Mime[:xlsx].to_s,
+                  filename: "#{@system}_audit_#{@from_date.strftime('%Y%m%d')}_#{@to_date.strftime('%Y%m%d')}.xlsx",
+                  disposition: 'attachment'
       end
     end
   rescue => e
@@ -296,6 +325,20 @@ class AuditReportsController < ApplicationController
                   type: 'text/csv',
                   disposition: 'attachment'
       end
+      format.xlsx do
+        xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_monthly_xlsx(
+          @report_data, as_of_time: @as_of_time, target_system: target_system
+        )
+        filename_suffix = if mode == 'current'
+                            'current'
+                          else
+                            "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
+                          end
+        send_data xlsx_data,
+                  filename: "monthly_report_#{target_system.parameterize}_#{filename_suffix}.xlsx",
+                  type: Mime[:xlsx].to_s,
+                  disposition: 'attachment'
+      end
     end
   rescue => e
     Rails.logger.error "Monthly report generation failed: #{e.message}"
@@ -337,13 +380,23 @@ class AuditReportsController < ApplicationController
       end
     end
 
-    zip_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(
-      reports_by_system, filename_suffix, as_of_time: as_of_time
-    )
-    send_data zip_data,
-              filename: "monthly_reports_all_systems_#{filename_suffix}.zip",
-              type: 'application/zip',
-              disposition: 'attachment'
+    if params[:format].to_s == 'xlsx'
+      xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_all_systems_xlsx(
+        reports_by_system, as_of_time: as_of_time
+      )
+      send_data xlsx_data,
+                filename: "monthly_reports_all_systems_#{filename_suffix}.xlsx",
+                type: Mime[:xlsx].to_s,
+                disposition: 'attachment'
+    else
+      zip_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(
+        reports_by_system, filename_suffix, as_of_time: as_of_time
+      )
+      send_data zip_data,
+                filename: "monthly_reports_all_systems_#{filename_suffix}.zip",
+                type: 'application/zip',
+                disposition: 'attachment'
+    end
   rescue => e
     Rails.logger.error "Monthly ZIP export failed: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
@@ -398,6 +451,13 @@ class AuditReportsController < ApplicationController
         send_data csv_data,
                   filename: "account_holder_access_report_#{Date.current.strftime('%Y%m%d')}.csv",
                   type: 'text/csv',
+                  disposition: 'attachment'
+      end
+      format.xlsx do
+        xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_account_holder_access_xlsx(@report_data)
+        send_data xlsx_data,
+                  filename: "account_holder_access_report_#{Date.current.strftime('%Y%m%d')}.xlsx",
+                  type: Mime[:xlsx].to_s,
                   disposition: 'attachment'
       end
     end

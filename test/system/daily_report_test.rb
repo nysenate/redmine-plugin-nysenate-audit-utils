@@ -78,6 +78,9 @@ class DailyReportTest < AuditUtilsSystemTestCase
   def test_daily_report_export_csv
     visit daily_project_audit_reports_path(@project)
 
+    # The Excel export link lives next to the CSV link.
+    assert_link 'Export Excel'
+
     # The daily CSV starts with metadata rows before the column header, so parse
     # without a header row and search the raw cells.
     rows = downloaded_csv('*.csv', headers: false) { click_link 'Export CSV' }

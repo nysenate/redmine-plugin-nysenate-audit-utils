@@ -1005,4 +1005,94 @@ class AuditReportsControllerTest < ActionController::TestCase
     svc.stubs(:errors).returns([])
     svc
   end
+
+  # --- Excel (.xlsx) export tests ------------------------------------------
+
+  XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+  # Assert the response is an attachment .xlsx workbook (valid zip container).
+  def assert_xlsx_response(filename_pattern)
+    assert_response :success
+    assert_equal XLSX_MIME, response.content_type
+    assert_match(/attachment/, response.headers['Content-Disposition'])
+    assert_match(filename_pattern, response.headers['Content-Disposition'])
+    assert_equal 'PK', response.body[0, 2], 'expected a zip (xlsx) container'
+  end
+
+  test "should export daily report as Excel" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns([
+      { user_name: 'Doe, John', status_changes: [{ code: 'APP', notes: nil }],
+        account_statuses: [], open_requests: [], office: 'IT', office_location: nil,
+        user_id: '12345', user_uid: 'jdoe', post_date: '2025-01-15' }
+    ])
+    service_mock.stubs(:from_date).returns(Date.today - 1.day)
+    service_mock.stubs(:to_date).returns(Date.today)
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::DailyReportService.expects(:new).returns(service_mock)
+
+    get :daily, params: { project_id: 1 }, format: :xlsx
+    assert_xlsx_response(/daily_report_.*\.xlsx/)
+  end
+
+  test "should export weekly report as Excel" do
+    stub_weekly_service(weekly_mock_data)
+
+    get :weekly, params: { project_id: 1 }, format: :xlsx
+    assert_xlsx_response(/weekly_report_.*\.xlsx/)
+  end
+
+  test "should export monthly report as Excel" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns([
+      { user_id: '12345', user_name: 'John Doe', status: 'active', account_action: 'Add',
+        closed_on: Date.today - 1.day, request_code: 'RC1', issue_id: 1 }
+    ])
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
+
+    get :monthly, params: { project_id: 1, target_system: 'Oracle / SFMS' }, format: :xlsx
+    assert_xlsx_response(/monthly_report_oracle-sfms_.*\.xlsx/)
+  end
+
+  test "should export account holder access report as Excel" do
+    service_mock = mock('service')
+    service_mock.expects(:generate).returns([
+      { user_name: 'John Doe', user_id: '12345', user_uid: 'jdoe', user_type: 'Employee',
+        account_type: 'Oracle / SFMS', request_code: 'USRA', status: 'active', issue_id: 1 }
+    ])
+    service_mock.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
+
+    get :account_holder_access, params: { project_id: 1 }, format: :xlsx
+    assert_xlsx_response(/account_holder_access_report_\d{8}\.xlsx/)
+  end
+
+  test "should export all systems as a single Excel workbook" do
+    target_system_field_mock = mock('target_system_field')
+    target_system_field_mock.stubs(:possible_values).returns(['Oracle / SFMS', 'AIX'])
+    NysenateAuditUtils::CustomFieldConfiguration.stubs(:target_system_field).returns(target_system_field_mock)
+
+    oracle_data = [{ user_id: '111', user_name: 'Alice', status: 'active', account_action: 'Add', closed_on: Date.today, request_code: 'OAA', issue_id: 1 }]
+    aix_data    = [{ user_id: '222', user_name: 'Bob',   status: 'active', account_action: 'Add', closed_on: Date.today, request_code: 'AAA', issue_id: 2 }]
+
+    oracle_svc = mock('oracle_service')
+    oracle_svc.expects(:generate).returns(oracle_data)
+    oracle_svc.stubs(:success?).returns(true)
+    aix_svc = mock('aix_service')
+    aix_svc.expects(:generate).returns(aix_data)
+    aix_svc.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with { |a| a[:target_system] == 'Oracle / SFMS' }.returns(oracle_svc)
+    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with { |a| a[:target_system] == 'AIX' }.returns(aix_svc)
+
+    get :monthly_zip, params: { project_id: 1, mode: 'current', format: 'xlsx' }
+    assert_xlsx_response(/monthly_reports_all_systems_current\.xlsx/)
+
+    # One worksheet per target system.
+    sheets = nil
+    Zip::File.open_buffer(response.body) do |z|
+      sheets = z.read('xl/workbook.xml').scan(/<sheet[^>]*\bname="([^"]+)"/).flatten
+    end
+    assert_equal ['Oracle   SFMS', 'AIX'], sheets
+  end
 end

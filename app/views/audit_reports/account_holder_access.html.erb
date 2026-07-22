@@ -1,6 +1,7 @@
 <% html_title(l(:label_audit_account_holder_access_report)) -%>
 
 <div class="contextual">
+  <%= link_to sprite_icon('download', "Export Excel"), account_holder_access_project_audit_reports_path(@project, search: @search, user_type: @user_type_filter, target_system: @target_system_filter, account_status: @account_status_filter, format: :xlsx), class: "icon icon-download" %>
   <%= link_to sprite_icon('download', "Export CSV"), account_holder_access_project_audit_reports_path(@project, search: @search, user_type: @user_type_filter, target_system: @target_system_filter, account_status: @account_status_filter, format: :csv), class: "icon icon-download" %>
   <%= link_to sprite_icon('cancel', "Back to Reports"), project_audit_reports_path(@project), class: "icon icon-cancel" %>
 </div>

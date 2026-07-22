@@ -48,6 +48,9 @@ class WeeklyReportTest < AuditUtilsSystemTestCase
 
     visit weekly_url
 
+    # The Excel export link lives next to the CSV link.
+    assert_link 'Export Excel'
+
     # The weekly CSV carries a metadata preamble before the header row, so parse
     # raw (headers: false) and locate the real header row ourselves.
     rows = downloaded_csv(headers: false) { click_link 'Export CSV' }

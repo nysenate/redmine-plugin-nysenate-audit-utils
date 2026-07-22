@@ -196,6 +196,8 @@ class AccountHolderAccessReportTest < AuditUtilsSystemTestCase
     end
 
     visit_report
+    # The Excel export link lives next to the CSV link.
+    assert_link 'Export Excel'
     # Web view is paginated to 25.
     assert_selector 'tbody tr', count: 25
 

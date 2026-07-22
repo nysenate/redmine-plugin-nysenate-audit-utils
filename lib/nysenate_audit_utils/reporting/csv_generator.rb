@@ -9,6 +9,33 @@ module NysenateAuditUtils
       DAILY_DESCRIPTION = 'Tickets for employees with status changes in the date range.'
       WEEKLY_DESCRIPTION = 'All tickets active during the week for access list consistency checks.'
 
+      # Report Purpose line (#18834): a "why this report exists" statement shown
+      # below the Report Description in the export heading. Only Daily has wording
+      # for now; the other reports omit the row until purpose text is decided.
+      DAILY_PURPOSE = 'Review for potential Offboarding and/or Onboarding security work.'
+
+      # No-entries messages, mirroring each report's on-screen "none found" text
+      # (#18834). Shared here so both the CSV and Excel exporters use identical
+      # wording; the interpolated ones (monthly, periodic) are built by helpers.
+      DAILY_NO_ENTRIES = 'No user status changes found for the query period.'
+      WEEKLY_NO_ENTRIES = 'No closed tickets found for the selected period.'
+      PERIODIC_NO_ENTRIES = 'No closed tickets found for the selected period.'
+      ACCOUNT_HOLDER_ACCESS_NO_ENTRIES = 'No account access found.'
+
+      # No-entries wording for the Monthly report (mirrors monthly.html.erb).
+      def self.monthly_no_entries(target_system, as_of_time)
+        base = target_system ? "No account data found for #{target_system}" : 'No account data found'
+        as_of_time ? "#{base} as of #{as_of_time.to_date.strftime('%B %Y')}." : "#{base}."
+      end
+
+      # No-entries wording for the periodic (SFMS/SFS) report (mirrors periodic.html.erb).
+      def self.periodic_no_entries(system, from_date, to_date)
+        return PERIODIC_NO_ENTRIES unless system && from_date && to_date
+
+        "No closed #{system.to_s.upcase} tickets found between " \
+          "#{from_date.to_date.strftime('%Y-%m-%d')} and #{to_date.to_date.strftime('%Y-%m-%d')}."
+      end
+
       # Generate CSV for daily report data
       # @param data [Array<Hash>] Report data with user and account status info
       # @param from_date [Time, Date, nil] Start of report range
@@ -22,9 +49,15 @@ module NysenateAuditUtils
             write_metadata(csv,
               name: 'Daily',
               description: DAILY_DESCRIPTION,
+              purpose: DAILY_PURPOSE,
               start_time: from_date,
               end_time: to_date
             )
+          end
+
+          if data.empty?
+            csv << [DAILY_NO_ENTRIES]
+            next
           end
 
           # Header row
@@ -97,6 +130,11 @@ module NysenateAuditUtils
             )
           end
 
+          if data.empty?
+            csv << [WEEKLY_NO_ENTRIES]
+            next
+          end
+
           # Header row
           csv << [
             'Ticket #',
@@ -138,10 +176,15 @@ module NysenateAuditUtils
       # directly into Access. No metadata preamble — the header is the first row.
       # @param data [Array<Hash>] Report rows from PeriodicAuditReportService
       # @return [String] CSV content
-      def self.generate_periodic_csv(data)
+      def self.generate_periodic_csv(data, system: nil, from_date: nil, to_date: nil)
         return '' unless data
 
         CSV.generate do |csv|
+          if data.empty?
+            csv << [periodic_no_entries(system, from_date, to_date)]
+            next
+          end
+
           # Header row (matches the legacy audit spreadsheet)
           csv << [
             'RequestType',
@@ -198,6 +241,11 @@ module NysenateAuditUtils
             )
           end
 
+          if data.empty?
+            csv << [monthly_no_entries(target_system, as_of_time)]
+            next
+          end
+
           # Header row (matches web view layout with user_type and request_code added)
           csv << [
             'Account Holder Name',
@@ -244,6 +292,11 @@ module NysenateAuditUtils
             end_time: Time.now
           )
 
+          if data.empty?
+            csv << [ACCOUNT_HOLDER_ACCESS_NO_ENTRIES]
+            next
+          end
+
           # Header row (Account Holder terminology per plugin convention)
           csv << [
             'Account Holder Name',
@@ -285,9 +338,10 @@ module NysenateAuditUtils
       end
 
       # Write the 4-row metadata block followed by a blank separator row.
-      def self.write_metadata(csv, name:, description:, start_time:, end_time:)
+      def self.write_metadata(csv, name:, description:, start_time:, end_time:, purpose: nil)
         csv << ['Report Name', name]
         csv << ['Report Description', description]
+        csv << ['Report Purpose', purpose] if purpose
         csv << ['Start time', format_metadata_time(start_time)]
         csv << ['End time', format_metadata_time(end_time)]
         csv << ['Generated at', format_metadata_time(Time.now)]

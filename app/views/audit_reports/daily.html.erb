@@ -1,6 +1,7 @@
 <% html_title(l(:label_audit_daily_report)) -%>
 
 <div class="contextual">
+  <%= link_to sprite_icon('download', "Export Excel"), daily_project_audit_reports_path(@project, format: :xlsx, mode: @mode, start_date: params[:start_date], end_date: params[:end_date]), class: "icon icon-download" %>
   <%= link_to sprite_icon('download', "Export CSV"), daily_project_audit_reports_path(@project, format: :csv, mode: @mode, start_date: params[:start_date], end_date: params[:end_date]), class: "icon icon-download" %>
   <%= link_to sprite_icon('cancel', "Back to Reports"), project_audit_reports_path(@project), class: "icon icon-cancel" %>
 </div>

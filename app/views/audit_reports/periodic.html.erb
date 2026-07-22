@@ -1,6 +1,12 @@
 <% html_title("SFMS Quarterly / SFS Annual Report") -%>
 
 <div class="contextual">
+  <%= link_to sprite_icon('download', "Export Excel"), periodic_project_audit_reports_path(@project,
+        format: :xlsx,
+        system: @system,
+        start_date: @from_date.to_date.iso8601,
+        end_date: @to_date.to_date.iso8601),
+      class: "icon icon-download" %>
   <%= link_to sprite_icon('download', "Export CSV"), periodic_project_audit_reports_path(@project,
         format: :csv,
         system: @system,

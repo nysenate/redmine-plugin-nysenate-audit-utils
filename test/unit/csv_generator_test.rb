@@ -122,17 +122,67 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     lines = csv.lines
     assert_equal 'Report Name,Daily', lines[0].chomp
     assert_match(/^Report Description,/, lines[1])
-    assert_match(/^Start time,2026-04-28 00:00:00/, lines[2])
-    assert_match(/^End time,2026-04-29 00:00:00/, lines[3])
-    assert_match(/^Generated at,\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, lines[4])
-    assert_equal '', lines[5].chomp
-    assert_match(/Account Holder Name/, lines[6])
-    assert_match(/John Doe/, lines[7])
+    # #18834: Report Purpose row sits directly below Report Description.
+    assert_match(/^Report Purpose,Review for potential Offboarding/, lines[2])
+    assert_match(/^Start time,2026-04-28 00:00:00/, lines[3])
+    assert_match(/^End time,2026-04-29 00:00:00/, lines[4])
+    assert_match(/^Generated at,\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, lines[5])
+    assert_equal '', lines[6].chomp
+    assert_match(/Account Holder Name/, lines[7])
+    assert_match(/John Doe/, lines[8])
+  end
+
+  # #18834: only the Daily report carries a Report Purpose row for now; the other
+  # reports omit it until wording is decided.
+  def test_report_purpose_row_only_on_daily
+    from = Time.parse('2026-04-28 00:00:00')
+    to   = Time.parse('2026-04-29 00:00:00')
+    daily = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv([DAILY_ROW], from_date: from, to_date: to)
+    weekly = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv([WEEKLY_ROW], from_date: from, to_date: to)
+    assert_includes daily, 'Report Purpose,Review for potential Offboarding and/or Onboarding security work.'
+    assert_not_includes weekly, 'Report Purpose'
   end
 
   def test_daily_csv_omits_metadata_when_dates_missing
     csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv([DAILY_ROW])
     assert_match(/\AAccount Holder Name/, csv)
+  end
+
+  # #18834: empty data writes the on-screen "none found" message instead of a
+  # bare header row (parity with the Excel export).
+  def test_daily_csv_empty_writes_no_entries_message
+    from = Time.parse('2026-04-28 00:00:00')
+    to   = Time.parse('2026-04-29 00:00:00')
+    csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv([], from_date: from, to_date: to)
+    assert_includes csv, 'No user status changes found for the query period.'
+    assert_not_includes csv, 'Account Holder Name'
+  end
+
+  def test_weekly_csv_empty_writes_no_entries_message
+    csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(
+      [], from_date: Date.parse('2026-04-27'), to_date: Time.parse('2026-05-01 23:59:59')
+    )
+    assert_includes csv, 'No closed tickets found for the selected period.'
+    assert_not_includes csv, 'Ticket #'
+  end
+
+  def test_monthly_csv_empty_writes_no_entries_message
+    csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
+      [], as_of_time: Time.parse('2026-04-01 00:00'), target_system: 'AIX'
+    )
+    assert_includes csv, 'No account data found for AIX as of April 2026.'
+  end
+
+  def test_periodic_csv_empty_writes_interpolated_no_entries_message
+    csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_periodic_csv(
+      [], system: 'sfms', from_date: Date.parse('2026-02-01'), to_date: Date.parse('2026-04-30')
+    )
+    assert_includes csv, 'No closed SFMS tickets found between 2026-02-01 and 2026-04-30.'
+  end
+
+  def test_account_holder_access_csv_empty_writes_no_entries_message
+    csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_account_holder_access_csv([])
+    assert_includes csv, 'No account access found.'
   end
 
   def test_weekly_csv_includes_metadata_block_when_dates_provided

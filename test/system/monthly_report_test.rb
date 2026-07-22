@@ -67,6 +67,10 @@ class MonthlyReportTest < AuditUtilsSystemTestCase
   def test_single_system_csv_export
     visit monthly_path(target_system: 'Oracle / SFMS', status_filter: 'all')
 
+    # Both single-system and all-systems Excel export links live next to the CSV ones.
+    assert_link 'Export Excel', exact: true
+    assert_link 'Export Excel All Systems'
+
     # Two "Export CSV..." links exist; match the single-system one exactly.
     rows = downloaded_csv('*.csv', headers: false) do
       click_link 'Export CSV', exact: true

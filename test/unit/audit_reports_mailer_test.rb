@@ -11,6 +11,31 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     Setting.default_language = 'en'
   end
 
+  XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+  # Return the single .xlsx attachment on a mail, asserting exactly one exists.
+  # Excel is intentionally the FIRST attachment; select by extension rather than
+  # position so these helpers stay order-independent.
+  def xlsx_attachment(mail)
+    attachment_with_ext(mail, '.xlsx')
+  end
+
+  # Return the single .csv attachment on a mail.
+  def csv_attachment(mail)
+    attachment_with_ext(mail, '.csv')
+  end
+
+  # Return the single .zip attachment on a mail.
+  def zip_attachment(mail)
+    attachment_with_ext(mail, '.zip')
+  end
+
+  def attachment_with_ext(mail, ext)
+    matches = mail.attachments.select { |a| a.filename.to_s.end_with?(ext) }
+    assert_equal 1, matches.size, "expected exactly one #{ext} attachment"
+    matches.first
+  end
+
   def test_daily_report_generates_email
     report_data = [
       {
@@ -33,8 +58,11 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     assert_equal ['user@example.com'], mail.to
     assert_match /Daily Audit Report/, mail.subject
     assert_match /2026-03-01/, mail.subject
-    assert_equal 1, mail.attachments.size
-    assert_match /daily_report.*\.csv/, mail.attachments.first.filename
+    assert_equal 2, mail.attachments.size
+    assert_match /daily_report.*\.csv/, csv_attachment(mail).filename
+    xlsx = xlsx_attachment(mail)
+    assert_match /daily_report.*\.xlsx/, xlsx.filename
+    assert_equal 'PK', xlsx.body.decoded[0, 2]
     # Check HTML part for content
     assert_match /Employees with Status Changes/, mail.html_part.body.to_s
     assert_match /1/, mail.html_part.body.to_s
@@ -70,7 +98,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
 
     mail = AuditReportsMailer.daily_report('user@example.com', report_data, from_date, to_date)
 
-    csv_content = mail.attachments.first.body.to_s
+    csv_content = csv_attachment(mail).body.to_s
     assert_match /Account Holder Name/, csv_content
     assert_match /Jane Smith/, csv_content
     assert_match /67890/, csv_content
@@ -97,8 +125,9 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     assert_equal ['user@example.com'], mail.to
     assert_match /Weekly Audit Report/, mail.subject
     assert_match /Week of 2026-03-01/, mail.subject
-    assert_equal 1, mail.attachments.size
-    assert_match /weekly_report.*\.csv/, mail.attachments.first.filename
+    assert_equal 2, mail.attachments.size
+    assert_match /weekly_report.*\.csv/, csv_attachment(mail).filename
+    assert_match /weekly_report.*\.xlsx/, xlsx_attachment(mail).filename
     # Check HTML part for content
     assert_match /Active Tickets/, mail.html_part.body.to_s
     assert_match /1/, mail.html_part.body.to_s
@@ -122,7 +151,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
 
     mail = AuditReportsMailer.weekly_report('user@example.com', report_data, from_date, to_date)
 
-    csv_content = mail.attachments.first.body.to_s
+    csv_content = csv_attachment(mail).body.to_s
     assert_match /Account Holder Username/, csv_content
     assert_match /test_user/, csv_content
     assert_match /11111/, csv_content
@@ -159,8 +188,9 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     assert_match /Monthly Audit Report/, mail.subject
     assert_match /Oracle \/ SFMS/, mail.subject
     assert_match /Current State/, mail.subject
-    assert_equal 1, mail.attachments.size
-    assert_match /monthly_report_oracle-sfms_current\.csv/, mail.attachments.first.filename
+    assert_equal 2, mail.attachments.size
+    assert_match /monthly_report_oracle-sfms_current\.csv/, csv_attachment(mail).filename
+    assert_match /monthly_report_oracle-sfms_current\.xlsx/, xlsx_attachment(mail).filename
     # Check HTML part for content
     assert_match /Total Accounts/, mail.html_part.body.to_s
     assert_match /1/, mail.html_part.body.to_s
@@ -201,8 +231,9 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     assert_match /Monthly Audit Report/, mail.subject
     assert_match /AIX/, mail.subject
     assert_match /January 2026/, mail.subject
-    assert_equal 1, mail.attachments.size
-    assert_match /monthly_report_aix_202601\.csv/, mail.attachments.first.filename
+    assert_equal 2, mail.attachments.size
+    assert_match /monthly_report_aix_202601\.csv/, csv_attachment(mail).filename
+    assert_match /monthly_report_aix_202601\.xlsx/, xlsx_attachment(mail).filename
     # Check HTML part for content
     assert_match /Historical Snapshot/, mail.html_part.body.to_s
     assert_match /January 2026/, mail.html_part.body.to_s
@@ -235,7 +266,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
       as_of_time
     )
 
-    csv_content = mail.attachments.first.body.to_s
+    csv_content = csv_attachment(mail).body.to_s
     assert_match /Account Holder Name/, csv_content
     assert_match /Test User/, csv_content
     assert_match /99999/, csv_content
@@ -260,10 +291,13 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     assert_match /Monthly Audit Report/, mail.subject
     assert_match /All Systems/, mail.subject
     assert_match /Current State/, mail.subject
-    assert_equal 1, mail.attachments.size
-    assert_match /monthly_reports_all_systems_current\.zip/, mail.attachments.first.filename
+    assert_equal 2, mail.attachments.size
+    assert_match /monthly_reports_all_systems_current\.zip/, zip_attachment(mail).filename
+    xlsx = xlsx_attachment(mail)
+    assert_match /monthly_reports_all_systems_current\.xlsx/, xlsx.filename
+    assert_equal 'PK', xlsx.body.decoded[0, 2]
 
-    zip_data = mail.attachments.first.body.decoded
+    zip_data = zip_attachment(mail).body.decoded
     Zip::InputStream.open(StringIO.new(zip_data)) do |zip|
       entries = {}
       while (entry = zip.get_next_entry)
@@ -298,8 +332,9 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
 
     assert_match /January 2026/, mail.subject
     assert_match /All Systems/, mail.subject
-    assert_equal 1, mail.attachments.size
-    assert_match /monthly_reports_all_systems_202601\.zip/, mail.attachments.first.filename
+    assert_equal 2, mail.attachments.size
+    assert_match /monthly_reports_all_systems_202601\.zip/, zip_attachment(mail).filename
+    assert_match /monthly_reports_all_systems_202601\.xlsx/, xlsx_attachment(mail).filename
   end
 
   def test_all_systems_monthly_report_multiple_recipients

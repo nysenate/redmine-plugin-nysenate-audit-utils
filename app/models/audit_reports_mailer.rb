@@ -4,6 +4,8 @@ class AuditReportsMailer < ActionMailer::Base
   include Redmine::I18n
   layout 'mailer'
 
+  XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
   def default_url_options
     ::Mailer.default_url_options
   end
@@ -28,7 +30,12 @@ class AuditReportsMailer < ActionMailer::Base
       )
     end
 
-    # Generate and attach CSV
+    # Generate and attach both Excel and CSV (Excel first)
+    xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_daily_xlsx(
+      report_data, from_date: from_date, to_date: to_date
+    )
+    attachments["daily_report_#{Date.today.strftime('%Y%m%d')}.xlsx"] =
+      { mime_type: XLSX_MIME, content: xlsx_data }
     csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv(
       report_data, from_date: from_date, to_date: to_date
     )
@@ -58,7 +65,12 @@ class AuditReportsMailer < ActionMailer::Base
       end_date: to_date.to_date.to_s
     ) if project_id
 
-    # Generate and attach CSV
+    # Generate and attach both Excel and CSV (Excel first)
+    xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_weekly_xlsx(
+      report_data, from_date: from_date, to_date: to_date
+    )
+    attachments["weekly_report_#{Date.current.strftime('%Y%m%d')}.xlsx"] =
+      { mime_type: XLSX_MIME, content: xlsx_data }
     csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(
       report_data, from_date: from_date, to_date: to_date
     )
@@ -95,15 +107,20 @@ class AuditReportsMailer < ActionMailer::Base
       @report_url = monthly_project_audit_reports_url(project_id, url_params)
     end
 
-    # Generate and attach CSV with appropriate filename
-    csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
-      report_data, as_of_time: as_of_time, target_system: target_system
-    )
+    # Generate and attach both Excel and CSV (Excel first) with appropriate filename
     filename_suffix = if mode == 'current'
                         'current'
                       else
                         "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
                       end
+    xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_monthly_xlsx(
+      report_data, as_of_time: as_of_time, target_system: target_system
+    )
+    attachments["monthly_report_#{target_system.parameterize}_#{filename_suffix}.xlsx"] =
+      { mime_type: XLSX_MIME, content: xlsx_data }
+    csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
+      report_data, as_of_time: as_of_time, target_system: target_system
+    )
     attachments["monthly_report_#{target_system.parameterize}_#{filename_suffix}.csv"] = csv_data
 
     # Build subject line
@@ -181,6 +198,11 @@ class AuditReportsMailer < ActionMailer::Base
                         "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
                       end
 
+    xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_all_systems_xlsx(
+      reports_by_system, as_of_time: as_of_time
+    )
+    attachments["monthly_reports_all_systems_#{filename_suffix}.xlsx"] =
+      { mime_type: XLSX_MIME, content: xlsx_data }
     zip_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(
       reports_by_system, filename_suffix, as_of_time: as_of_time
     )
@@ -216,16 +238,20 @@ class AuditReportsMailer < ActionMailer::Base
   # @param recipients     [Array<String>, String] Email address(es)
   # @param summary        [Hash] Result summary counters
   # @param csv_data       [String] CSV body to attach
+  # @param xlsx_data      [String] Excel workbook body to attach
   # @param project_id     [String] Project identifier (passed by id, not the
   #                       AR object, so ActiveJob can serialize it)
   # @param dry_run        [Boolean]
-  def user_info_audit_report(recipients, summary, csv_data, project_id, dry_run)
+  def user_info_audit_report(recipients, summary, csv_data, xlsx_data, project_id, dry_run)
     @project_identifier = project_id
     @dry_run = dry_run
     @summary = (summary || {}).deep_symbolize_keys
 
     filename_stem = dry_run ? 'account_holder_audit_dryrun' : 'account_holder_audit'
-    attachments["#{filename_stem}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv"] = csv_data
+    timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
+    attachments["#{filename_stem}_#{timestamp}.xlsx"] =
+      { mime_type: XLSX_MIME, content: xlsx_data }
+    attachments["#{filename_stem}_#{timestamp}.csv"] = csv_data
 
     mode_tag = dry_run ? ' [DRY RUN]' : ''
     mail(
@@ -236,7 +262,7 @@ class AuditReportsMailer < ActionMailer::Base
   end
 
   # Class method to deliver Account Holder info audit report.
-  def self.deliver_user_info_audit_report(recipients, summary, csv_data, project_id, dry_run)
-    user_info_audit_report(recipients, summary, csv_data, project_id, dry_run).deliver_later
+  def self.deliver_user_info_audit_report(recipients, summary, csv_data, xlsx_data, project_id, dry_run)
+    user_info_audit_report(recipients, summary, csv_data, xlsx_data, project_id, dry_run).deliver_later
   end
 end
