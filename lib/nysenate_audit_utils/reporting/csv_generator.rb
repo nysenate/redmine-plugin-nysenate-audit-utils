@@ -62,32 +62,21 @@ module NysenateAuditUtils
 
           # Header row
           csv << [
+            'Post Date',
             'Account Holder Name',
-            'Account Status',
-            'Open Tickets',
-            'Status Changes',
-            'Account Holder Office',
-            'Account Holder Location',
-            'Account Holder ID',
             'Account Holder Username',
-            'Post Date'
+            'Personnel Status Changes',
+            'Account Holder Office',
+            'Account Access Status',
+            'In-progress Tickets'
           ]
 
           # Data rows
           data.each do |row|
-            # Format account statuses as comma-separated request codes
-            account_status_str = if row[:account_statuses].present?
-                                   row[:account_statuses].map { |s| s[:request_code] || s[:account_type] }.join(', ')
-                                 else
-                                   ''
-                                 end
-
-            # Format open requests as comma-separated request codes
-            open_tickets_str = if row[:open_requests].present?
-                                 row[:open_requests].map { |r| r[:request_code] || r[:account_type] }.join(', ')
-                               else
-                                 ''
-                               end
+            # One "CODE - TICKET#" entry per line (blank ticket # falls back to
+            # just the code).
+            account_status_str = format_code_ticket_lines(row[:account_statuses])
+            open_tickets_str = format_code_ticket_lines(row[:open_requests])
 
             status_changes_str = if row[:status_changes].present?
                                    row[:status_changes].map do |sc|
@@ -98,15 +87,13 @@ module NysenateAuditUtils
                                  end
 
             csv << [
+              format_report_date(row[:post_date]),
               row[:user_name],
-              account_status_str,
-              open_tickets_str,
+              row[:user_uid],
               status_changes_str,
               row[:office],
-              row[:office_location],
-              row[:user_id],
-              row[:user_uid],
-              row[:post_date]
+              account_status_str,
+              open_tickets_str
             ]
           end
         end
@@ -352,6 +339,25 @@ module NysenateAuditUtils
         end
         csv << ['Generated at', format_metadata_time(Time.now)]
         csv << []
+      end
+
+      # Render account-status / open-request entries as one "CODE - TICKET#" line
+      # each, newline-separated (shared by the CSV and XLSX daily exports). Falls
+      # back to the account type when there's no request code, and omits the
+      # " - TICKET#" suffix when no issue id is present.
+      def self.format_code_ticket_lines(entries)
+        return '' if entries.blank?
+
+        entries.map do |entry|
+          code = entry[:request_code].presence || entry[:account_type]
+          entry[:issue_id].present? ? "#{code} - #{entry[:issue_id]}" : code
+        end.join("\n")
+      end
+
+      # Format a report date value as YYYY-MM-DD. Coerces Date/Time to a string so
+      # Excel doesn't render a bare Date as its numeric serial (e.g. 46188).
+      def self.format_report_date(value)
+        value.respond_to?(:strftime) ? value.strftime('%Y-%m-%d') : value
       end
 
       def self.format_metadata_time(value)

@@ -101,7 +101,10 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     csv_content = csv_attachment(mail).body.to_s
     assert_match /Account Holder Name/, csv_content
     assert_match /Jane Smith/, csv_content
-    assert_match /67890/, csv_content
+    # #18837 dropped the Account Holder ID column; office still exports, and the
+    # post date renders as a plain YYYY-MM-DD (not an Excel serial).
+    assert_match /Personnel/, csv_content
+    assert_match /2026-03-01/, csv_content
   end
 
   def test_weekly_report_generates_email

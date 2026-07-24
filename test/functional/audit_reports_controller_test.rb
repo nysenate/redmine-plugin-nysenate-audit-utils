@@ -156,7 +156,8 @@ class AuditReportsControllerTest < ActionController::TestCase
     csv_content = response.body
     assert_match /Account Holder Name/, csv_content
     assert_match /Doe, John/, csv_content
-    assert_match /12345/, csv_content
+    # #18837 dropped the Account Holder ID column; the username still exports.
+    assert_match /jdoe/, csv_content
   end
 
   test "should export empty CSV for nil report data" do

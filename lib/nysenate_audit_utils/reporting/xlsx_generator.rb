@@ -47,29 +47,18 @@ module NysenateAuditUtils
             end
 
             headers = [
+              'Post Date',
               'Account Holder Name',
-              'Account Status',
-              'Open Tickets',
-              'Status Changes',
-              'Account Holder Office',
-              'Account Holder Location',
-              'Account Holder ID',
               'Account Holder Username',
-              'Post Date'
+              'Personnel Status Changes',
+              'Account Holder Office',
+              'Account Access Status',
+              'In-progress Tickets'
             ]
 
             rows = data.map do |row|
-              account_status_str = if row[:account_statuses].present?
-                                     row[:account_statuses].map { |s| s[:request_code] || s[:account_type] }.join(', ')
-                                   else
-                                     ''
-                                   end
-
-              open_tickets_str = if row[:open_requests].present?
-                                   row[:open_requests].map { |r| r[:request_code] || r[:account_type] }.join(', ')
-                                 else
-                                   ''
-                                 end
+              account_status_str = CsvGenerator.format_code_ticket_lines(row[:account_statuses])
+              open_tickets_str = CsvGenerator.format_code_ticket_lines(row[:open_requests])
 
               status_changes_str = if row[:status_changes].present?
                                      row[:status_changes].map do |sc|
@@ -80,22 +69,20 @@ module NysenateAuditUtils
                                    end
 
               [
+                CsvGenerator.format_report_date(row[:post_date]),
                 row[:user_name],
-                account_status_str,
-                open_tickets_str,
+                row[:user_uid],
                 status_changes_str,
                 row[:office],
-                row[:office_location],
-                row[:user_id],
-                row[:user_uid],
-                row[:post_date]
+                account_status_str,
+                open_tickets_str
               ]
             end
 
             write_table(sheet, styles,
               headers: headers,
               rows: rows,
-              widths: [24, 16, 16, 40, 20, 20, 14, 20, 14]
+              widths: [14, 24, 20, 40, 20, 16, 16]
             )
           end
         end

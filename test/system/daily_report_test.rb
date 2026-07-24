@@ -88,11 +88,12 @@ class DailyReportTest < AuditUtilsSystemTestCase
 
     # Column header row is present...
     assert_includes cells, 'Account Holder Name'
-    assert_includes cells, 'Account Holder ID'
-    assert_includes cells, 'Status Changes'
+    assert_includes cells, 'Personnel Status Changes'
+    assert_includes cells, 'Account Access Status'
+    # #18837 removed the Account Holder ID column from the export.
+    assert_not_includes cells, 'Account Holder ID'
     # ...and at least one synthetic data row landed in the export.
     assert_includes cells, 'Doodlewick, Ulric F.'
-    assert_includes cells, '900101'
   end
 
   # 4. Empty state -----------------------------------------------------------

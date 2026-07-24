@@ -145,7 +145,7 @@ class CsvGeneratorTest < ActiveSupport::TestCase
 
   def test_daily_csv_omits_metadata_when_dates_missing
     csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv([DAILY_ROW])
-    assert_match(/\AAccount Holder Name/, csv)
+    assert_match(/\APost Date/, csv)
   end
 
   # #18834: empty data writes the on-screen "none found" message instead of a
