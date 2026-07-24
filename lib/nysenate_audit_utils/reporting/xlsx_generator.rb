@@ -164,7 +164,9 @@ module NysenateAuditUtils
       end
 
       # Generate the quarterly/annual (periodic) audit workbook. Columns match
-      # the legacy SFMS/SFS audit spreadsheet; no metadata preamble.
+      # the legacy SFMS/SFS audit spreadsheet, with the ticket description
+      # appended as a final export-only column. No metadata preamble — the file
+      # is kept clean so it imports directly (parity with the CSV export).
       # @param data [Array<Hash>] rows from PeriodicAuditReportService
       def self.generate_periodic_xlsx(data, system: nil, from_date: nil, to_date: nil)
         return ''.b unless data
@@ -187,6 +189,7 @@ module NysenateAuditUtils
               'SenDevNumber',
               'GeneralFormInfoID',
               'Program',
+              'Subject',
               'Description'
             ]
 
@@ -202,14 +205,15 @@ module NysenateAuditUtils
                 row[:issue_id],
                 nil,
                 'SFMS',
-                row[:subject]
+                row[:subject],
+                row[:description]
               ]
             end
 
             write_table(sheet, styles,
               headers: headers,
               rows: rows,
-              widths: [14, 24, 14, 20, 14, 16, 14, 14, 18, 12, 44]
+              widths: [14, 24, 14, 20, 14, 16, 14, 14, 18, 12, 44, 60]
             )
           end
         end

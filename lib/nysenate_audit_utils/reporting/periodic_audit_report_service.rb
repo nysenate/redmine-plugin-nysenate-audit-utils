@@ -165,7 +165,8 @@ module NysenateAuditUtils
             closed_on: issue.closed_on,
             bac_number: bac_number_field_id ? get_custom_field_value(issue, bac_number_field_id) : nil,
             issue_id: issue.id,
-            subject: issue.subject
+            subject: issue.subject,
+            description: issue.description
           }
         end
       end

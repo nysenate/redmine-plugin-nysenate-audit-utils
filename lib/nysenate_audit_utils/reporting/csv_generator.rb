@@ -185,7 +185,8 @@ module NysenateAuditUtils
             next
           end
 
-          # Header row (matches the legacy audit spreadsheet)
+          # Header row (matches the legacy audit spreadsheet). The ticket
+          # description is appended as a final export-only column.
           csv << [
             'RequestType',
             'FullName',
@@ -197,6 +198,7 @@ module NysenateAuditUtils
             'SenDevNumber',
             'GeneralFormInfoID',
             'Program',
+            'Subject',
             'Description'
           ]
 
@@ -212,7 +214,8 @@ module NysenateAuditUtils
               row[:issue_id],
               nil,
               'SFMS',
-              row[:subject]
+              row[:subject],
+              row[:description]
             ]
           end
         end

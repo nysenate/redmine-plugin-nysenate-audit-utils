@@ -67,7 +67,7 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
     table = downloaded_csv { click_link 'Export CSV' }
 
     %w[RequestType FullName Userid Office EntryDate CompletedDate BacNumber
-       SenDevNumber GeneralFormInfoID Program Description].each do |col|
+       SenDevNumber GeneralFormInfoID Program Subject Description].each do |col|
       assert_includes table.headers, col
     end
 
@@ -77,6 +77,9 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
     assert_equal 'yfakeperson', row['Userid']
     assert_equal '900777', row['BacNumber']
     assert_equal 'USRA', row['RequestType']
+    # The legacy "Description" column now carries the ticket Subject, and the
+    # ticket Description is appended as its own export-only column.
+    assert_equal 'Yara SFMS Add', row['Subject']
   end
 
   # ---------------------------------------------------------------------------

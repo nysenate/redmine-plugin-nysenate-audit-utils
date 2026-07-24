@@ -32,7 +32,8 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
   PERIODIC_ROW = {
     request_code: 'USRA', user_name: 'Alice Jones', user_uid: 'ajones', office: 'STS',
     created_on: Date.parse('2026-02-01'), closed_on: Date.parse('2026-02-10'),
-    bac_number: 'BAC-1', issue_id: 200, subject: 'SFMS access'
+    bac_number: 'BAC-1', issue_id: 200, subject: 'SFMS access',
+    description: 'Please grant SFMS access for the new hire.'
   }.freeze
 
   ACCOUNT_HOLDER_ACCESS_ROW = {
@@ -168,12 +169,18 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
 
   # --- periodic ------------------------------------------------------------
 
-  def test_periodic_xlsx_has_no_metadata_and_matches_legacy_headers
-    xlsx = GEN.generate_periodic_xlsx([PERIODIC_ROW])
+  def test_periodic_xlsx_has_no_metadata_and_subject_description_columns
+    xlsx = GEN.generate_periodic_xlsx([PERIODIC_ROW], system: 'sfms',
+      from_date: Time.new(2026, 2, 1), to_date: Time.new(2026, 4, 30))
     assert_valid_xlsx(xlsx)
     xml = sheet_xml(xlsx)
     assert_includes xml, 'RequestType'
     assert_includes xml, 'Alice Jones'
+    # Renamed legacy "Description" column plus the new export-only ticket
+    # Description column.
+    assert_includes xml, 'Subject'
+    assert_includes xml, 'Please grant SFMS access for the new hire.'
+    # No metadata preamble — the file is kept clean for import.
     assert_not_includes xml, 'Report Name'
     # header + 1 data row (no metadata preamble)
     assert_equal 2, row_count(xlsx)

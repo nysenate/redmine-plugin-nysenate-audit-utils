@@ -173,6 +173,25 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     assert_includes csv, 'No account data found for AIX as of April 2026.'
   end
 
+  def test_periodic_csv_renames_subject_and_appends_description
+    row = {
+      request_code: 'USRA', user_name: 'Alice Jones', user_uid: 'ajones', office: 'STS',
+      created_on: Date.parse('2026-02-01'), closed_on: Date.parse('2026-02-10'),
+      bac_number: 'BAC-1', issue_id: 200, subject: 'SFMS access',
+      description: 'Please grant SFMS access for the new hire.'
+    }
+    csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_periodic_csv(
+      [row], system: 'sfms', from_date: Date.parse('2026-02-01'), to_date: Date.parse('2026-04-30')
+    )
+    lines = csv.lines
+    # No metadata preamble — the CSV imports directly into Access.
+    assert_not_includes csv, 'Report Name'
+    assert_equal 'RequestType,FullName,Userid,Office,EntryDate,CompletedDate,' \
+                 'BacNumber,SenDevNumber,GeneralFormInfoID,Program,Subject,Description',
+                 lines[0].chomp
+    assert_match(/,SFMS,SFMS access,Please grant SFMS access for the new hire\.$/, lines[1].chomp)
+  end
+
   def test_periodic_csv_empty_writes_interpolated_no_entries_message
     csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_periodic_csv(
       [], system: 'sfms', from_date: Date.parse('2026-02-01'), to_date: Date.parse('2026-04-30')
