@@ -127,7 +127,7 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
   def test_weekly_xlsx_empty_writes_no_entries_message_and_no_table
     xlsx = GEN.generate_weekly_xlsx([], from_date: Date.parse('2026-04-27'), to_date: Time.parse('2026-05-01 00:00'))
     assert_equal 0, table_part_count(xlsx)
-    assert_includes sheet_xml(xlsx), 'No closed tickets found for the selected period.'
+    assert_includes sheet_xml(xlsx), 'No updated tickets found for the selected period.'
   end
 
   def test_monthly_xlsx_empty_writes_no_entries_message_and_no_table

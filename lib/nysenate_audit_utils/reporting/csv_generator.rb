@@ -9,6 +9,26 @@ module NysenateAuditUtils
       DAILY_DESCRIPTION = 'Tickets for employees with status changes in the date range.'
       WEEKLY_DESCRIPTION = 'All tickets active during the week for access list consistency checks.'
 
+      # Weekly report Update Type wording (#18838). The export description and
+      # no-entries line name the selected filter; the phrase keeps both sentences
+      # grammatical for each option.
+      def self.weekly_filter_phrase(update_type)
+        case update_type.to_s
+        when 'opened' then 'opened'
+        when 'closed' then 'closed'
+        when 'other'  then 'otherwise-updated'
+        else 'updated'
+        end
+      end
+
+      def self.weekly_description(update_type)
+        "All #{weekly_filter_phrase(update_type)} tickets during the query period."
+      end
+
+      def self.weekly_no_entries(update_type)
+        "No #{weekly_filter_phrase(update_type)} tickets found for the selected period."
+      end
+
       # Report Purpose line (#18834): a "why this report exists" statement shown
       # below the Report Description in the export heading. Only Daily has wording
       # for now; the other reports omit the row until purpose text is decided.
@@ -104,55 +124,55 @@ module NysenateAuditUtils
       # @param from_date [Time, Date, nil] Start of report range
       # @param to_date [Time, Date, nil] End of report range
       # @return [String] CSV content
-      def self.generate_weekly_csv(data, from_date: nil, to_date: nil)
+      def self.generate_weekly_csv(data, from_date: nil, to_date: nil, update_type: 'all')
         return '' unless data
 
         CSV.generate do |csv|
           if from_date && to_date
             write_metadata(csv,
               name: 'Weekly',
-              description: WEEKLY_DESCRIPTION,
+              description: weekly_description(update_type),
               start_time: from_date,
               end_time: to_date
             )
           end
 
           if data.empty?
-            csv << [WEEKLY_NO_ENTRIES]
+            csv << [weekly_no_entries(update_type)]
             next
           end
 
           # Header row
           csv << [
+            'Updated On',
+            'Open Date',
+            'Closed Date',
             'Ticket #',
-            'Account Holder Type',
+            'Ticket Status',
+            'Subject',
+            'Request Code',
             'Account Holder Name',
             'Account Holder Username',
-            'Account Holder ID',
             'Account Holder Office',
-            'Request Code',
-            'Ticket Description',
-            'Status',
-            'Open Date',
-            'Close Date',
-            'Updated On'
+            'Account Holder Type',
+            'Account Holder ID'
           ]
 
           # Data rows
           data.each do |row|
             csv << [
-              row[:issue_id],
-              row[:user_type],
-              row[:user_name],
-              row[:user_uid],
-              row[:user_id],
-              row[:office],
-              row[:request_code],
-              row[:subject],
-              row[:status],
+              row[:updated_on]&.strftime('%Y-%m-%d %H:%M'),
               row[:created_on]&.strftime('%Y-%m-%d'),
               row[:closed_on]&.strftime('%Y-%m-%d'),
-              row[:updated_on]&.strftime('%Y-%m-%d %H:%M')
+              row[:issue_id],
+              row[:status],
+              row[:subject],
+              row[:request_code],
+              row[:user_name],
+              row[:user_uid],
+              row[:office],
+              row[:user_type],
+              row[:user_id]
             ]
           end
         end

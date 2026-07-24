@@ -87,7 +87,8 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     service = NysenateAuditUtils::Reporting::WeeklyReportService.new(
       project: @project,
       from_date: 1.week.ago,
-      to_date: Time.zone.now
+      to_date: Time.zone.now,
+      update_type: 'closed'
     )
     report_data = service.generate
 
@@ -96,6 +97,82 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
 
     assert_includes issue_ids, closed_issue.id, "Should include closed issue"
     assert_not_includes issue_ids, open_issue.id, "Should not include open issue"
+  end
+
+  test "should include all issues updated in range by default" do
+    close_time = 2.days.ago
+
+    closed_issue = Issue.create!(project: @project, tracker_id: 1, author_id: 1, status_id: 5, subject: 'Closed Updated')
+    Issue.where(id: closed_issue.id).update_all(created_on: 1.week.ago, updated_on: close_time, closed_on: close_time)
+
+    open_issue = Issue.create!(project: @project, tracker_id: 1, author_id: 1, status_id: 1, subject: 'Open Updated')
+    Issue.where(id: open_issue.id).update_all(created_on: 1.week.ago, updated_on: 2.days.ago, closed_on: nil)
+
+    service = NysenateAuditUtils::Reporting::WeeklyReportService.new(
+      project: @project,
+      from_date: 1.week.ago,
+      to_date: Time.zone.now
+    )
+    report_data = service.generate
+
+    assert service.success?
+    issue_ids = report_data.map { |r| r[:issue_id] }
+
+    assert_includes issue_ids, closed_issue.id, "Default 'all' should include closed issue"
+    assert_includes issue_ids, open_issue.id, "Default 'all' should include open issue updated in range"
+  end
+
+  test "opened filter returns only issues created in range" do
+    created_in = Issue.create!(project: @project, tracker_id: 1, author_id: 1, status_id: 1, subject: 'Created In Range')
+    Issue.where(id: created_in.id).update_all(created_on: 2.days.ago, updated_on: 1.day.ago, closed_on: nil)
+
+    created_before = Issue.create!(project: @project, tracker_id: 1, author_id: 1, status_id: 1, subject: 'Created Before Range')
+    Issue.where(id: created_before.id).update_all(created_on: 3.weeks.ago, updated_on: 1.day.ago, closed_on: nil)
+
+    service = NysenateAuditUtils::Reporting::WeeklyReportService.new(
+      project: @project,
+      from_date: 1.week.ago,
+      to_date: Time.zone.now,
+      update_type: 'opened'
+    )
+    report_data = service.generate
+
+    assert service.success?
+    issue_ids = report_data.map { |r| r[:issue_id] }
+
+    assert_includes issue_ids, created_in.id, "Should include issue created in range"
+    assert_not_includes issue_ids, created_before.id, "Should not include issue created before range"
+  end
+
+  test "other filter returns issues with non-close journal activity in range" do
+    # Issue with a note added in range -> qualifies as an "other" update.
+    noted = Issue.create!(project: @project, tracker_id: 1, author_id: 1, status_id: 1, subject: 'Noted In Range')
+    Issue.where(id: noted.id).update_all(created_on: 3.weeks.ago, updated_on: 3.weeks.ago, closed_on: nil)
+    noted.reload
+    noted.init_journal(User.find(1), 'A comment')
+    noted.save!
+
+    # Issue whose only in-range activity is the close -> excluded from "other".
+    closed_only = Issue.create!(project: @project, tracker_id: 1, author_id: 1, status_id: 1, subject: 'Closed Only')
+    Issue.where(id: closed_only.id).update_all(created_on: 3.weeks.ago, updated_on: 3.weeks.ago, closed_on: nil)
+    closed_only.reload
+    closed_only.init_journal(User.find(1))
+    closed_only.status_id = 5 # closed
+    closed_only.save!
+
+    service = NysenateAuditUtils::Reporting::WeeklyReportService.new(
+      project: @project,
+      from_date: 1.week.ago,
+      to_date: Time.zone.now,
+      update_type: 'other'
+    )
+    report_data = service.generate
+
+    assert service.success?
+    issue_ids = report_data.map { |r| r[:issue_id] }
+
+    assert_includes issue_ids, noted.id, "Should include issue with a note in range"
+    assert_not_includes issue_ids, closed_only.id, "Should not include issue whose only activity is the close"
   end
 
   test "should filter by closed_on date range" do
@@ -130,7 +207,8 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     service = NysenateAuditUtils::Reporting::WeeklyReportService.new(
       project: @project,
       from_date: 1.week.ago,
-      to_date: Time.zone.now
+      to_date: Time.zone.now,
+      update_type: 'closed'
     )
     report_data = service.generate
 
@@ -399,7 +477,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     assert_includes issue_ids, issue_with_value.id
   end
 
-  test "should order issues by closed_on descending" do
+  test "should order issues by updated_on descending" do
     base_time = 5.days.ago
 
     issue1 = Issue.create!(project: @project, tracker_id: 1, author_id: 1, status_id: 5, subject: 'Oldest Closed')

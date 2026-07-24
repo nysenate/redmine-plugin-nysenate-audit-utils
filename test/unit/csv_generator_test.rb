@@ -162,7 +162,7 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(
       [], from_date: Date.parse('2026-04-27'), to_date: Time.parse('2026-05-01 23:59:59')
     )
-    assert_includes csv, 'No closed tickets found for the selected period.'
+    assert_includes csv, 'No updated tickets found for the selected period.'
     assert_not_includes csv, 'Ticket #'
   end
 
@@ -222,7 +222,7 @@ class CsvGeneratorTest < ActiveSupport::TestCase
 
   def test_weekly_csv_omits_metadata_when_dates_missing
     csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv([WEEKLY_ROW])
-    assert_match(/\ATicket #/, csv)
+    assert_match(/\AUpdated On/, csv)
   end
 
   def test_monthly_csv_includes_metadata_block_with_target_system

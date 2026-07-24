@@ -4,10 +4,11 @@ require File.expand_path('../system_test_helper', __dir__)
 
 # End-to-end (browser) tests for the Weekly audit report.
 #
-# The Weekly report is driven ENTIRELY by CLOSED Redmine issues whose
-# `closed_on` falls within the selected window (no ESS involved), so these
-# tests seed synthetic closed issues with the standard Account Holder custom
-# fields and then drive the web view + CSV export through the browser.
+# The Weekly report is driven ENTIRELY by Redmine issues updated within the
+# selected window (no ESS involved). The default Update Type ("All Updates")
+# keys on `updated_on`, so these tests seed synthetic issues updated in the
+# window with the standard Account Holder custom fields and then drive the web
+# view + CSV export through the browser.
 class WeeklyReportTest < AuditUtilsSystemTestCase
   fixtures :users, :projects, :roles, :members, :member_roles,
            :trackers, :enabled_modules, :issue_statuses, :enumerations,
@@ -54,16 +55,19 @@ class WeeklyReportTest < AuditUtilsSystemTestCase
     # The weekly CSV carries a metadata preamble before the header row, so parse
     # raw (headers: false) and locate the real header row ourselves.
     rows = downloaded_csv(headers: false) { click_link 'Export CSV' }
-    header = rows.find { |r| r.first == 'Ticket #' }
+    header = rows.find { |r| r.first == 'Updated On' }
 
-    assert header, "Expected a 'Ticket #' header row in the CSV (saw: #{rows.first(6).inspect})"
-    %w[Account\ Holder\ Type Account\ Holder\ Name Account\ Holder\ Username
-       Account\ Holder\ ID Account\ Holder\ Office Request\ Code
-       Ticket\ Description Status Open\ Date Close\ Date Updated\ On].each do |col|
+    assert header, "Expected an 'Updated On' header row in the CSV (saw: #{rows.first(6).inspect})"
+    %w[Updated\ On Open\ Date Closed\ Date Ticket\ # Ticket\ Status Subject
+       Request\ Code Account\ Holder\ Name Account\ Holder\ Username
+       Account\ Holder\ Office Account\ Holder\ Type Account\ Holder\ ID].each do |col|
       assert_includes header, col
     end
 
-    data_row = rows.find { |r| r.first.to_s == issue.id.to_s }
+    # "Ticket #" is no longer the first column (the reorder put "Updated On"
+    # first), so locate the row by the Ticket # column via the header index.
+    ticket_col = header.index('Ticket #')
+    data_row = rows.find { |r| r[ticket_col].to_s == issue.id.to_s }
     assert data_row, "Expected a CSV data row for issue ##{issue.id}"
     assert_includes data_row, 'Zeta Fakeholder'
     assert_includes data_row, '900123'
@@ -81,7 +85,7 @@ class WeeklyReportTest < AuditUtilsSystemTestCase
     visit weekly_url(start_date: '2001-01-01', end_date: '2001-01-07')
 
     assert_no_selector 'table.weekly-report-table'
-    assert_selector 'p.nodata', text: 'No closed tickets found for the selected period.'
+    assert_selector 'p.nodata', text: 'No updated tickets found for the selected period.'
   end
 
   private

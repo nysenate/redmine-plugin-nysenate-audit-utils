@@ -90,7 +90,7 @@ module NysenateAuditUtils
 
       # Generate the Weekly report workbook.
       # @param data [Array<Hash>] rows from WeeklyReportService
-      def self.generate_weekly_xlsx(data, from_date: nil, to_date: nil)
+      def self.generate_weekly_xlsx(data, from_date: nil, to_date: nil, update_type: 'all')
         return ''.b unless data
 
         build_package do |wb, styles|
@@ -98,53 +98,53 @@ module NysenateAuditUtils
             if from_date && to_date
               write_metadata_rows(sheet, styles,
                 name: 'Weekly',
-                description: WEEKLY_DESCRIPTION,
+                description: CsvGenerator.weekly_description(update_type),
                 start_time: from_date,
                 end_time: to_date
               )
             end
 
             if data.empty?
-              write_no_entries(sheet, styles, CsvGenerator::WEEKLY_NO_ENTRIES)
+              write_no_entries(sheet, styles, CsvGenerator.weekly_no_entries(update_type))
               next
             end
 
             headers = [
+              'Updated On',
+              'Open Date',
+              'Closed Date',
               'Ticket #',
-              'Account Holder Type',
+              'Ticket Status',
+              'Subject',
+              'Request Code',
               'Account Holder Name',
               'Account Holder Username',
-              'Account Holder ID',
               'Account Holder Office',
-              'Request Code',
-              'Ticket Description',
-              'Status',
-              'Open Date',
-              'Close Date',
-              'Updated On'
+              'Account Holder Type',
+              'Account Holder ID'
             ]
 
             rows = data.map do |row|
               [
-                row[:issue_id],
-                row[:user_type],
-                row[:user_name],
-                row[:user_uid],
-                row[:user_id],
-                row[:office],
-                row[:request_code],
-                row[:subject],
-                row[:status],
+                row[:updated_on]&.strftime('%Y-%m-%d %H:%M'),
                 row[:created_on]&.strftime('%Y-%m-%d'),
                 row[:closed_on]&.strftime('%Y-%m-%d'),
-                row[:updated_on]&.strftime('%Y-%m-%d %H:%M')
+                row[:issue_id],
+                row[:status],
+                row[:subject],
+                row[:request_code],
+                row[:user_name],
+                row[:user_uid],
+                row[:office],
+                row[:user_type],
+                row[:user_id]
               ]
             end
 
             write_table(sheet, styles,
               headers: headers,
               rows: rows,
-              widths: [10, 16, 24, 20, 14, 20, 14, 44, 14, 14, 14, 18]
+              widths: [18, 14, 14, 10, 14, 44, 14, 24, 20, 20, 16, 14]
             )
           end
         end

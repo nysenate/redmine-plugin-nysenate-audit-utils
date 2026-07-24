@@ -238,7 +238,9 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'th a', text: 'Account Holder Name'
     assert_select 'th a', text: 'Account Holder Office'
     assert_select 'th a', text: 'Open Date'
-    assert_select 'th a', text: 'Close Date'
+    assert_select 'th a', text: 'Closed Date'
+    assert_select 'th a', text: 'Updated On'
+    assert_select 'th a', text: 'Ticket Status'
   end
 
   test "should display date range inputs" do
@@ -250,12 +252,25 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'input[name=end_date][type=date]'
   end
 
-  test "should not display status filter dropdown" do
+  test "should display update type dropdown" do
     stub_weekly_service(weekly_mock_data)
 
     get :weekly, params: { project_id: 1 }
     assert_response :success
-    assert_select 'select[name=status_filter]', count: 0
+    assert_select 'select[name=update_type]'
+    assert_select 'select[name=update_type] option', text: 'All Updates'
+    assert_select 'select[name=update_type] option', text: 'Opened'
+    assert_select 'select[name=update_type] option', text: 'Closed'
+    assert_select 'select[name=update_type] option', text: 'Other Updates'
+  end
+
+  test "should pass update_type to weekly service" do
+    NysenateAuditUtils::Reporting::WeeklyReportService.expects(:new).with do |args|
+      args[:update_type] == 'opened'
+    end.returns(stub_returning_service(weekly_mock_data))
+
+    get :weekly, params: { project_id: 1, update_type: 'opened' }
+    assert_response :success
   end
 
   test "should pass date range to weekly service" do
@@ -280,7 +295,7 @@ class AuditReportsControllerTest < ActionController::TestCase
 
     get :weekly, params: { project_id: 1 }
     assert_response :success
-    assert_select 'p.nodata', text: /No closed tickets found/
+    assert_select 'p.nodata', text: /No updated tickets found/
   end
 
   test "should render error page on weekly service failure" do
@@ -307,7 +322,7 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_match /Account Holder ID/, csv_content
     assert_match /Account Holder Office/, csv_content
     assert_match /Open Date/, csv_content
-    assert_match /Close Date/, csv_content
+    assert_match /Closed Date/, csv_content
     assert_match /Request Code/, csv_content
     assert_match /Test Issue 1/, csv_content
     assert_match /12345/, csv_content
