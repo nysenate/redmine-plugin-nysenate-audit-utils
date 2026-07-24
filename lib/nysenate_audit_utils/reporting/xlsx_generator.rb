@@ -256,8 +256,7 @@ module NysenateAuditUtils
             write_metadata_rows(sheet, styles,
               name: 'Account Holder Access',
               description: ACCOUNT_HOLDER_ACCESS_DESCRIPTION,
-              start_time: 'N/A',
-              end_time: Time.now
+              show_times: false
             )
 
             if data.empty?
@@ -271,7 +270,7 @@ module NysenateAuditUtils
               'Account Holder Username',
               'Account Holder Office',
               'Target System',
-              'Account Status',
+              'Account Access Status',
               'Request Code'
             ]
 
@@ -390,13 +389,15 @@ module NysenateAuditUtils
 
       # Write the metadata preamble (parity with CsvGenerator.write_metadata)
       # followed by a blank separator row.
-      def self.write_metadata_rows(sheet, styles, name:, description:, start_time:, end_time:, purpose: nil)
+      def self.write_metadata_rows(sheet, styles, name:, description:, start_time: nil, end_time: nil, purpose: nil, show_times: true)
         label = styles[:metadata_label]
         sheet.add_row ['Report Name', name], style: [label, nil]
         sheet.add_row ['Report Description', description], style: [label, nil]
         sheet.add_row(['Report Purpose', purpose], style: [label, nil]) if purpose
-        sheet.add_row ['Start time', CsvGenerator.format_metadata_time(start_time)], style: [label, nil]
-        sheet.add_row ['End time', CsvGenerator.format_metadata_time(end_time)], style: [label, nil]
+        if show_times
+          sheet.add_row ['Start time', CsvGenerator.format_metadata_time(start_time)], style: [label, nil]
+          sheet.add_row ['End time', CsvGenerator.format_metadata_time(end_time)], style: [label, nil]
+        end
         sheet.add_row ['Generated at', CsvGenerator.format_metadata_time(Time.now)], style: [label, nil]
         sheet.add_row []
       end

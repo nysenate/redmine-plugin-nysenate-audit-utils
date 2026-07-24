@@ -25,7 +25,7 @@ class AccountHolderAccessReportTest < AuditUtilsSystemTestCase
     'Account Holder Username',
     'Account Holder Office',
     'Target System',
-    'Account Status',
+    'Account Access Status',
     'Request Code'
   ].freeze
 

@@ -244,8 +244,8 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
     assert_includes xml, 'Target System'
     assert_includes xml, 'Active'
     assert_includes xml, 'Inactive'
-    # 5 metadata + blank + header + 2 data = 9 rows
-    assert_equal 9, row_count(xlsx)
+    # 3 metadata (no Start/End time) + blank + header + 2 data = 7 rows
+    assert_equal 7, row_count(xlsx)
   end
 
   def test_account_holder_access_xlsx_nil_data_returns_blank

@@ -262,13 +262,12 @@ class CsvGeneratorTest < ActiveSupport::TestCase
       [ACCOUNT_HOLDER_ACCESS_ROW]
     )
     lines = csv.lines
+    # This report has no time window, so Start/End time rows are omitted.
     assert_equal 'Report Name,Account Holder Access', lines[0].chomp
     assert_match(/^Report Description,/, lines[1])
-    assert_equal 'Start time,N/A', lines[2].chomp
-    assert_match(/^End time,\d{4}-\d{2}-\d{2}/, lines[3])
-    assert_match(/^Generated at,\d{4}-\d{2}-\d{2}/, lines[4])
-    assert_equal '', lines[5].chomp
-    assert_equal 'Account Holder Name,Account Holder Type,Account Holder Username,Account Holder Office,Target System,Account Status,Request Code', lines[6].chomp
+    assert_match(/^Generated at,\d{4}-\d{2}-\d{2}/, lines[2])
+    assert_equal '', lines[3].chomp
+    assert_equal 'Account Holder Name,Account Holder Type,Account Holder Username,Account Holder Office,Target System,Account Access Status,Request Code', lines[4].chomp
   end
 
   def test_account_holder_access_csv_writes_one_row_per_account
@@ -276,9 +275,9 @@ class CsvGeneratorTest < ActiveSupport::TestCase
       [ACCOUNT_HOLDER_ACCESS_ROW, ACCOUNT_HOLDER_ACCESS_ROW.merge(account_type: 'AIX', request_code: 'AIXD', status: 'inactive')]
     )
     rows = CSV.parse(csv)
-    # 6 metadata/separator rows + header + 2 data rows
-    assert_equal ['John Doe', 'Employee', 'jdoe', 'Senate Office', 'Oracle / SFMS', 'Active', 'USRA'], rows[7]
-    assert_equal ['John Doe', 'Employee', 'jdoe', 'Senate Office', 'AIX', 'Inactive', 'AIXD'], rows[8]
+    # 4 metadata/separator rows (no Start/End time) + header + 2 data rows
+    assert_equal ['John Doe', 'Employee', 'jdoe', 'Senate Office', 'Oracle / SFMS', 'Active', 'USRA'], rows[5]
+    assert_equal ['John Doe', 'Employee', 'jdoe', 'Senate Office', 'AIX', 'Inactive', 'AIXD'], rows[6]
   end
 
   def test_account_holder_access_csv_handles_nil_data

@@ -278,7 +278,7 @@ module NysenateAuditUtils
           end
         end
       end
-      ACCOUNT_HOLDER_ACCESS_DESCRIPTION = 'Snapshot of all currently active account access.'
+      ACCOUNT_HOLDER_ACCESS_DESCRIPTION = 'Account Holder access, including active, inactive, or both statuses, with one row per account.'
 
       # Generate CSV for the Account Holder Access Report.
       # One row per active account (account holder x target system).
@@ -291,8 +291,7 @@ module NysenateAuditUtils
           write_metadata(csv,
             name: 'Account Holder Access',
             description: ACCOUNT_HOLDER_ACCESS_DESCRIPTION,
-            start_time: 'N/A',
-            end_time: Time.now
+            show_times: false
           )
 
           if data.empty?
@@ -307,7 +306,7 @@ module NysenateAuditUtils
             'Account Holder Username',
             'Account Holder Office',
             'Target System',
-            'Account Status',
+            'Account Access Status',
             'Request Code'
           ]
 
@@ -340,13 +339,17 @@ module NysenateAuditUtils
         end.string
       end
 
-      # Write the 4-row metadata block followed by a blank separator row.
-      def self.write_metadata(csv, name:, description:, start_time:, end_time:, purpose: nil)
+      # Write the metadata block followed by a blank separator row. Reports that
+      # have no meaningful time window (e.g. the current-state Account Holder
+      # Access report) pass show_times: false to omit the Start/End time rows.
+      def self.write_metadata(csv, name:, description:, start_time: nil, end_time: nil, purpose: nil, show_times: true)
         csv << ['Report Name', name]
         csv << ['Report Description', description]
         csv << ['Report Purpose', purpose] if purpose
-        csv << ['Start time', format_metadata_time(start_time)]
-        csv << ['End time', format_metadata_time(end_time)]
+        if show_times
+          csv << ['Start time', format_metadata_time(start_time)]
+          csv << ['End time', format_metadata_time(end_time)]
+        end
         csv << ['Generated at', format_metadata_time(Time.now)]
         csv << []
       end

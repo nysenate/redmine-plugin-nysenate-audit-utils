@@ -983,7 +983,7 @@ class AuditReportsControllerTest < ActionController::TestCase
 
     get :account_holder_access, params: { project_id: 1, account_status: 'inactive' }, format: :csv
     assert_response :success
-    assert_match /Account Status/, response.body
+    assert_match /Account Access Status/, response.body
     assert_match /Inactive Ida/, response.body
     assert_no_match /Active Al/, response.body
   end
