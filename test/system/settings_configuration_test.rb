@@ -145,6 +145,31 @@ class SettingsConfigurationTest < AuditUtilsSystemTestCase
     assert_not prefixes.key?('Retired System')
   end
 
+  # ==========================================================================
+  # 4. Apply buttons: top + bottom, disabled until the form changes
+  # ==========================================================================
+
+  def test_apply_buttons_are_disabled_until_the_form_changes
+    visit SETTINGS_PATH
+
+    # There is an Apply button at the top (ours) and at the bottom (core).
+    assert_selector '.audit-top-actions input[type="submit"][value="Apply"]'
+    assert_selector 'input[type="submit"][value="Apply"]', count: 2, visible: :all
+
+    # Both start disabled — nothing to apply on a freshly loaded form.
+    assert_selector 'input[type="submit"][value="Apply"]:disabled', count: 2, visible: :all
+    assert_no_selector 'input[type="submit"][value="Apply"]:enabled', visible: :all
+
+    # Editing any field enables both buttons.
+    open_all_config_sections
+    fill_in 'settings[ess_base_url]', with: 'https://example.test/api'
+    assert_selector 'input[type="submit"][value="Apply"]:enabled', count: 2, visible: :all
+
+    # Reverting the change disables them again.
+    fill_in 'settings[ess_base_url]', with: ''
+    assert_selector 'input[type="submit"][value="Apply"]:disabled', count: 2, visible: :all
+  end
+
   private
 
   # --------------------------------------------------------------------------

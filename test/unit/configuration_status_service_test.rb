@@ -271,6 +271,18 @@ class ConfigurationStatusServiceTest < ActiveSupport::TestCase
     assert_empty status[:errors]
   end
 
+  # Test combined_status (single badge for a consolidated accordion)
+  test 'combined_status takes the worst status among sections' do
+    ok = { status: :ok }
+    warning = { status: :warning }
+    error = { status: :error }
+
+    assert_equal :ok, NysenateAuditUtils::ConfigurationStatusService.combined_status(ok, ok)[:status]
+    assert_equal :warning, NysenateAuditUtils::ConfigurationStatusService.combined_status(ok, warning)[:status]
+    assert_equal :error, NysenateAuditUtils::ConfigurationStatusService.combined_status(ok, warning, error)[:status]
+    assert_equal :ok, NysenateAuditUtils::ConfigurationStatusService.combined_status[:status]
+  end
+
   test 'overall_status should include report_data section' do
     overall = NysenateAuditUtils::ConfigurationStatusService.overall_status
 

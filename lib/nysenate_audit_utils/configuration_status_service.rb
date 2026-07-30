@@ -247,6 +247,17 @@ module NysenateAuditUtils
         }
       end
 
+      # Combine several section status hashes into one, taking the worst status
+      # (error > warning > ok). Used for accordions that group several sections
+      # under a single badge.
+      # @param section_statuses [Array<Hash>] section status hashes
+      # @return [Hash] { status: worst_status }
+      def combined_status(*section_statuses)
+        rank = { STATUS_ERROR => 2, STATUS_WARNING => 1, STATUS_OK => 0 }
+        worst = section_statuses.map { |s| s[:status] }.max_by { |st| rank[st] || 0 }
+        { status: worst || STATUS_OK }
+      end
+
       # Get status badge text for a section
       # @param section_status [Hash] Section status hash
       # @return [String] Badge text ('✓', '⚠', '✗')

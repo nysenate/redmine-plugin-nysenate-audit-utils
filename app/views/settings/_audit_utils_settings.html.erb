@@ -7,7 +7,18 @@
   report_data_status = status[:sections][:report_data]
   request_codes_status = status[:sections][:request_codes]
   removal_defaults_status = status[:sections][:removal_defaults]
+
+  # Single badge for the consolidated General Configuration accordion:
+  # worst status among its sub-sections.
+  general_status = NysenateAuditUtils::ConfigurationStatusService.combined_status(
+    ess_status, removal_defaults_status, email_status, report_data_status
+  )
 %>
+
+<!-- Top apply bar (mirrors the Apply button at the bottom of the form) -->
+<div class="audit-top-actions">
+  <%= submit_tag l(:button_apply), :name => 'commit', :class => 'audit-apply-btn' %>
+</div>
 
 <!-- Configuration Issues Summary -->
 <% if status[:has_issues] %>
@@ -44,20 +55,21 @@
 
 <div class="config-accordions">
 
-  <!-- ESS API Configuration Section -->
+  <!-- General Configuration Section -->
   <div class="config-accordion">
-    <div class="accordion-header" data-section="ess-api">
+    <div class="accordion-header" data-section="general">
       <h3>
         <span class="accordion-toggle">▶</span>
-        ESS API Configuration
-        <span class="status-badge <%= NysenateAuditUtils::ConfigurationStatusService.status_badge_class(ess_status) %>">
-          <%= NysenateAuditUtils::ConfigurationStatusService.status_badge(ess_status) %>
-          <%= NysenateAuditUtils::ConfigurationStatusService.status_description(ess_status) %>
+        General Configuration
+        <span class="status-badge <%= NysenateAuditUtils::ConfigurationStatusService.status_badge_class(general_status) %>">
+          <%= NysenateAuditUtils::ConfigurationStatusService.status_badge(general_status) %>
+          <%= NysenateAuditUtils::ConfigurationStatusService.status_description(general_status) %>
         </span>
       </h3>
     </div>
 
-    <div class="accordion-body" id="ess-api-section">
+    <div class="accordion-body" id="general-section">
+      <h4 class="config-subsection">ESS API Configuration</h4>
       <div class="box tabular settings">
         <p>
           <%= content_tag 'label', 'ESS Base URL' %>
@@ -83,8 +95,6 @@
           <em class="info">Saves the URL and API key above, then tests the connection.</em>
         </p>
       </div>
-    </div>
-  </div>
 
   <script>
   (function() {
@@ -135,6 +145,73 @@
     });
   })();
   </script>
+
+      <h4 class="config-subsection">Removal Ticket Defaults</h4>
+      <div class="box tabular settings">
+        <p style="margin: 1em 0 0.5em 0; padding: 0;">
+          Select the Redmine user auto-populated as both the <strong>Requested By</strong>
+          and <strong>Authorizing User(s)</strong> fields when a removal ticket is created from
+          the Daily Report. Leave unset to leave these fields blank. Requires the "Requested By"
+          and "Authorizing User(s)" custom fields to be mapped in the Custom Field Configuration section.
+        </p>
+
+        <p>
+          <%= content_tag 'label', 'Requested By / Authorizing User(s)' %>
+          <%= select_tag 'settings[removal_ticket_requester_user_id]',
+                options_for_select([['-- Select User --', '']] +
+                  User.active.sorted.map { |u| [u.name, u.id] },
+                  @settings['removal_ticket_requester_user_id']) %>
+          <em class="info">The single user applied to Requested By and Authorizing User(s) on removal tickets</em>
+        </p>
+      </div>
+
+      <h4 class="config-subsection">Email Reporting Configuration</h4>
+      <div class="box tabular settings">
+        <p style="margin: 1em 0 0.5em 0; padding: 0;">
+          Configure default email recipients for scheduled audit reports. Email addresses should be comma-separated.
+          Individual rake tasks can override this default by providing a recipients parameter.
+        </p>
+
+        <p>
+          <%= content_tag 'label', 'Default Report Recipients' %>
+          <%= text_field_tag 'settings[report_recipients]', @settings['report_recipients'],
+                             :size => 80, :placeholder => 'user1@example.com, user2@example.com' %>
+          <em class="info">Default recipients for all automated reports (daily, weekly, monthly)</em>
+        </p>
+
+        <p class="config-note">
+          <strong>Note:</strong> To enable scheduled reports, you must set up cron jobs on the server. See the plugin README for instructions on configuring rake tasks and cron.
+        </p>
+      </div>
+
+      <h4 class="config-subsection">Report Data Options</h4>
+      <div class="box tabular settings">
+        <%
+          public_website_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
+        %>
+        <% if public_website_field && public_website_field.possible_values.present? %>
+          <p style="margin: 0 0 0.5em 0; padding: 0;">
+            Select the Target System that represents the <strong>public website</strong>
+            (NYSenate.gov). Its Monthly Report includes an extra
+            <strong>Account Holder Email</strong> column.
+          </p>
+          <p>
+            <%= content_tag 'label', 'Public Website Target System <span class="required">*</span>'.html_safe %>
+            <%= select_tag 'settings[public_website_target_system]',
+                  options_for_select(
+                    [['-- Select Target System --', '']] +
+                      public_website_field.possible_values.map { |v| [v, v] },
+                    @settings['public_website_target_system']) %>
+            <em class="info">Required. Identifies the public website among the Target System values.</em>
+          </p>
+        <% else %>
+          <div class="flash error" style="margin: 1em 0;">
+            <p><strong>Configuration Required:</strong> Please configure the Target System custom field in the Custom Field Configuration section before selecting the public website Target System.</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
 
   <!-- Custom Field Configuration Section -->
   <div class="config-accordion">
@@ -217,117 +294,6 @@
             <% end %>
           </tbody>
         </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Removal Ticket Defaults Section -->
-  <div class="config-accordion">
-    <div class="accordion-header" data-section="removal-defaults">
-      <h3>
-        <span class="accordion-toggle">▶</span>
-        Removal Ticket Defaults
-        <span class="status-badge <%= NysenateAuditUtils::ConfigurationStatusService.status_badge_class(removal_defaults_status) %>">
-          <%= NysenateAuditUtils::ConfigurationStatusService.status_badge(removal_defaults_status) %>
-          <%= NysenateAuditUtils::ConfigurationStatusService.status_description(removal_defaults_status) %>
-        </span>
-      </h3>
-    </div>
-
-    <div class="accordion-body" id="removal-defaults-section">
-      <div class="box tabular settings">
-        <p style="margin: 1em 0 0.5em 0; padding: 0;">
-          Select the Redmine user auto-populated as both the <strong>Requested By</strong>
-          and <strong>Authorizing User(s)</strong> fields when a removal ticket is created from
-          the Daily Report. Leave unset to leave these fields blank. Requires the "Requested By"
-          and "Authorizing User(s)" custom fields to be mapped above.
-        </p>
-
-        <p>
-          <%= content_tag 'label', 'Requested By / Authorizing User(s)' %>
-          <%= select_tag 'settings[removal_ticket_requester_user_id]',
-                options_for_select([['-- Select User --', '']] +
-                  User.active.sorted.map { |u| [u.name, u.id] },
-                  @settings['removal_ticket_requester_user_id']) %>
-          <em class="info">The single user applied to Requested By and Authorizing User(s) on removal tickets</em>
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Email Reporting Configuration Section -->
-  <div class="config-accordion">
-    <div class="accordion-header" data-section="email-reporting">
-      <h3>
-        <span class="accordion-toggle">▶</span>
-        Email Reporting Configuration
-        <span class="status-badge <%= NysenateAuditUtils::ConfigurationStatusService.status_badge_class(email_status) %>">
-          <%= NysenateAuditUtils::ConfigurationStatusService.status_badge(email_status) %>
-          <%= NysenateAuditUtils::ConfigurationStatusService.status_description(email_status) %>
-        </span>
-      </h3>
-    </div>
-
-    <div class="accordion-body" id="email-reporting-section">
-      <div class="box tabular settings">
-        <p style="margin: 1em 0 0.5em 0; padding: 0;">
-          Configure default email recipients for scheduled audit reports. Email addresses should be comma-separated.
-          Individual rake tasks can override this default by providing a recipients parameter.
-        </p>
-
-        <p>
-          <%= content_tag 'label', 'Default Report Recipients' %>
-          <%= text_field_tag 'settings[report_recipients]', @settings['report_recipients'],
-                             :size => 80, :placeholder => 'user1@example.com, user2@example.com' %>
-          <em class="info">Default recipients for all automated reports (daily, weekly, monthly)</em>
-        </p>
-
-        <div class="flash notice" style="margin-top: 1em;">
-          <p><strong>Note:</strong> To enable scheduled reports, you must set up cron jobs on the server. See the plugin README for instructions on configuring rake tasks and cron.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Report Data Options Section -->
-  <div class="config-accordion">
-    <div class="accordion-header" data-section="report-data-options">
-      <h3>
-        <span class="accordion-toggle">▶</span>
-        Report Data Options
-        <span class="status-badge <%= NysenateAuditUtils::ConfigurationStatusService.status_badge_class(report_data_status) %>">
-          <%= NysenateAuditUtils::ConfigurationStatusService.status_badge(report_data_status) %>
-          <%= NysenateAuditUtils::ConfigurationStatusService.status_description(report_data_status) %>
-        </span>
-      </h3>
-    </div>
-
-    <div class="accordion-body" id="report-data-options-section">
-      <div class="box tabular settings">
-        <%
-          public_website_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
-        %>
-        <h4 style="margin: 1em 0 0.5em 0;">Public Website</h4>
-        <% if public_website_field && public_website_field.possible_values.present? %>
-          <p style="margin: 0 0 0.5em 0; padding: 0;">
-            Select the Target System that represents the <strong>public website</strong>
-            (NYSenate.gov). Its Monthly Report includes an extra
-            <strong>Account Holder Email</strong> column.
-          </p>
-          <p>
-            <%= content_tag 'label', 'Public Website Target System <span class="required">*</span>'.html_safe %>
-            <%= select_tag 'settings[public_website_target_system]',
-                  options_for_select(
-                    [['-- Select Target System --', '']] +
-                      public_website_field.possible_values.map { |v| [v, v] },
-                    @settings['public_website_target_system']) %>
-            <em class="info">Required. Identifies the public website among the Target System values.</em>
-          </p>
-        <% else %>
-          <div class="flash error" style="margin: 1em 0;">
-            <p><strong>Configuration Required:</strong> Please configure the Target System custom field (above) before selecting the public website Target System.</p>
-          </div>
-        <% end %>
       </div>
     </div>
   </div>
@@ -607,8 +573,73 @@
 })();
 </script>
 
+<!-- Dirty-tracking: disable both Apply buttons until the form actually changes -->
+<script>
+(function() {
+  'use strict';
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var topBtn = document.querySelector('.audit-top-actions .audit-apply-btn');
+    var form = topBtn ? topBtn.form : document.querySelector('#settings form');
+    if (!form) { return; }
+
+    // Every Apply/submit control in the form (top button + core bottom button).
+    var applyButtons = Array.prototype.slice.call(
+      form.querySelectorAll('input[type="submit"], button[type="submit"]')
+    );
+    if (!applyButtons.length) { return; }
+
+    // Snapshot of the form's successful controls (submit buttons are excluded
+    // by FormData unless they are the submitter, so they don't affect this).
+    function serialize() {
+      try {
+        return Array.from(new FormData(form).entries())
+          .map(function(e) { return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1]); })
+          .join('&');
+      } catch (err) {
+        return null; // FormData unsupported — fall back to always-enabled.
+      }
+    }
+
+    var initial = serialize();
+
+    function setDisabled(disabled) {
+      applyButtons.forEach(function(btn) {
+        btn.disabled = disabled;
+        btn.classList.toggle('disabled', disabled);
+      });
+    }
+
+    function checkDirty() {
+      var now = serialize();
+      if (initial === null || now === null) { setDisabled(false); return; }
+      setDisabled(now === initial);
+    }
+
+    // No changes on load -> nothing to apply.
+    setDisabled(true);
+
+    form.addEventListener('input', checkDirty);
+    form.addEventListener('change', checkDirty);
+  });
+})();
+</script>
+
 <!-- CSS Styling -->
 <style>
+/* Top apply bar */
+.audit-top-actions {
+  margin: 0.5em 0 1.5em 0;
+  text-align: left;
+}
+
+#settings input[type="submit"][disabled],
+.audit-apply-btn[disabled],
+.audit-apply-btn.disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* Configuration Issues Summary */
 .config-issues-summary {
   margin-bottom: 2em;
@@ -681,6 +712,23 @@
 /* Accordion Styles */
 .config-accordions {
   margin-top: 0.5em;
+}
+
+/* Sub-section headers inside a consolidated accordion (e.g. General Configuration) */
+.config-subsection {
+  margin: 1.5em 0 0.5em 0;
+  font-size: 1.02em;
+}
+
+.config-subsection:first-of-type {
+  margin-top: 0;
+}
+
+/* Muted inline note (used instead of a full flash banner) */
+.config-note {
+  margin-top: 0.75em;
+  color: #666;
+  font-size: 0.9em;
 }
 
 .config-accordion {
