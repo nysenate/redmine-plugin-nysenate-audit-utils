@@ -15,6 +15,7 @@ module NysenateAuditUtils
         ess_status = ess_api_status
         custom_fields_status = self.custom_fields_status
         email_status = email_reporting_status
+        report_data_status = self.report_data_status
         request_codes_status = self.request_codes_status
         removal_defaults_status = self.removal_defaults_status
 
@@ -23,6 +24,7 @@ module NysenateAuditUtils
         all_errors += ess_status[:errors] if ess_status[:errors].any?
         all_errors += custom_fields_status[:errors] if custom_fields_status[:errors].any?
         all_errors += email_status[:errors] if email_status[:errors].any?
+        all_errors += report_data_status[:errors] if report_data_status[:errors].any?
         all_errors += request_codes_status[:errors] if request_codes_status[:errors].any?
         all_errors += removal_defaults_status[:errors] if removal_defaults_status[:errors].any?
 
@@ -30,6 +32,7 @@ module NysenateAuditUtils
         all_warnings += ess_status[:warnings] if ess_status[:warnings].any?
         all_warnings += custom_fields_status[:warnings] if custom_fields_status[:warnings].any?
         all_warnings += email_status[:warnings] if email_status[:warnings].any?
+        all_warnings += report_data_status[:warnings] if report_data_status[:warnings].any?
         all_warnings += request_codes_status[:warnings] if request_codes_status[:warnings].any?
         all_warnings += removal_defaults_status[:warnings] if removal_defaults_status[:warnings].any?
 
@@ -38,6 +41,7 @@ module NysenateAuditUtils
             ess_api: ess_status,
             custom_fields: custom_fields_status,
             email_reporting: email_status,
+            report_data: report_data_status,
             request_codes: request_codes_status,
             removal_defaults: removal_defaults_status
           },
@@ -109,6 +113,32 @@ module NysenateAuditUtils
           valid: true, # Email is optional
           errors: [],
           warnings: warnings
+        }
+      end
+
+      # Get Report Data Options configuration status.
+      # The public website Target System is required so its Monthly Report can
+      # include the Account Holder Email column.
+      # @return [Hash] Status hash with :status, :errors, :warnings
+      def report_data_status
+        errors = []
+
+        target_system_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
+        configured = NysenateAuditUtils::CustomFieldConfiguration.public_website_target_system
+
+        if target_system_field.nil?
+          errors << 'Report Data: Configure the Target System custom field before selecting the public website.'
+        elsif configured.blank?
+          errors << 'Report Data: No public website Target System selected.'
+        elsif target_system_field.possible_values.exclude?(configured)
+          errors << "Report Data: Public website Target System \"#{configured}\" is not a valid Target System value."
+        end
+
+        {
+          status: errors.empty? ? STATUS_OK : STATUS_ERROR,
+          valid: errors.empty?,
+          errors: errors,
+          warnings: []
         }
       end
 

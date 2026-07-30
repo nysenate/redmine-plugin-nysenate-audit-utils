@@ -393,6 +393,57 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'td', text: 'Jane Smith'
   end
 
+  test "should aggregate all systems into one table when All Systems selected" do
+    target_system_field_mock = mock('target_system_field')
+    target_system_field_mock.stubs(:possible_values).returns(['Oracle / SFMS', 'AIX'])
+    NysenateAuditUtils::CustomFieldConfiguration.stubs(:target_system_field).returns(target_system_field_mock)
+
+    oracle_rows = [{ user_id: '12345', user_name: 'John Doe', account_type: 'Oracle / SFMS',
+                     status: 'active', account_action: 'Add', closed_on: Date.today - 1.day,
+                     request_code: 'RC1', issue_id: 1 }]
+    aix_rows = [{ user_id: '54321', user_name: 'Jane Smith', account_type: 'AIX',
+                  status: 'active', account_action: 'Add', closed_on: Date.today - 2.days,
+                  request_code: 'RC2', issue_id: 2 }]
+
+    oracle_service = mock('oracle_service')
+    oracle_service.stubs(:generate).returns(oracle_rows)
+    oracle_service.stubs(:success?).returns(true)
+    aix_service = mock('aix_service')
+    aix_service.stubs(:generate).returns(aix_rows)
+    aix_service.stubs(:success?).returns(true)
+
+    NysenateAuditUtils::Reporting::MonthlyReportService.stubs(:new).with do |args|
+      args[:target_system] == 'Oracle / SFMS'
+    end.returns(oracle_service)
+    NysenateAuditUtils::Reporting::MonthlyReportService.stubs(:new).with do |args|
+      args[:target_system] == 'AIX'
+    end.returns(aix_service)
+
+    get :monthly, params: { project_id: 1, target_system: 'All Systems' }
+    assert_response :success
+    assert_select 'select#target_system option[selected]', text: 'All Systems'
+    # Both systems' rows appear, with the Target System column populated.
+    assert_select 'td', text: 'John Doe'
+    assert_select 'td', text: 'Jane Smith'
+    assert_select 'td', text: 'Oracle / SFMS'
+    assert_select 'td', text: 'AIX'
+  end
+
+  test "should redirect All Systems CSV export to the all-systems zip" do
+    target_system_field_mock = mock('target_system_field')
+    target_system_field_mock.stubs(:possible_values).returns(['Oracle / SFMS', 'AIX'])
+    NysenateAuditUtils::CustomFieldConfiguration.stubs(:target_system_field).returns(target_system_field_mock)
+
+    service = mock('service')
+    service.stubs(:generate).returns([])
+    service.stubs(:success?).returns(true)
+    NysenateAuditUtils::Reporting::MonthlyReportService.stubs(:new).returns(service)
+
+    get :monthly, params: { project_id: 1, target_system: 'All Systems' }, format: :csv
+    assert_response :redirect
+    assert_match(/monthly_zip/, response.location)
+  end
+
   test "should require admin access for monthly report" do
     @request.session[:user_id] = 2 # Non-admin user
     role = Role.find(1)

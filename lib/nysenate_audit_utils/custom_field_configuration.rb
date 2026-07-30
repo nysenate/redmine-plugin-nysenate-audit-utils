@@ -303,6 +303,14 @@ module NysenateAuditUtils
         get_field('authorizing_users_field_id')
       end
 
+      # Target System value identifying the public website (NYSenate.gov).
+      # Its Monthly Report includes the extra Account Holder Email column.
+      # @return [String, nil] the configured value, or nil if unset
+      def public_website_target_system
+        value = (Setting.plugin_nysenate_audit_utils || {})['public_website_target_system']
+        value.presence
+      end
+
       # Get all autofill field IDs as a hash
       # @return [Hash<Symbol, Integer>] Hash mapping field purpose to field ID
       # Example: { user_type: 123, user_id: 124, ... }

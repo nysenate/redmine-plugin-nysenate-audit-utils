@@ -236,13 +236,11 @@ module NysenateAuditUtils
       def self.generate_monthly_csv(data, as_of_time: nil, target_system: nil)
         return '' unless data
 
+        include_email = monthly_include_email?(target_system)
+
         CSV.generate do |csv|
           if as_of_time
-            description = if target_system
-                            "Snapshot of employee access status for #{target_system} as of the end time."
-                          else
-                            'Snapshot of employee access status as of the end time.'
-                          end
+            description = monthly_description(target_system)
             write_metadata(csv,
               name: 'Monthly',
               description: description,
@@ -257,33 +255,58 @@ module NysenateAuditUtils
           end
 
           # Header row (matches web view layout with user_type and request_code added)
-          csv << [
+          header = [
             'Account Holder Name',
             'Account Holder ID',
             'Account Holder Type',
             'Account Holder Username',
-            'Account Status',
+            'Account Holder Office',
+            'Account Access Status',
             'Last Updated',
             'Last Issue',
             'Last Action',
             'Request Code'
           ]
+          header << 'Account Holder Email' if include_email
+          csv << header
 
           # Data rows
           data.each do |row|
-            csv << [
+            values = [
               row[:user_name],
               row[:user_id],
               row[:user_type],
               row[:user_uid],
+              row[:user_office],
               row[:status],
               row[:closed_on]&.strftime('%Y-%m-%d'),
               row[:issue_id],
               row[:account_action],
               row[:request_code]
             ]
+            values << row[:user_email] if include_email
+            csv << values
           end
         end
+      end
+
+      # Report description for the Monthly export, mentioning the target system.
+      def self.monthly_description(target_system)
+        if target_system
+          "Monthly snapshot of account holders with active access for #{target_system}. " \
+            'This report displays all access-related tickets closed during the previous month.'
+        else
+          'Monthly snapshot of account holders with active access. ' \
+            'This report displays all access-related tickets closed during the previous month.'
+        end
+      end
+
+      # Whether the Account Holder Email column should be included for the given
+      # target system — true only for the configured public website
+      # (public_website_target_system plugin setting).
+      def self.monthly_include_email?(target_system)
+        configured = NysenateAuditUtils::CustomFieldConfiguration.public_website_target_system
+        configured.present? && target_system == configured
       end
       ACCOUNT_HOLDER_ACCESS_DESCRIPTION = 'Account Holder access, including active, inactive, or both statuses, with one row per account.'
 

@@ -125,12 +125,25 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     assert row.key?(:user_id)
     assert row.key?(:user_name)
     assert row.key?(:user_type)
+    assert row.key?(:user_office)
+    assert row.key?(:user_email)
     assert row.key?(:account_type)
     assert row.key?(:status)
     assert row.key?(:account_action)
     assert row.key?(:closed_on)
     assert row.key?(:request_code)
     assert row.key?(:issue_id)
+  end
+
+  test 'generate enriches office and email from custom fields' do
+    create_closed_test_issue('12345', 'John Doe', 'AIX', 'Add', 1.day.ago,
+                             office: 'Senate Office', email: 'jdoe@example.com')
+
+    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(target_system: 'AIX')
+    row = service.generate.first
+
+    assert_equal 'Senate Office', row[:user_office]
+    assert_equal 'jdoe@example.com', row[:user_email]
   end
 
   test 'generate filters by target system correctly' do
@@ -458,7 +471,8 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
     issue.reload
   end
 
-  def create_closed_test_issue(employee_id, employee_name, target_system, account_action, closed_time)
+  def create_closed_test_issue(employee_id, employee_name, target_system, account_action, closed_time,
+                               office: nil, email: nil)
     custom_values = {
       @employee_id_field.id => employee_id.to_s,
       @target_system_field.id => target_system,
@@ -467,6 +481,8 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
 
     # Only add employee_name if provided
     custom_values[@employee_name_field.id] = employee_name if employee_name
+    custom_values[@fields[:user_location].id] = office if office
+    custom_values[@fields[:user_email].id] = email if email
 
     issue = Issue.create!(
       project: @project,

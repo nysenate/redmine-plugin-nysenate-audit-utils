@@ -323,14 +323,9 @@ module NysenateAuditUtils
       # single-system and all-systems (multi-sheet) workbooks.
       def self.write_monthly_sheet(sheet, styles, data, as_of_time:, target_system:)
         if as_of_time
-          description = if target_system
-                          "Snapshot of employee access status for #{target_system} as of the end time."
-                        else
-                          'Snapshot of employee access status as of the end time.'
-                        end
           write_metadata_rows(sheet, styles,
             name: 'Monthly',
-            description: description,
+            description: CsvGenerator.monthly_description(target_system),
             start_time: 'N/A',
             end_time: as_of_time
           )
@@ -341,36 +336,46 @@ module NysenateAuditUtils
           return
         end
 
+        include_email = CsvGenerator.monthly_include_email?(target_system)
+
         headers = [
           'Account Holder Name',
           'Account Holder ID',
           'Account Holder Type',
           'Account Holder Username',
-          'Account Status',
+          'Account Holder Office',
+          'Account Access Status',
           'Last Updated',
           'Last Issue',
           'Last Action',
           'Request Code'
         ]
+        headers << 'Account Holder Email' if include_email
 
         rows = data.map do |row|
-          [
+          values = [
             row[:user_name],
             row[:user_id],
             row[:user_type],
             row[:user_uid],
+            row[:user_office],
             row[:status],
             row[:closed_on]&.strftime('%Y-%m-%d'),
             row[:issue_id],
             row[:account_action],
             row[:request_code]
           ]
+          values << row[:user_email] if include_email
+          values
         end
+
+        widths = [24, 14, 16, 20, 20, 16, 14, 12, 20, 14]
+        widths << 28 if include_email
 
         write_table(sheet, styles,
           headers: headers,
           rows: rows,
-          widths: [24, 14, 16, 20, 16, 14, 12, 20, 14]
+          widths: widths
         )
       end
 

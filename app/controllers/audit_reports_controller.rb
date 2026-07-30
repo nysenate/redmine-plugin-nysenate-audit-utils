@@ -242,10 +242,16 @@ class AuditReportsController < ApplicationController
     render :error
   end
 
+  # Sentinel value offered in the Target System dropdown that aggregates every
+  # configured target system into a single combined table.
+  ALL_SYSTEMS_OPTION = 'All Systems'
+
   def monthly
     # Get valid target systems from custom field configuration
     target_system_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
-    @target_systems = target_system_field&.possible_values || ['Oracle / SFMS']
+    real_target_systems = target_system_field&.possible_values || ['Oracle / SFMS']
+    # Offer an "All Systems" option in the dropdown (aggregates all systems)
+    @target_systems = real_target_systems + [ALL_SYSTEMS_OPTION]
 
     # Calculate earliest closed issue date in the project
     earliest_closed_date = calculate_earliest_closed_date(@project)
@@ -261,7 +267,8 @@ class AuditReportsController < ApplicationController
     end
 
     # Parse target_system parameter (use first valid system as default)
-    target_system = params[:target_system].presence || @target_systems.first
+    target_system = params[:target_system].presence || real_target_systems.first
+    all_systems = target_system == ALL_SYSTEMS_OPTION
 
     # Parse status_filter parameter (default to 'active')
     status_filter = params[:status_filter].presence || 'active'
@@ -283,26 +290,47 @@ class AuditReportsController < ApplicationController
     end
 
     # Generate report
-    service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
-      target_system: target_system,
-      as_of_time: as_of_time,
-      status_filter: status_filter,
-      project: @project
-    )
-    @report_data = service.generate
+    if all_systems
+      # Aggregate every configured target system into one combined table.
+      # Each row keeps its account_type (= target system) for the System column.
+      @report_data = []
+      real_target_systems.each do |system|
+        service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+          target_system: system,
+          as_of_time: as_of_time,
+          status_filter: status_filter,
+          project: @project
+        )
+        data = service.generate
+        if service.success?
+          @report_data.concat(data)
+        else
+          Rails.logger.warn "monthly (All Systems): skipping #{system} — #{service.errors.join('; ')}"
+        end
+      end
+    else
+      service = NysenateAuditUtils::Reporting::MonthlyReportService.new(
+        target_system: target_system,
+        as_of_time: as_of_time,
+        status_filter: status_filter,
+        project: @project
+      )
+      @report_data = service.generate
+
+      # Handle errors
+      unless service.success?
+        @error_message = service.errors.join('; ')
+        render :error
+        return
+      end
+    end
+
     @target_system = target_system
     @status_filter = status_filter
     @mode = mode
     @selected_month_num = selected_month_num
     @selected_year = selected_year
     @as_of_time = as_of_time
-
-    # Handle errors
-    unless service.success?
-      @error_message = service.errors.join('; ')
-      render :error
-      return
-    end
 
     # Set up sorting
     sort_init 'user_name', 'asc'
@@ -311,6 +339,8 @@ class AuditReportsController < ApplicationController
       'user_id' => 'user_id',
       'user_type' => 'user_type',
       'user_uid' => 'user_uid',
+      'user_office' => 'user_office',
+      'account_type' => 'account_type',
       'status' => 'status',
       'account_action' => 'account_action',
       'closed_on' => 'closed_on',
@@ -326,6 +356,14 @@ class AuditReportsController < ApplicationController
     respond_to do |format|
       format.html { paginate_report_data }
       format.csv do
+        # All Systems uses the per-system ZIP export instead of a single CSV.
+        if all_systems
+          redirect_to monthly_zip_project_audit_reports_path(
+            @project, mode: mode, month: selected_month_num, year: selected_year,
+            status_filter: status_filter
+          )
+          next
+        end
         csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
           @report_data, as_of_time: @as_of_time, target_system: target_system
         )
@@ -340,6 +378,14 @@ class AuditReportsController < ApplicationController
                   disposition: 'attachment'
       end
       format.xlsx do
+        # All Systems uses the per-system workbook export instead of a single sheet.
+        if all_systems
+          redirect_to monthly_zip_project_audit_reports_path(
+            @project, mode: mode, month: selected_month_num, year: selected_year,
+            status_filter: status_filter, format: :xlsx
+          )
+          next
+        end
         xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_monthly_xlsx(
           @report_data, as_of_time: @as_of_time, target_system: target_system
         )

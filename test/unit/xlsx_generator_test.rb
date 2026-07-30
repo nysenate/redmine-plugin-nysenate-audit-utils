@@ -12,6 +12,7 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
 
   MONTHLY_ROW = {
     user_id: '12345', user_name: 'John Doe', user_type: 'Employee', user_uid: 'jdoe',
+    user_office: 'Senate Office', user_email: 'jdoe@example.com',
     status: 'active', account_action: 'Add', closed_on: Date.parse('2026-03-15'),
     request_code: 'OAA', issue_id: 100
   }.freeze
@@ -200,12 +201,34 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
     assert_equal ['Oracle   SFMS'], sheet_names(xlsx)
     xml = sheet_xml(xlsx)
     assert_includes xml, 'Account Holder Name'
+    assert_includes xml, 'Account Holder Office'
+    assert_includes xml, 'Account Access Status'
+    assert_includes xml, 'Senate Office'
     assert_includes xml, 'John Doe'
+    assert_includes xml, 'Monthly snapshot of account holders with active access'
+    assert_not_includes xml, 'Account Holder Email'
     assert_equal 8, row_count(xlsx)
   end
 
   def test_monthly_xlsx_nil_data_returns_blank
     assert_equal '', GEN.generate_monthly_xlsx(nil)
+  end
+
+  def test_monthly_xlsx_includes_email_column_only_for_configured_system
+    Setting.plugin_nysenate_audit_utils = (Setting.plugin_nysenate_audit_utils || {}).merge(
+      'public_website_target_system' => 'NYSenate.gov Website'
+    )
+    xlsx = GEN.generate_monthly_xlsx([MONTHLY_ROW], target_system: 'NYSenate.gov Website')
+    xml = sheet_xml(xlsx)
+    assert_includes xml, 'Account Holder Email'
+    assert_includes xml, 'jdoe@example.com'
+
+    other = GEN.generate_monthly_xlsx([MONTHLY_ROW], target_system: 'AIX')
+    assert_not_includes sheet_xml(other), 'Account Holder Email'
+  ensure
+    Setting.plugin_nysenate_audit_utils = (Setting.plugin_nysenate_audit_utils || {}).merge(
+      'public_website_target_system' => ''
+    )
   end
 
   # --- all systems (single multi-sheet workbook) ---------------------------

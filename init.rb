@@ -100,7 +100,11 @@ Redmine::Plugin.register :nysenate_audit_utils do
     # Tracked User ID settings
     'tracked_user_id_offset' => 500_000, # Minimum starting point for auto-generated tracked user IDs
     # Email Reporting settings
-    'report_recipients' => ''            # Comma-separated email addresses for all reports
+    'report_recipients' => '',           # Comma-separated email addresses for all reports
+    # Target System value identifying the public website (NYSenate.gov). Its
+    # Monthly Report includes the extra Account Holder Email column. Must match
+    # a Target System custom-field value. Required.
+    'public_website_target_system' => ''
   }, partial: 'settings/audit_utils_settings'
 end
 

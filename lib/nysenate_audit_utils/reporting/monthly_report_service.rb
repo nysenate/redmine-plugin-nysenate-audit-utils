@@ -71,10 +71,12 @@ module NysenateAuditUtils
       end
 
       def enrich_with_user_names
-        # Get user name, UID, and type field IDs
+        # Get user name, UID, type, office, and email field IDs
         user_name_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_name_field_id')
         user_uid_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_uid_field_id')
         user_type_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_type_field_id')
+        user_office_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_location_field_id')
+        user_email_field_id = NysenateAuditUtils::CustomFieldConfiguration.get_field_id('user_email_field_id')
 
         return unless user_name_field_id || user_uid_field_id
 
@@ -82,21 +84,29 @@ module NysenateAuditUtils
         issue_ids = @account_statuses.filter_map { |status| status[:issue_id] }.uniq
         return if issue_ids.empty?
 
-        # Fetch custom values for user names, UIDs, and types in a single query
+        # Fetch custom values for user names, UIDs, types, offices, and emails in a single query
         @user_names = {}
         @user_uids = {}
         @user_types = {}
+        @user_offices = {}
+        @user_emails = {}
 
-        field_ids = [user_name_field_id, user_uid_field_id, user_type_field_id].compact
+        field_ids = [user_name_field_id, user_uid_field_id, user_type_field_id,
+                     user_office_field_id, user_email_field_id].compact
         CustomValue
           .where(customized_type: 'Issue', customized_id: issue_ids, custom_field_id: field_ids)
           .each do |cv|
-            if cv.custom_field_id == user_name_field_id
+            case cv.custom_field_id
+            when user_name_field_id
               @user_names[cv.customized_id] = cv.value
-            elsif cv.custom_field_id == user_uid_field_id
+            when user_uid_field_id
               @user_uids[cv.customized_id] = cv.value
-            elsif cv.custom_field_id == user_type_field_id
+            when user_type_field_id
               @user_types[cv.customized_id] = cv.value
+            when user_office_field_id
+              @user_offices[cv.customized_id] = cv.value
+            when user_email_field_id
+              @user_emails[cv.customized_id] = cv.value
             end
           end
       rescue StandardError => e
@@ -104,6 +114,8 @@ module NysenateAuditUtils
         @user_names = {}
         @user_uids = {}
         @user_types = {}
+        @user_offices = {}
+        @user_emails = {}
       end
 
       def build_report_data
@@ -112,6 +124,8 @@ module NysenateAuditUtils
         @user_names ||= {}
         @user_uids ||= {}
         @user_types ||= {}
+        @user_offices ||= {}
+        @user_emails ||= {}
 
         # Build report data array
         report_data = @account_statuses.map do |status|
@@ -119,6 +133,8 @@ module NysenateAuditUtils
             user_id: status[:user_id],
             user_name: @user_names[status[:issue_id]],
             user_uid: @user_uids[status[:issue_id]],
+            user_office: @user_offices[status[:issue_id]],
+            user_email: @user_emails[status[:issue_id]],
             user_type: @user_types[status[:issue_id]] || status[:user_type],  # Prefer from enrichment, fall back to status hash
             account_type: status[:account_type],
             status: status[:status],

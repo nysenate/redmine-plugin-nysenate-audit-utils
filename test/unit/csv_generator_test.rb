@@ -9,6 +9,8 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     user_name: 'John Doe',
     user_type: 'Employee',
     user_uid: 'jdoe',
+    user_office: 'Senate Office',
+    user_email: 'jdoe@example.com',
     status: 'active',
     account_action: 'Add',
     closed_on: Date.parse('2026-03-15'),
@@ -243,6 +245,49 @@ class CsvGeneratorTest < ActiveSupport::TestCase
   def test_monthly_csv_omits_metadata_when_as_of_time_missing
     csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv([MONTHLY_ROW])
     assert_match(/\AAccount Holder Name/, csv)
+  end
+
+  def test_monthly_csv_header_includes_office_and_access_status
+    csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv([MONTHLY_ROW])
+    header = csv.lines.first.chomp
+    assert_equal 'Account Holder Name,Account Holder ID,Account Holder Type,' \
+                 'Account Holder Username,Account Holder Office,Account Access Status,' \
+                 'Last Updated,Last Issue,Last Action,Request Code', header
+    # Office value lands in the right column; email is not included by default.
+    row = CSV.parse(csv)[1]
+    assert_equal 'Senate Office', row[4]
+    assert_not_includes header, 'Account Holder Email'
+  end
+
+  def test_monthly_csv_description_uses_new_wording
+    as_of = Time.parse('2026-04-01 00:00:00')
+    csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
+      [MONTHLY_ROW], as_of_time: as_of, target_system: 'Oracle / SFMS'
+    )
+    assert_match(/Monthly snapshot of account holders with active access for Oracle \/ SFMS\./, csv)
+    assert_match(/all access-related tickets closed during the previous month/, csv)
+  end
+
+  def test_monthly_csv_includes_email_column_only_for_configured_system
+    Setting.plugin_nysenate_audit_utils = (Setting.plugin_nysenate_audit_utils || {}).merge(
+      'public_website_target_system' => 'NYSenate.gov Website'
+    )
+    csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
+      [MONTHLY_ROW], target_system: 'NYSenate.gov Website'
+    )
+    header = csv.lines.first.chomp
+    assert_includes header, 'Account Holder Email'
+    assert_equal 'jdoe@example.com', CSV.parse(csv)[1].last
+
+    # A different system does not get the email column.
+    other = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
+      [MONTHLY_ROW], target_system: 'AIX'
+    )
+    assert_not_includes other.lines.first, 'Account Holder Email'
+  ensure
+    Setting.plugin_nysenate_audit_utils = (Setting.plugin_nysenate_audit_utils || {}).merge(
+      'public_website_target_system' => ''
+    )
   end
 
   ACCOUNT_HOLDER_ACCESS_ROW = {

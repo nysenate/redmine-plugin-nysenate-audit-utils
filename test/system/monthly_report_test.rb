@@ -27,7 +27,7 @@ class MonthlyReportTest < AuditUtilsSystemTestCase
     # Seed synthetic closed Account Request issues.
     #   Oracle / SFMS: one active (Add) holder + one inactive (Delete) holder.
     #   AIX: one active holder (proves per-system filtering / a non-default tab).
-    seed_closed_account_issue('900101', 'Ada Testwell', 'Oracle / SFMS', 'Add')
+    seed_closed_account_issue('900101', 'Ada Testwell', 'Oracle / SFMS', 'Add', office: 'Senate Office')
     seed_closed_account_issue('900102', 'Ben Sample',   'Oracle / SFMS', 'Delete')
     seed_closed_account_issue('900201', 'Cara Mockton', 'AIX',           'Add')
 
@@ -49,6 +49,36 @@ class MonthlyReportTest < AuditUtilsSystemTestCase
       assert_text 'Ada Testwell'
       assert_text '900101'
       assert_no_text 'Ben Sample'
+    end
+  end
+
+  # Screen shows the Office and Target System columns and the renamed
+  # "Account Access Status" header.
+  def test_monthly_web_view_shows_office_and_access_status_columns
+    visit monthly_path
+
+    within 'table.list.issues thead' do
+      assert_text 'Office'
+      assert_text 'Target System'
+      assert_text 'Account Access Status'
+    end
+    within 'table.list.issues' do
+      assert_text 'Senate Office'
+    end
+  end
+
+  # The "All Systems" dropdown option aggregates every configured system into
+  # one combined table (one row per account-holder x system).
+  def test_monthly_all_systems_option_aggregates_every_system
+    visit monthly_path(target_system: 'All Systems', status_filter: 'all')
+
+    assert_selector 'select#target_system option[selected]', text: 'All Systems'
+    within 'table.list.issues' do
+      # Oracle holders and the AIX holder all appear in one table.
+      assert_text 'Ada Testwell'
+      assert_text 'Cara Mockton'
+      assert_text 'Oracle / SFMS'
+      assert_text 'AIX'
     end
   end
 
@@ -78,8 +108,8 @@ class MonthlyReportTest < AuditUtilsSystemTestCase
 
     header = rows.find { |r| r.include?('Account Holder Name') }
     assert header, "expected an 'Account Holder Name' header row in the CSV, got: #{rows.inspect}"
-    ['Account Holder ID', 'Account Holder Type', 'Account Status',
-     'Last Action', 'Request Code'].each do |col|
+    ['Account Holder ID', 'Account Holder Type', 'Account Holder Office',
+     'Account Access Status', 'Last Action', 'Request Code'].each do |col|
       assert_includes header, col
     end
 
@@ -162,7 +192,15 @@ class MonthlyReportTest < AuditUtilsSystemTestCase
   # Create a *closed* Account Request issue carrying the account-holder /
   # request custom fields, then backdate closed_on (bypassing callbacks) so it
   # falls before any snapshot cutoff.
-  def seed_closed_account_issue(user_id, user_name, target_system, account_action)
+  def seed_closed_account_issue(user_id, user_name, target_system, account_action, office: nil)
+    values = {
+      @fields[:user_id].id => user_id,
+      @fields[:user_name].id => user_name,
+      @fields[:target_system].id => target_system,
+      @fields[:account_action].id => account_action
+    }
+    values[@fields[:user_location].id] = office if office
+
     issue = Issue.create!(
       project: @project,
       tracker: @tracker,
@@ -170,12 +208,7 @@ class MonthlyReportTest < AuditUtilsSystemTestCase
       subject: "Account Request for #{user_name}",
       status: @closed_status,
       priority_id: 5,
-      custom_field_values: {
-        @fields[:user_id].id => user_id,
-        @fields[:user_name].id => user_name,
-        @fields[:target_system].id => target_system,
-        @fields[:account_action].id => account_action
-      }
+      custom_field_values: values
     )
     Issue.where(id: issue.id).update_all(closed_on: FIXED_CLOSED_ON)
     issue

@@ -215,4 +215,66 @@ class ConfigurationStatusServiceTest < ActiveSupport::TestCase
     assert overall[:sections].key?(:request_codes)
     assert overall[:sections][:request_codes].is_a?(Hash)
   end
+
+  # Test report_data_status method (public website is required)
+  test 'report_data_status errors when target system field not configured' do
+    status = NysenateAuditUtils::ConfigurationStatusService.report_data_status
+
+    assert_equal :error, status[:status]
+    assert_equal false, status[:valid]
+    assert_includes status[:errors].first, 'Configure the Target System custom field'
+  end
+
+  test 'report_data_status errors when public website not selected' do
+    target_system_field = IssueCustomField.create!(
+      name: 'Target System', field_format: 'list',
+      possible_values: ['Oracle / SFMS', 'NYSenate.gov Website']
+    )
+    Setting.plugin_nysenate_audit_utils = { 'target_system_field_id' => target_system_field.id.to_s }
+
+    status = NysenateAuditUtils::ConfigurationStatusService.report_data_status
+
+    assert_equal :error, status[:status]
+    assert_includes status[:errors].first, 'No public website Target System selected'
+  end
+
+  test 'report_data_status errors when public website value is not a valid target system' do
+    target_system_field = IssueCustomField.create!(
+      name: 'Target System', field_format: 'list',
+      possible_values: ['Oracle / SFMS', 'NYSenate.gov Website']
+    )
+    Setting.plugin_nysenate_audit_utils = {
+      'target_system_field_id' => target_system_field.id.to_s,
+      'public_website_target_system' => 'Nonexistent System'
+    }
+
+    status = NysenateAuditUtils::ConfigurationStatusService.report_data_status
+
+    assert_equal :error, status[:status]
+    assert_includes status[:errors].first, 'is not a valid Target System value'
+  end
+
+  test 'report_data_status ok when public website is a valid target system' do
+    target_system_field = IssueCustomField.create!(
+      name: 'Target System', field_format: 'list',
+      possible_values: ['Oracle / SFMS', 'NYSenate.gov Website']
+    )
+    Setting.plugin_nysenate_audit_utils = {
+      'target_system_field_id' => target_system_field.id.to_s,
+      'public_website_target_system' => 'NYSenate.gov Website'
+    }
+
+    status = NysenateAuditUtils::ConfigurationStatusService.report_data_status
+
+    assert_equal :ok, status[:status]
+    assert_equal true, status[:valid]
+    assert_empty status[:errors]
+  end
+
+  test 'overall_status should include report_data section' do
+    overall = NysenateAuditUtils::ConfigurationStatusService.overall_status
+
+    assert overall[:sections].key?(:report_data)
+    assert overall[:sections][:report_data].is_a?(Hash)
+  end
 end

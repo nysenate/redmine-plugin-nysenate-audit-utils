@@ -4,6 +4,7 @@
   ess_status = status[:sections][:ess_api]
   custom_fields_status = status[:sections][:custom_fields]
   email_status = status[:sections][:email_reporting]
+  report_data_status = status[:sections][:report_data]
   request_codes_status = status[:sections][:request_codes]
   removal_defaults_status = status[:sections][:removal_defaults]
 %>
@@ -284,6 +285,49 @@
         <div class="flash notice" style="margin-top: 1em;">
           <p><strong>Note:</strong> To enable scheduled reports, you must set up cron jobs on the server. See the plugin README for instructions on configuring rake tasks and cron.</p>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Data Options Section -->
+  <div class="config-accordion">
+    <div class="accordion-header" data-section="report-data-options">
+      <h3>
+        <span class="accordion-toggle">▶</span>
+        Report Data Options
+        <span class="status-badge <%= NysenateAuditUtils::ConfigurationStatusService.status_badge_class(report_data_status) %>">
+          <%= NysenateAuditUtils::ConfigurationStatusService.status_badge(report_data_status) %>
+          <%= NysenateAuditUtils::ConfigurationStatusService.status_description(report_data_status) %>
+        </span>
+      </h3>
+    </div>
+
+    <div class="accordion-body" id="report-data-options-section">
+      <div class="box tabular settings">
+        <%
+          public_website_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
+        %>
+        <h4 style="margin: 1em 0 0.5em 0;">Public Website</h4>
+        <% if public_website_field && public_website_field.possible_values.present? %>
+          <p style="margin: 0 0 0.5em 0; padding: 0;">
+            Select the Target System that represents the <strong>public website</strong>
+            (NYSenate.gov). Its Monthly Report includes an extra
+            <strong>Account Holder Email</strong> column.
+          </p>
+          <p>
+            <%= content_tag 'label', 'Public Website Target System <span class="required">*</span>'.html_safe %>
+            <%= select_tag 'settings[public_website_target_system]',
+                  options_for_select(
+                    [['-- Select Target System --', '']] +
+                      public_website_field.possible_values.map { |v| [v, v] },
+                    @settings['public_website_target_system']) %>
+            <em class="info">Required. Identifies the public website among the Target System values.</em>
+          </p>
+        <% else %>
+          <div class="flash error" style="margin: 1em 0;">
+            <p><strong>Configuration Required:</strong> Please configure the Target System custom field (above) before selecting the public website Target System.</p>
+          </div>
+        <% end %>
       </div>
     </div>
   </div>
