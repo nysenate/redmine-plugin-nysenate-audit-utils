@@ -186,9 +186,9 @@ class AccountHolderAccessReportTest < AuditUtilsSystemTestCase
     assert_no_text 'Zeta Pagerow 30'
   end
 
-  # 4. CSV export contains the FULL, unpaginated, flat (one-row-per-account) set.
-  def test_csv_export_contains_full_unpaginated_dataset
-    # 30 holders on 25-per-page -> more than one page; CSV must contain all 30.
+  # 4. Excel export contains the FULL, unpaginated, flat (one-row-per-account) set.
+  def test_excel_export_contains_full_unpaginated_dataset
+    # 30 holders on 25-per-page -> more than one page; export must contain all 30.
     (1..30).each do |n|
       nn = format('%02d', n)
       seed_account("9600#{nn}", "Cee Exportrow #{nn}", 'Oracle / SFMS', 'Add',
@@ -196,16 +196,15 @@ class AccountHolderAccessReportTest < AuditUtilsSystemTestCase
     end
 
     visit_report
-    # The Excel export link lives next to the CSV link.
     assert_link 'Export Excel'
     # Web view is paginated to 25.
     assert_selector 'tbody tr', count: 25
 
-    # The Playwright CSV parse would treat the metadata block as the header, so
-    # parse headerless and locate the real header row + count data rows.
-    rows = downloaded_csv('*.csv', headers: false) { click_link 'Export CSV' }.to_a
+    # The workbook has metadata rows before the column header, so locate the
+    # real header row and count the data rows after it.
+    rows = downloaded_xlsx_rows('*.xlsx') { click_link 'Export Excel' }
     header_index = rows.index { |r| r.first == 'Account Holder Name' }
-    assert header_index, 'Expected an "Account Holder Name" header row in the CSV'
+    assert header_index, 'Expected an "Account Holder Name" header row in the workbook'
 
     assert_equal CSV_HEADERS, rows[header_index]
 

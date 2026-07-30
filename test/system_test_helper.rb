@@ -270,4 +270,41 @@ class AuditUtilsSystemTestCase < ApplicationSystemTestCase
     path = block ? capture_download(filename, &block) : wait_for_download(filename)
     Zip::File.open(path) { |zip| zip.map(&:name) }
   end
+
+  # Download an .xlsx export and assert it is a valid, non-empty workbook (an
+  # .xlsx is a zip container, so it starts with the "PK" magic bytes). Reports
+  # export Excel only; the workbook's content is verified by the unit-level
+  # XlsxGenerator tests, so system tests just smoke-check the download path.
+  #
+  #   assert_downloaded_xlsx('weekly_report_*.xlsx') { click_link 'Export Excel' }
+  def assert_downloaded_xlsx(filename = '*.xlsx', &block)
+    path = block ? capture_download(filename, &block) : wait_for_download(filename)
+    assert File.size?(path), "Expected a non-empty Excel download at #{path}"
+    assert_equal 'PK', File.binread(path, 2), 'expected an .xlsx (zip) container'
+    path
+  end
+
+  # Download an .xlsx export and return the rows of its FIRST worksheet as an
+  # array of arrays of cell text. Reports use caxlsx with inline strings, so
+  # cell values live in the worksheet XML (no sharedStrings lookup needed).
+  #
+  #   rows = downloaded_xlsx_rows('*.xlsx') { click_link 'Export Excel' }
+  #   header = rows.find { |r| r.first == 'Account Holder Name' }
+  def downloaded_xlsx_rows(filename = '*.xlsx', &block)
+    path = block ? capture_download(filename, &block) : wait_for_download(filename)
+    sheet_xml = Zip::File.open(path) do |zip|
+      entry = zip.detect { |e| e.name.end_with?('xl/worksheets/sheet1.xml') }
+      assert entry, "no worksheet found in #{File.basename(path)}"
+      entry.get_input_stream.read
+    end
+    doc = Nokogiri::XML(sheet_xml)
+    doc.remove_namespaces!
+    doc.xpath('//row').map do |row|
+      row.xpath('./c').map do |c|
+        # Inline-string cells store text under <is><t>; numeric/other cells store
+        # their value under <v>. Read whichever is present.
+        (c.at_xpath('.//t') || c.at_xpath('./v'))&.text
+      end
+    end
+  end
 end

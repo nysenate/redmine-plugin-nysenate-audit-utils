@@ -95,7 +95,7 @@ tracked-user features described below.
 Under **Administration → Roles and Permissions**, grant roles the desired
 permissions in the **Audit Utils** group:
 
-- **View audit reports** - Access to daily/weekly/monthly reports (also gates their CSV export)
+- **View audit reports** - Access to daily/weekly/monthly reports (also gates their Excel export)
 - **Use user autofill** - User search and autofill functionality
 - **Manage Vendors/Volunteers** - Create/edit/delete vendor, volunteer, and contractor records
 
@@ -145,7 +145,7 @@ Access via the project menu: **Reports → Audit Utils**. Report types:
   Business Day* (default, single date) and *Date Range* (explicit start/end).
 - **Weekly Reports**: Tickets closed during the previous full week (Sunday–Sunday).
 - **Quarterly / Annual Reports**: Closed tickets for a single target system,
-  feeding the SFMS Quarterly Audit and the SFS Annual Audit, with CSV columns
+  feeding the SFMS Quarterly Audit and the SFS Annual Audit, with Excel columns
   matching the legacy audit spreadsheet.
 - **Monthly Reports**: Account status snapshot for a target system.
 - **Account Holder Access Report**: One row per account (account holder ×
@@ -153,7 +153,7 @@ Access via the project menu: **Reports → Audit Utils**. Report types:
   holder type, target system, and status.
 
 On-screen reports use Redmine's standard pagination (preserving sort and
-filters); CSV exports always contain the full, unpaginated dataset.
+filters); Excel exports always contain the full, unpaginated dataset.
 
 Reports can also be generated and emailed on a schedule via the rake tasks
 described in [Rake Tasks](#rake-tasks).
@@ -193,9 +193,10 @@ The plugin provides rake tasks for generating and emailing audit reports; run
 them on a cron schedule to automate delivery. **Run all tasks from the Redmine
 root directory.**
 
-Each successful run archives a copy of the generated CSV/ZIP to the project's
-**Files** repository (timestamped) for the audit trail. If the Files module is
-disabled, archiving is skipped with a warning and the email is still sent.
+Each successful run archives a copy of the generated Excel workbook (and a CSV
+copy) to the project's **Files** repository (timestamped) for the audit trail.
+Emails carry the Excel workbook only. If the Files module is disabled, archiving
+is skipped with a warning and the email is still sent.
 
 Every email-sending task accepts a `no_email` flag (`1`, `true`, or `yes`) that
 suppresses the email; the report is still generated and archived, and
@@ -255,7 +256,7 @@ rake nysenate_audit_utils:send_monthly_report project_id="bachelp-2" target_syst
 
 ### Send All-Systems Monthly Report
 
-Generates and emails a ZIP containing one monthly-snapshot CSV per configured target system.
+Generates and emails a single Excel workbook with one monthly-snapshot sheet per configured target system.
 
 ```bash
 rake nysenate_audit_utils:send_all_systems_monthly_report project_id="bachelp-2" RAILS_ENV=production

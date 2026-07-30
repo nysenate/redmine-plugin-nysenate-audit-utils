@@ -42,25 +42,24 @@ class WeeklyReportTest < AuditUtilsSystemTestCase
   end
 
   # ---------------------------------------------------------------------------
-  # 2. CSV export: assert the legacy weekly headers + the seeded row.
+  # 2. Excel export: assert the legacy weekly headers + the seeded row.
   # ---------------------------------------------------------------------------
-  def test_csv_export_includes_headers_and_seeded_row
+  def test_excel_export_includes_headers_and_seeded_row
     issue = seed_closed_weekly_issue
 
     visit weekly_url
 
-    # The Excel export link lives next to the CSV link.
     assert_link 'Export Excel'
 
-    # The weekly CSV carries a metadata preamble before the header row, so parse
-    # raw (headers: false) and locate the real header row ourselves.
-    rows = downloaded_csv(headers: false) { click_link 'Export CSV' }
+    # The weekly workbook carries a metadata preamble before the header row, so
+    # locate the real header row ourselves.
+    rows = downloaded_xlsx_rows { click_link 'Export Excel' }
     header = rows.find { |r| r.first == 'Updated On' }
 
-    assert header, "Expected an 'Updated On' header row in the CSV (saw: #{rows.first(6).inspect})"
-    %w[Updated\ On Open\ Date Closed\ Date Ticket\ # Ticket\ Status Subject
-       Request\ Code Account\ Holder\ Name Account\ Holder\ Username
-       Account\ Holder\ Office Account\ Holder\ Type Account\ Holder\ ID].each do |col|
+    assert header, "Expected an 'Updated On' header row in the workbook (saw: #{rows.first(6).inspect})"
+    ['Updated On', 'Open Date', 'Closed Date', 'Ticket #', 'Ticket Status', 'Subject',
+     'Request Code', 'Account Holder Name', 'Account Holder Username',
+     'Account Holder Office', 'Account Holder Type', 'Account Holder ID'].each do |col|
       assert_includes header, col
     end
 
@@ -68,7 +67,7 @@ class WeeklyReportTest < AuditUtilsSystemTestCase
     # first), so locate the row by the Ticket # column via the header index.
     ticket_col = header.index('Ticket #')
     data_row = rows.find { |r| r[ticket_col].to_s == issue.id.to_s }
-    assert data_row, "Expected a CSV data row for issue ##{issue.id}"
+    assert data_row, "Expected a data row for issue ##{issue.id}"
     assert_includes data_row, 'Zeta Fakeholder'
     assert_includes data_row, '900123'
     assert_includes data_row, 'zfakeholder'

@@ -76,36 +76,34 @@ class AuthorizationTest < AuditUtilsSystemTestCase
   end
 
   # ===========================================================================
-  # 2. CSV export -- gated by :view_audit_reports
+  # 2. Excel export -- gated by :view_audit_reports
   # ===========================================================================
   #
-  # Each report's CSV comes from its own report action rendered with
-  # `format: :csv` (e.g. AuditReportsController#weekly's `format.csv` block), so
-  # it is protected by :view_audit_reports -- the SAME `before_action :authorize`
-  # that guards the HTML report. There is no separate export permission.
+  # Each report's Excel export comes from its own report action rendered with
+  # `format: :xlsx` (e.g. AuditReportsController#weekly's `format.xlsx` block),
+  # so it is protected by :view_audit_reports -- the SAME `before_action
+  # :authorize` that guards the HTML report. There is no separate export
+  # permission.
   #
-  # NOTE ON TECHNIQUE: we can't `visit` the `.csv` URL to assert a 403 -- the
-  # Playwright driver fires "Download is starting" for ANY navigation to a
-  # text/csv response (the denied 403 carries a text/csv content type too). So
-  # the denial is proven on the HTML report (a member without the permission is
-  # refused the whole report, hence its CSV), and the positive control downloads
-  # the CSV via the on-page "Export CSV" link (a click-triggered download).
-  def test_csv_export_is_gated_by_view_audit_reports
-    # A member without :view_audit_reports gets neither the report nor its CSV.
+  # The denial is proven on the HTML report (a member without the permission is
+  # refused the whole report, hence its Excel export), and the positive control
+  # downloads the workbook via the on-page "Export Excel" link (a click-triggered
+  # download).
+  def test_excel_export_is_gated_by_view_audit_reports
+    # A member without :view_audit_reports gets neither the report nor its export.
     log_in_with_permissions([])
     visit weekly_report_url
     assert_text NOT_AUTHORIZED_TEXT
-    assert_no_link 'Export CSV'
+    assert_no_link 'Export Excel'
 
-    # :view_audit_reports opens the report AND its CSV export (positive control).
+    # :view_audit_reports opens the report AND its Excel export (positive control).
     page.reset_session!
     log_in_with_permissions([:view_audit_reports])
     visit weekly_report_url
     assert_no_text NOT_AUTHORIZED_TEXT
-    assert_link 'Export CSV'
+    assert_link 'Export Excel'
 
-    path = capture_download('weekly_report_*.csv') { click_link 'Export CSV' }
-    assert File.size?(path), "Expected a non-empty weekly CSV download at #{path}"
+    assert_downloaded_xlsx('weekly_report_*.xlsx') { click_link 'Export Excel' }
   end
 
   # ===========================================================================

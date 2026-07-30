@@ -113,7 +113,7 @@ END_DESC
       exit 1
     end
 
-    # Send email with CSV attachment (unless suppressed)
+    # Send email with Excel attachment (unless suppressed)
     unless no_email
       Mailer.with_synched_deliveries do
         AuditReportsMailer.deliver_daily_report(
@@ -221,7 +221,7 @@ END_DESC
       exit 1
     end
 
-    # Send email with CSV attachment (unless suppressed)
+    # Send email with Excel attachment (unless suppressed)
     unless no_email
       Mailer.with_synched_deliveries do
         AuditReportsMailer.deliver_weekly_report(
@@ -352,7 +352,7 @@ END_DESC
       exit 1
     end
 
-    # Send email with CSV attachment (unless suppressed)
+    # Send email with Excel attachment (unless suppressed)
     unless no_email
       Mailer.with_synched_deliveries do
         AuditReportsMailer.deliver_monthly_report(
@@ -550,8 +550,8 @@ issues in the given project, re-fetch authoritative data (ESS API for
 Employees, tracked_users table for Vendor/Volunteer) and update any drifted
 Account Holder custom fields (Name, Email, Phone, Status, UID, Office).
 
-Produces a CSV report and emails it to the
-configured recipients, and archives it to the project's Files repository.
+Produces an Excel report and emails it to the configured recipients, and
+archives both an Excel and a CSV copy to the project's Files repository.
 
 Available options:
   * project_id => project identifier (required)
@@ -631,7 +631,7 @@ END_DESC
       begin
         Mailer.with_synched_deliveries do
           AuditReportsMailer.deliver_user_info_audit_report(
-            recipient_list, result.summary, csv_data, xlsx_data, project.identifier, dry_run
+            recipient_list, result.summary, xlsx_data, project.identifier, dry_run
           )
         end
       rescue StandardError => e

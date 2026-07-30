@@ -43,34 +43,35 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
   end
 
   # ---------------------------------------------------------------------------
-  # 5. CSV export: assert the legacy audit-spreadsheet columns are present.
+  # 5. Excel export: assert the legacy audit-spreadsheet columns are present.
   # ---------------------------------------------------------------------------
-  def test_csv_export_has_legacy_spreadsheet_columns
+  def test_excel_export_has_legacy_spreadsheet_columns
     sfms = seed_closed_issue(target_system: 'Oracle / SFMS', subject: 'Yara SFMS Add',
                              user_name: 'Yara Fakeperson', user_uid: 'yfakeperson')
 
     visit periodic_url(system: 'sfms')
 
-    # The Excel export link lives next to the CSV link.
     assert_link 'Export Excel'
 
-    # Periodic CSV has NO metadata preamble -- the header IS the first row.
-    table = downloaded_csv { click_link 'Export CSV' }
+    # Periodic workbook has NO metadata preamble -- the header IS the first row.
+    rows = downloaded_xlsx_rows { click_link 'Export Excel' }
+    headers = rows.first
 
     %w[RequestType FullName Userid Office EntryDate CompletedDate
        SenDevNumber GeneralFormInfoID Program Subject Description].each do |col|
-      assert_includes table.headers, col
+      assert_includes headers, col
     end
-    assert_not_includes table.headers, 'BacNumber'
+    assert_not_includes headers, 'BacNumber'
 
-    row = table.find { |r| r['SenDevNumber'].to_s == sfms.id.to_s }
-    assert row, "Expected a CSV row for issue ##{sfms.id}"
-    assert_equal 'Yara Fakeperson', row['FullName']
-    assert_equal 'yfakeperson', row['Userid']
-    assert_equal 'USRA', row['RequestType']
+    idx = ->(name) { headers.index(name) }
+    row = rows.find { |r| r[idx.call('SenDevNumber')].to_s == sfms.id.to_s }
+    assert row, "Expected a data row for issue ##{sfms.id}"
+    assert_equal 'Yara Fakeperson', row[idx.call('FullName')]
+    assert_equal 'yfakeperson', row[idx.call('Userid')]
+    assert_equal 'USRA', row[idx.call('RequestType')]
     # The legacy "Description" column now carries the ticket Subject, and the
     # ticket Description is appended as its own export-only column.
-    assert_equal 'Yara SFMS Add', row['Subject']
+    assert_equal 'Yara SFMS Add', row[idx.call('Subject')]
   end
 
   # ---------------------------------------------------------------------------

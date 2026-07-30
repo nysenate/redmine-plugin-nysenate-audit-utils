@@ -70,15 +70,6 @@ class AuditReportsController < ApplicationController
 
     respond_to do |format|
       format.html { paginate_report_data }
-      format.csv do
-        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv(
-          @report_data, from_date: @from_date, to_date: @to_date
-        )
-        send_data csv_data,
-                  filename: "daily_report_#{Date.today.strftime('%Y%m%d')}.csv",
-                  type: 'text/csv',
-                  disposition: 'attachment'
-      end
       format.xlsx do
         xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_daily_xlsx(
           @report_data, from_date: @from_date, to_date: @to_date
@@ -150,14 +141,6 @@ class AuditReportsController < ApplicationController
 
     respond_to do |format|
       format.html { paginate_report_data }
-      format.csv do
-        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(
-          @report_data, from_date: @from_date, to_date: @to_date, update_type: @update_type
-        )
-        send_data csv_data,
-                  type: 'text/csv; header=present',
-                  filename: "weekly_report_#{Date.current.strftime('%Y%m%d')}.csv"
-      end
       format.xlsx do
         xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_weekly_xlsx(
           @report_data, from_date: @from_date, to_date: @to_date, update_type: @update_type
@@ -221,14 +204,6 @@ class AuditReportsController < ApplicationController
 
     respond_to do |format|
       format.html { paginate_report_data }
-      format.csv do
-        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_periodic_csv(
-          @report_data, system: @system, from_date: @from_date, to_date: @to_date
-        )
-        send_data csv_data,
-                  type: 'text/csv; header=present',
-                  filename: "#{@system}_audit_#{@from_date.strftime('%Y%m%d')}_#{@to_date.strftime('%Y%m%d')}.csv"
-      end
       format.xlsx do
         xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_periodic_xlsx(
           @report_data, system: @system, from_date: @from_date, to_date: @to_date
@@ -359,28 +334,6 @@ class AuditReportsController < ApplicationController
     # Respond to formats
     respond_to do |format|
       format.html { paginate_report_data }
-      format.csv do
-        # All Systems uses the per-system ZIP export instead of a single CSV.
-        if all_systems
-          redirect_to monthly_zip_project_audit_reports_path(
-            @project, mode: mode, month: selected_month_num, year: selected_year,
-            status_filter: status_filter
-          )
-          next
-        end
-        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(
-          @report_data, as_of_time: @as_of_time, target_system: target_system
-        )
-        filename_suffix = if mode == 'current'
-                            'current'
-                          else
-                            "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
-                          end
-        send_data csv_data,
-                  filename: "monthly_report_#{target_system.parameterize}_#{filename_suffix}.csv",
-                  type: 'text/csv',
-                  disposition: 'attachment'
-      end
       format.xlsx do
         # All Systems uses the per-system workbook export instead of a single sheet.
         if all_systems
@@ -444,23 +397,13 @@ class AuditReportsController < ApplicationController
       end
     end
 
-    if params[:format].to_s == 'xlsx'
-      xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_all_systems_xlsx(
-        reports_by_system, as_of_time: as_of_time
-      )
-      send_data xlsx_data,
-                filename: "monthly_reports_all_systems_#{filename_suffix}.xlsx",
-                type: Mime[:xlsx].to_s,
-                disposition: 'attachment'
-    else
-      zip_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(
-        reports_by_system, filename_suffix, as_of_time: as_of_time
-      )
-      send_data zip_data,
-                filename: "monthly_reports_all_systems_#{filename_suffix}.zip",
-                type: 'application/zip',
-                disposition: 'attachment'
-    end
+    xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_all_systems_xlsx(
+      reports_by_system, as_of_time: as_of_time
+    )
+    send_data xlsx_data,
+              filename: "monthly_reports_all_systems_#{filename_suffix}.xlsx",
+              type: Mime[:xlsx].to_s,
+              disposition: 'attachment'
   rescue => e
     Rails.logger.error "Monthly ZIP export failed: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
@@ -509,13 +452,6 @@ class AuditReportsController < ApplicationController
         # Collapse to one row per account holder for the web view only.
         @report_data = group_report_data_by_holder(@report_data)
         paginate_report_data
-      end
-      format.csv do
-        csv_data = NysenateAuditUtils::Reporting::CsvGenerator.generate_account_holder_access_csv(@report_data)
-        send_data csv_data,
-                  filename: "account_holder_access_report_#{Date.current.strftime('%Y%m%d')}.csv",
-                  type: 'text/csv',
-                  disposition: 'attachment'
       end
       format.xlsx do
         xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_account_holder_access_xlsx(@report_data)

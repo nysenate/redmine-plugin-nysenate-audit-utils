@@ -6,7 +6,7 @@ require File.expand_path('../system_test_helper', __dir__)
 #   * the Reports (Audit Reports) landing/index page and its report links,
 #   * the daily report web view in both "Last Business Day" and "Date Range"
 #     modes (rows come from the stubbed ESS statusChanges fixture),
-#   * the "Export CSV" download, and
+#   * the "Export Excel" download, and
 #   * the empty state when ESS reports no status changes.
 #
 # ESS is stubbed in-process via WebMock (see AuditUtilsSystemTestCase). The
@@ -74,26 +74,12 @@ class DailyReportTest < AuditUtilsSystemTestCase
     assert_text 'Doodlewick, Ulric F.'
   end
 
-  # 3. CSV export ------------------------------------------------------------
-  def test_daily_report_export_csv
+  # 3. Excel export ----------------------------------------------------------
+  def test_daily_report_export_excel
     visit daily_project_audit_reports_path(@project)
 
-    # The Excel export link lives next to the CSV link.
     assert_link 'Export Excel'
-
-    # The daily CSV starts with metadata rows before the column header, so parse
-    # without a header row and search the raw cells.
-    rows = downloaded_csv('*.csv', headers: false) { click_link 'Export CSV' }
-    cells = rows.flatten
-
-    # Column header row is present...
-    assert_includes cells, 'Account Holder Name'
-    assert_includes cells, 'Personnel Status Changes'
-    assert_includes cells, 'Account Access Status'
-    # #18837 removed the Account Holder ID column from the export.
-    assert_not_includes cells, 'Account Holder ID'
-    # ...and at least one synthetic data row landed in the export.
-    assert_includes cells, 'Doodlewick, Ulric F.'
+    assert_downloaded_xlsx('*.xlsx') { click_link 'Export Excel' }
   end
 
   # 4. Empty state -----------------------------------------------------------

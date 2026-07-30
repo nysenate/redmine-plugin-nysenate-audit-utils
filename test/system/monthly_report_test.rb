@@ -92,53 +92,26 @@ class MonthlyReportTest < AuditUtilsSystemTestCase
     end
   end
 
-  # 2. Single-system CSV export: the "Export CSV" link streams the Oracle
-  #    snapshot as CSV with the expected header row and a seeded data row.
-  def test_single_system_csv_export
+  # 2. Single-system Excel export: the "Export Excel" link streams the Oracle
+  #    snapshot as a valid .xlsx workbook.
+  def test_single_system_excel_export
     visit monthly_path(target_system: 'Oracle / SFMS', status_filter: 'all')
 
-    # Both single-system and all-systems Excel export links live next to the CSV ones.
+    # Both single-system and all-systems Excel export links are present.
     assert_link 'Export Excel', exact: true
     assert_link 'Export Excel All Systems'
 
-    # Two "Export CSV..." links exist; match the single-system one exactly.
-    rows = downloaded_csv('*.csv', headers: false) do
-      click_link 'Export CSV', exact: true
-    end
-
-    header = rows.find { |r| r.include?('Account Holder Name') }
-    assert header, "expected an 'Account Holder Name' header row in the CSV, got: #{rows.inspect}"
-    ['Account Holder ID', 'Account Holder Type', 'Account Holder Office',
-     'Account Access Status', 'Last Action', 'Request Code'].each do |col|
-      assert_includes header, col
-    end
-
-    flat = rows.flatten.compact
-    assert_includes flat, 'Ada Testwell'
-    assert_includes flat, '900101'
-    assert_includes flat, 'USRA' # Oracle prefix "USR" + Add suffix "A"
+    # Two "Export Excel..." links exist; match the single-system one exactly.
+    assert_downloaded_xlsx('*.xlsx') { click_link 'Export Excel', exact: true }
   end
 
-  # 3. All-Systems Monthly ZIP: the "Export CSV All Systems" link streams a zip
-  #    containing exactly one CSV per configured target system.
-  def test_all_systems_monthly_zip_export
+  # 3. All-Systems Monthly Excel: the "Export Excel All Systems" link streams a
+  #    single workbook covering every configured target system.
+  def test_all_systems_monthly_excel_export
     visit monthly_path
 
-    configured_systems = @fields[:target_system].possible_values
-    expected_names = configured_systems.map { |s| "monthly_report_#{s.parameterize}_" }
-
-    entries = downloaded_zip_entries('*.zip') do
-      click_link 'Export CSV All Systems'
-    end
-
-    assert_equal configured_systems.size, entries.size,
-                 "expected one CSV per configured system, got: #{entries.inspect}"
-    assert entries.all? { |n| n.end_with?('.csv') }, "all zip entries should be CSVs: #{entries.inspect}"
-
-    # Each configured system contributes a distinctly-named CSV.
-    expected_names.each do |prefix|
-      assert entries.any? { |n| n.start_with?(prefix) },
-             "expected a zip entry starting with #{prefix.inspect}, got: #{entries.inspect}"
+    assert_downloaded_xlsx('monthly_reports_all_systems_*.xlsx') do
+      click_link 'Export Excel All Systems'
     end
   end
 

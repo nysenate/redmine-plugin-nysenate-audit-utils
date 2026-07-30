@@ -121,58 +121,6 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'div.flash.error'
   end
 
-  test "should export daily report as CSV" do
-    mock_report_data = [
-      {
-        user_name: 'Doe, John',
-        ticket_count: 2,
-        ticket_url: '/issues?cf_1=12345',
-        status_changes: [{ code: 'APP', notes: nil }],
-        account_statuses: [],
-        open_requests: [],
-        removal_systems: [],
-        phone_number: '555-1234',
-        office: 'IT',
-        office_location: nil,
-        user_id: '12345',
-        user_uid: 'jdoe',
-        post_date: '2025-01-15'
-      }
-    ]
-
-    service_mock = mock('service')
-    service_mock.expects(:generate).returns(mock_report_data)
-    service_mock.stubs(:from_date).returns(Date.today - 1.day)
-    service_mock.stubs(:to_date).returns(Date.today)
-    service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::DailyReportService.expects(:new).returns(service_mock)
-
-    get :daily, params: { project_id: 1 }, format: :csv
-    assert_response :success
-    assert_equal 'text/csv', response.content_type
-    assert_match /attachment/, response.headers['Content-Disposition']
-    assert_match /daily_report_.*\.csv/, response.headers['Content-Disposition']
-
-    csv_content = response.body
-    assert_match /Account Holder Name/, csv_content
-    assert_match /Doe, John/, csv_content
-    # #18837 dropped the Account Holder ID column; the username still exports.
-    assert_match /jdoe/, csv_content
-  end
-
-  test "should export empty CSV for nil report data" do
-    service_mock = mock('service')
-    service_mock.expects(:generate).returns(nil)
-    service_mock.stubs(:from_date).returns(Date.today - 1.day)
-    service_mock.stubs(:to_date).returns(Date.today)
-    service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::DailyReportService.expects(:new).returns(service_mock)
-
-    get :daily, params: { project_id: 1 }, format: :csv
-    assert_response :success
-    assert_equal '', response.body
-  end
-
   def weekly_mock_data
     [
       {
@@ -307,29 +255,6 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'div.flash.error'
   end
 
-  test "should export weekly report as CSV" do
-    stub_weekly_service(weekly_mock_data)
-
-    get :weekly, params: { project_id: 1 }, format: :csv
-    assert_response :success
-    assert_equal 'text/csv; header=present', response.content_type
-    assert_match /weekly_report_.*\.csv/, response.headers['Content-Disposition']
-
-    csv_content = response.body
-    assert_match /Ticket #/, csv_content
-    assert_match /Account Holder Name/, csv_content
-    assert_match /Account Holder Username/, csv_content
-    assert_match /Account Holder ID/, csv_content
-    assert_match /Account Holder Office/, csv_content
-    assert_match /Open Date/, csv_content
-    assert_match /Closed Date/, csv_content
-    assert_match /Request Code/, csv_content
-    assert_match /Test Issue 1/, csv_content
-    assert_match /12345/, csv_content
-    assert_match /John Doe/, csv_content
-    assert_match /Senate Office A/, csv_content
-  end
-
   test "should get monthly report with default system" do
     mock_report_data = [
       {
@@ -429,7 +354,7 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'td', text: 'AIX'
   end
 
-  test "should redirect All Systems CSV export to the all-systems zip" do
+  test "should redirect All Systems Excel export to the all-systems workbook" do
     target_system_field_mock = mock('target_system_field')
     target_system_field_mock.stubs(:possible_values).returns(['Oracle / SFMS', 'AIX'])
     NysenateAuditUtils::CustomFieldConfiguration.stubs(:target_system_field).returns(target_system_field_mock)
@@ -439,9 +364,9 @@ class AuditReportsControllerTest < ActionController::TestCase
     service.stubs(:success?).returns(true)
     NysenateAuditUtils::Reporting::MonthlyReportService.stubs(:new).returns(service)
 
-    get :monthly, params: { project_id: 1, target_system: 'All Systems' }, format: :csv
+    get :monthly, params: { project_id: 1, target_system: 'All Systems' }, format: :xlsx
     assert_response :redirect
-    assert_match(/monthly_zip/, response.location)
+    assert_match(/monthly_zip\.xlsx/, response.location)
   end
 
   test "should require admin access for monthly report" do
@@ -474,38 +399,6 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_response :success
     assert_select 'h2', text: 'Report Generation Error'
     assert_select 'div.flash.error'
-  end
-
-  test "should export monthly report as CSV" do
-    mock_report_data = [
-      {
-        user_id: '12345',
-        user_name: 'John Doe',
-        status: 'active',
-        account_action: 'Add',
-        closed_on: Date.today - 1.day,
-        request_code: 'RC1',
-        issue_id: 1
-      }
-    ]
-
-    service_mock = mock('service')
-    service_mock.expects(:generate).returns(mock_report_data)
-    service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
-
-    get :monthly, params: { project_id: 1, target_system: 'Oracle / SFMS' }, format: :csv
-    assert_response :success
-    assert_equal 'text/csv', response.content_type
-    assert_match /attachment/, response.headers['Content-Disposition']
-    assert_match /monthly_report_oracle-sfms_.*\.csv/, response.headers['Content-Disposition']
-
-    csv_content = response.body
-    assert_match /Account Holder ID/, csv_content
-    assert_match /Account Holder Name/, csv_content
-    assert_match /John Doe/, csv_content
-    assert_match /12345/, csv_content
-    assert_match /active/, csv_content
   end
 
   test "should sort monthly report by each column" do
@@ -541,17 +434,6 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'table.list.issues tbody tr', count: 2
     assert_select 'td', text: 'John Doe'
     assert_select 'td', text: 'Jane Smith'
-  end
-
-  test "should export empty CSV for nil monthly report data" do
-    service_mock = mock('service')
-    service_mock.expects(:generate).returns(nil)
-    service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
-
-    get :monthly, params: { project_id: 1 }, format: :csv
-    assert_response :success
-    assert_equal '', response.body
   end
 
   # Tests for mode and month parameters
@@ -631,7 +513,7 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_response :success
   end
 
-  test "should include month in CSV filename for monthly mode" do
+  test "should include month in Excel filename for monthly mode" do
     mock_report_data = [
       {
         user_id: '12345',
@@ -652,13 +534,12 @@ class AuditReportsControllerTest < ActionController::TestCase
     service_mock.stubs(:success?).returns(true)
     NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
 
-    get :monthly, params: { project_id: 1, target_system: 'AIX', mode: 'monthly', month: month_num, year: year_num }, format: :csv
+    get :monthly, params: { project_id: 1, target_system: 'AIX', mode: 'monthly', month: month_num, year: year_num }, format: :xlsx
     assert_response :success
-    assert_equal 'text/csv', response.content_type
-    assert_match /monthly_report_aix_202601\.csv/, response.headers['Content-Disposition']
+    assert_match /monthly_report_aix_202601\.xlsx/, response.headers['Content-Disposition']
   end
 
-  test "should include current in CSV filename for current mode" do
+  test "should include current in Excel filename for current mode" do
     mock_report_data = [
       {
         user_id: '12345',
@@ -676,15 +557,14 @@ class AuditReportsControllerTest < ActionController::TestCase
     service_mock.stubs(:success?).returns(true)
     NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).returns(service_mock)
 
-    get :monthly, params: { project_id: 1, target_system: 'SFS', mode: 'current' }, format: :csv
+    get :monthly, params: { project_id: 1, target_system: 'SFS', mode: 'current' }, format: :xlsx
     assert_response :success
-    assert_equal 'text/csv', response.content_type
-    assert_match /monthly_report_sfs_current\.csv/, response.headers['Content-Disposition']
+    assert_match /monthly_report_sfs_current\.xlsx/, response.headers['Content-Disposition']
   end
 
   # Tests for monthly_zip action
 
-  test "should export all systems as ZIP in current mode" do
+  test "should export all systems as one Excel workbook in current mode" do
     target_system_field_mock = mock('target_system_field')
     target_system_field_mock.stubs(:possible_values).returns(['Oracle / SFMS', 'AIX'])
     NysenateAuditUtils::CustomFieldConfiguration.stubs(:target_system_field).returns(target_system_field_mock)
@@ -703,26 +583,15 @@ class AuditReportsControllerTest < ActionController::TestCase
     NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with { |a| a[:target_system] == 'Oracle / SFMS' }.returns(oracle_svc)
     NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with { |a| a[:target_system] == 'AIX' }.returns(aix_svc)
 
-    get :monthly_zip, params: { project_id: 1, mode: 'current' }
+    get :monthly_zip, params: { project_id: 1, mode: 'current', format: 'xlsx' }
     assert_response :success
-    assert_equal 'application/zip', response.content_type
+    assert_equal Mime[:xlsx].to_s, response.content_type
     assert_match /attachment/, response.headers['Content-Disposition']
-    assert_match /monthly_reports_all_systems_current\.zip/, response.headers['Content-Disposition']
-
-    zip_content = response.body
-    assert !zip_content.empty?
-
-    Zip::InputStream.open(StringIO.new(zip_content)) do |zip|
-      entries = []
-      while (entry = zip.get_next_entry)
-        entries << entry.name
-      end
-      assert_includes entries, 'monthly_report_oracle-sfms_current.csv'
-      assert_includes entries, 'monthly_report_aix_current.csv'
-    end
+    assert_match /monthly_reports_all_systems_current\.xlsx/, response.headers['Content-Disposition']
+    assert_equal 'PK', response.body[0, 2]
   end
 
-  test "should export all systems as ZIP in monthly mode" do
+  test "should export all systems as one Excel workbook in monthly mode" do
     target_system_field_mock = mock('target_system_field')
     target_system_field_mock.stubs(:possible_values).returns(['Oracle / SFMS'])
     NysenateAuditUtils::CustomFieldConfiguration.stubs(:target_system_field).returns(target_system_field_mock)
@@ -735,13 +604,13 @@ class AuditReportsControllerTest < ActionController::TestCase
       a[:target_system] == 'Oracle / SFMS' && a[:as_of_time].to_date == Date.new(2026, 3, 1)
     end.returns(svc)
 
-    get :monthly_zip, params: { project_id: 1, mode: 'monthly', month: 3, year: 2026 }
+    get :monthly_zip, params: { project_id: 1, mode: 'monthly', month: 3, year: 2026, format: 'xlsx' }
     assert_response :success
-    assert_equal 'application/zip', response.content_type
-    assert_match /monthly_reports_all_systems_202603\.zip/, response.headers['Content-Disposition']
+    assert_equal Mime[:xlsx].to_s, response.content_type
+    assert_match /monthly_reports_all_systems_202603\.xlsx/, response.headers['Content-Disposition']
   end
 
-  test "should skip failed systems in ZIP export and still succeed" do
+  test "should skip failed systems in all-systems export and still succeed" do
     target_system_field_mock = mock('target_system_field')
     target_system_field_mock.stubs(:possible_values).returns(['Oracle / SFMS', 'AIX'])
     NysenateAuditUtils::CustomFieldConfiguration.stubs(:target_system_field).returns(target_system_field_mock)
@@ -759,18 +628,10 @@ class AuditReportsControllerTest < ActionController::TestCase
     NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with { |a| a[:target_system] == 'Oracle / SFMS' }.returns(oracle_svc)
     NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with { |a| a[:target_system] == 'AIX' }.returns(aix_svc)
 
-    get :monthly_zip, params: { project_id: 1, mode: 'current' }
+    get :monthly_zip, params: { project_id: 1, mode: 'current', format: 'xlsx' }
     assert_response :success
-    assert_equal 'application/zip', response.content_type
-
-    Zip::InputStream.open(StringIO.new(response.body)) do |zip|
-      entries = []
-      while (entry = zip.get_next_entry)
-        entries << entry.name
-      end
-      assert_includes entries, 'monthly_report_oracle-sfms_current.csv'
-      assert_not_includes entries, 'monthly_report_aix_current.csv'
-    end
+    assert_equal Mime[:xlsx].to_s, response.content_type
+    assert_equal 'PK', response.body[0, 2]
   end
 
   test "should require view_audit_reports permission for monthly_zip" do
@@ -863,33 +724,6 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'h2', text: 'Report Generation Error'
   end
 
-  test "should export account holder access report as CSV" do
-    mock_report_data = [
-      {
-        user_name: 'John Doe',
-        user_id: '12345',
-        user_uid: 'jdoe',
-        user_type: 'Employee',
-        account_type: 'Oracle / SFMS',
-        request_code: 'USRA',
-        status: 'active',
-        issue_id: 1
-      }
-    ]
-
-    service_mock = mock('service')
-    service_mock.expects(:generate).returns(mock_report_data)
-    service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
-
-    get :account_holder_access, params: { project_id: 1 }, format: :csv
-    assert_response :success
-    assert_match %r{text/csv}, response.content_type
-    assert_match /account_holder_access_report_\d{8}\.csv/, response.headers['Content-Disposition']
-    assert_match /Account Holder Name/, response.body
-    assert_match /USRA/, response.body
-  end
-
   # Two holders of different types (both active), used by the filter tests below.
   ACCOUNT_HOLDER_ACCESS_MIXED = [
     {
@@ -976,18 +810,6 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'tbody', text: /John Doe/, count: 0
   end
 
-  test "should apply filters to account holder access CSV export" do
-    service_mock = mock('service')
-    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_MIXED.map(&:dup))
-    service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
-
-    get :account_holder_access, params: { project_id: 1, user_type: 'Employee' }, format: :csv
-    assert_response :success
-    assert_match /John Doe/, response.body
-    assert_no_match /Jane Smith/, response.body
-  end
-
   test "should default account holder access to active accounts only" do
     service_mock = mock('service')
     service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_BY_STATUS.map(&:dup))
@@ -1040,19 +862,6 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_select 'table.list.issues tbody tr', 1
     assert_select 'tbody', text: /Inactive Ida/
     assert_select 'tbody', text: /Active Al/, count: 0
-  end
-
-  test "should apply account_status filter to account holder access CSV export" do
-    service_mock = mock('service')
-    service_mock.expects(:generate).returns(ACCOUNT_HOLDER_ACCESS_BY_STATUS.map(&:dup))
-    service_mock.stubs(:success?).returns(true)
-    NysenateAuditUtils::Reporting::AccountHolderAccessReportService.expects(:new).returns(service_mock)
-
-    get :account_holder_access, params: { project_id: 1, account_status: 'inactive' }, format: :csv
-    assert_response :success
-    assert_match /Account Access Status/, response.body
-    assert_match /Inactive Ida/, response.body
-    assert_no_match /Active Al/, response.body
   end
 
   test "should require view_audit_reports permission for account holder access report" do

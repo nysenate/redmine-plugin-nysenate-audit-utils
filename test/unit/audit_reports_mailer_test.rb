@@ -14,20 +14,9 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
   XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
   # Return the single .xlsx attachment on a mail, asserting exactly one exists.
-  # Excel is intentionally the FIRST attachment; select by extension rather than
-  # position so these helpers stay order-independent.
+  # Reports email an Excel workbook only (CSV export was retired from emails).
   def xlsx_attachment(mail)
     attachment_with_ext(mail, '.xlsx')
-  end
-
-  # Return the single .csv attachment on a mail.
-  def csv_attachment(mail)
-    attachment_with_ext(mail, '.csv')
-  end
-
-  # Return the single .zip attachment on a mail.
-  def zip_attachment(mail)
-    attachment_with_ext(mail, '.zip')
   end
 
   def attachment_with_ext(mail, ext)
@@ -58,8 +47,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     assert_equal ['user@example.com'], mail.to
     assert_match /Daily Audit Report/, mail.subject
     assert_match /2026-03-01/, mail.subject
-    assert_equal 2, mail.attachments.size
-    assert_match /daily_report.*\.csv/, csv_attachment(mail).filename
+    assert_equal 1, mail.attachments.size
     xlsx = xlsx_attachment(mail)
     assert_match /daily_report.*\.xlsx/, xlsx.filename
     assert_equal 'PK', xlsx.body.decoded[0, 2]
@@ -77,34 +65,6 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     mail = AuditReportsMailer.daily_report(recipients, report_data, from_date, to_date)
 
     assert_equal recipients, mail.to
-  end
-
-  def test_daily_report_csv_attachment_content
-    report_data = [
-      {
-        user_name: 'Jane Smith',
-        account_statuses: [{ request_code: 'OAA' }],
-        open_requests: [{ request_code: 'OAU' }],
-        status_changes: [{ code: 'TRN', notes: 'transferred from Office A' }],
-        phone_number: '555-5678',
-        office: 'Personnel',
-        office_location: 'NYC',
-        user_id: '67890',
-        post_date: Date.parse('2026-03-01')
-      }
-    ]
-    from_date = Time.zone.parse('2026-03-01 00:00:00')
-    to_date = Time.zone.parse('2026-03-01 23:59:59')
-
-    mail = AuditReportsMailer.daily_report('user@example.com', report_data, from_date, to_date)
-
-    csv_content = csv_attachment(mail).body.to_s
-    assert_match /Account Holder Name/, csv_content
-    assert_match /Jane Smith/, csv_content
-    # #18837 dropped the Account Holder ID column; office still exports, and the
-    # post date renders as a plain YYYY-MM-DD (not an Excel serial).
-    assert_match /Personnel/, csv_content
-    assert_match /2026-03-01/, csv_content
   end
 
   def test_weekly_report_generates_email
@@ -128,37 +88,11 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     assert_equal ['user@example.com'], mail.to
     assert_match /Weekly Audit Report/, mail.subject
     assert_match /Week of 2026-03-01/, mail.subject
-    assert_equal 2, mail.attachments.size
-    assert_match /weekly_report.*\.csv/, csv_attachment(mail).filename
+    assert_equal 1, mail.attachments.size
     assert_match /weekly_report.*\.xlsx/, xlsx_attachment(mail).filename
     # Check HTML part for content
     assert_match /Active Tickets/, mail.html_part.body.to_s
     assert_match /1/, mail.html_part.body.to_s
-  end
-
-  def test_weekly_report_csv_attachment_content
-    report_data = [
-      {
-        issue_id: 42,
-        subject: 'Account Request',
-        status: 'Closed',
-        user_id: '11111',
-        user_uid: 'test_user',
-        request_code: 'OAD',
-        updated_on: Time.zone.parse('2026-03-01 15:30:00'),
-        created_on: Time.zone.parse('2026-03-01 10:00:00')
-      }
-    ]
-    from_date = Date.parse('2026-03-01')
-    to_date = Time.zone.parse('2026-03-07 23:59:59')
-
-    mail = AuditReportsMailer.weekly_report('user@example.com', report_data, from_date, to_date)
-
-    csv_content = csv_attachment(mail).body.to_s
-    assert_match /Account Holder Username/, csv_content
-    assert_match /test_user/, csv_content
-    assert_match /11111/, csv_content
-    assert_match /Account Request/, csv_content
   end
 
   def test_monthly_report_current_mode_generates_email
@@ -191,8 +125,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     assert_match /Monthly Audit Report/, mail.subject
     assert_match /Oracle \/ SFMS/, mail.subject
     assert_match /Current State/, mail.subject
-    assert_equal 2, mail.attachments.size
-    assert_match /monthly_report_oracle-sfms_current\.csv/, csv_attachment(mail).filename
+    assert_equal 1, mail.attachments.size
     assert_match /monthly_report_oracle-sfms_current\.xlsx/, xlsx_attachment(mail).filename
     # Check HTML part for content
     assert_match /Total Accounts/, mail.html_part.body.to_s
@@ -234,46 +167,11 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     assert_match /Monthly Audit Report/, mail.subject
     assert_match /AIX/, mail.subject
     assert_match /January 2026/, mail.subject
-    assert_equal 2, mail.attachments.size
-    assert_match /monthly_report_aix_202601\.csv/, csv_attachment(mail).filename
+    assert_equal 1, mail.attachments.size
     assert_match /monthly_report_aix_202601\.xlsx/, xlsx_attachment(mail).filename
     # Check HTML part for content
     assert_match /Historical Snapshot/, mail.html_part.body.to_s
     assert_match /January 2026/, mail.html_part.body.to_s
-  end
-
-  def test_monthly_report_csv_attachment_content
-    report_data = [
-      {
-        user_id: '99999',
-        user_name: 'Test User',
-        user_type: 'Employee',
-        user_uid: 'testuser',
-        account_type: 'SFS',
-        status: 'active',
-        account_action: 'Update',
-        closed_on: Date.parse('2026-02-10'),
-        request_code: 'SAU',
-        issue_id: 200
-      }
-    ]
-    target_system = 'SFS'
-    mode = 'current'
-    as_of_time = Time.current
-
-    mail = AuditReportsMailer.monthly_report(
-      'user@example.com',
-      report_data,
-      target_system,
-      mode,
-      as_of_time
-    )
-
-    csv_content = csv_attachment(mail).body.to_s
-    assert_match /Account Holder Name/, csv_content
-    assert_match /Test User/, csv_content
-    assert_match /99999/, csv_content
-    assert_match /testuser/, csv_content
   end
 
   def test_all_systems_monthly_report_current_mode
@@ -296,23 +194,10 @@ issue_id: 20 }
     assert_match /Monthly Audit Report/, mail.subject
     assert_match /All Systems/, mail.subject
     assert_match /Current State/, mail.subject
-    assert_equal 2, mail.attachments.size
-    assert_match /monthly_reports_all_systems_current\.zip/, zip_attachment(mail).filename
+    assert_equal 1, mail.attachments.size
     xlsx = xlsx_attachment(mail)
     assert_match /monthly_reports_all_systems_current\.xlsx/, xlsx.filename
     assert_equal 'PK', xlsx.body.decoded[0, 2]
-
-    zip_data = zip_attachment(mail).body.decoded
-    Zip::InputStream.open(StringIO.new(zip_data)) do |zip|
-      entries = {}
-      while (entry = zip.get_next_entry)
-        entries[entry.name] = zip.read
-      end
-      assert_includes entries.keys, 'monthly_report_oracle-sfms_current.csv'
-      assert_includes entries.keys, 'monthly_report_aix_current.csv'
-      assert_match /Alice/, entries['monthly_report_oracle-sfms_current.csv']
-      assert_match /Bob/, entries['monthly_report_aix_current.csv']
-    end
   end
 
   def test_all_systems_monthly_report_monthly_mode
@@ -338,8 +223,7 @@ issue_id: 30 }
 
     assert_match /January 2026/, mail.subject
     assert_match /All Systems/, mail.subject
-    assert_equal 2, mail.attachments.size
-    assert_match /monthly_reports_all_systems_202601\.zip/, zip_attachment(mail).filename
+    assert_equal 1, mail.attachments.size
     assert_match /monthly_reports_all_systems_202601\.xlsx/, xlsx_attachment(mail).filename
   end
 
