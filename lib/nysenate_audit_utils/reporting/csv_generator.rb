@@ -354,7 +354,8 @@ module NysenateAuditUtils
 
       # Generate a ZIP containing one monthly CSV per target system
       # @param reports_by_system [Hash<String, Array<Hash>>] Map of system name => report data
-      # @param filename_suffix [String] Suffix appended to each CSV filename (e.g. "202504" or "current")
+      # @param filename_suffix [String] Suffix appended to each CSV filename
+      #   (e.g. "202504" for a month snapshot, or a "20260730" date stamp for current-state)
       # @param as_of_time [Time, nil] Snapshot time, forwarded as metadata to each CSV
       # @return [String] ZIP binary content
       def self.generate_all_systems_zip(reports_by_system, filename_suffix, as_of_time: nil)

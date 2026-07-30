@@ -108,9 +108,13 @@ class AccountRequestsController < IssuesController
       rows, from_date: from, to_date: to
     )
 
+    stem = NysenateAuditUtils::Reporting::ReportFilenames.daily_stem(
+      from_date: from, to_date: to, mode: params[:mode]
+    )
+
     attachment = Attachment.new(
       file: StringIO.new(csv),
-      filename: "daily_report_#{to.to_date.strftime('%Y%m%d')}.csv",
+      filename: "#{stem}.csv",
       content_type: 'text/csv',
       author: User.current
     )

@@ -126,7 +126,7 @@ class AuditReportsMailerTest < ActiveSupport::TestCase
     assert_match /Oracle \/ SFMS/, mail.subject
     assert_match /Current State/, mail.subject
     assert_equal 1, mail.attachments.size
-    assert_match /monthly_report_oracle-sfms_current\.xlsx/, xlsx_attachment(mail).filename
+    assert_match(/monthly_report_oracle-sfms_#{Date.current.strftime('%Y%m%d')}\.xlsx/, xlsx_attachment(mail).filename)
     # Check HTML part for content
     assert_match /Total Accounts/, mail.html_part.body.to_s
     assert_match /1/, mail.html_part.body.to_s
@@ -196,7 +196,7 @@ issue_id: 20 }
     assert_match /Current State/, mail.subject
     assert_equal 1, mail.attachments.size
     xlsx = xlsx_attachment(mail)
-    assert_match /monthly_reports_all_systems_current\.xlsx/, xlsx.filename
+    assert_match(/monthly_reports_all_systems_#{Date.current.strftime('%Y%m%d')}\.xlsx/, xlsx.filename)
     assert_equal 'PK', xlsx.body.decoded[0, 2]
   end
 

@@ -16,7 +16,7 @@ class AuditReportsMailer < ActionMailer::Base
   # @param report_data [Array<Hash>] Daily report data
   # @param from_date [Time] Start date for the report
   # @param to_date [Time] End date for the report
-  def daily_report(recipients, report_data, from_date, to_date, project_id = nil)
+  def daily_report(recipients, report_data, from_date, to_date, project_id = nil, mode = 'business_day')
     @report_data = report_data
     @from_date = from_date
     @to_date = to_date
@@ -33,7 +33,10 @@ class AuditReportsMailer < ActionMailer::Base
     xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_daily_xlsx(
       report_data, from_date: from_date, to_date: to_date
     )
-    attachments["daily_report_#{Date.today.strftime('%Y%m%d')}.xlsx"] =
+    stem = NysenateAuditUtils::Reporting::ReportFilenames.daily_stem(
+      from_date: from_date, to_date: to_date, mode: mode
+    )
+    attachments["#{stem}.xlsx"] =
       { mime_type: XLSX_MIME, content: xlsx_data }
 
     mail(
@@ -66,7 +69,10 @@ class AuditReportsMailer < ActionMailer::Base
     xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_weekly_xlsx(
       report_data, from_date: from_date, to_date: to_date
     )
-    attachments["weekly_report_#{Date.current.strftime('%Y%m%d')}.xlsx"] =
+    stem = NysenateAuditUtils::Reporting::ReportFilenames.weekly_stem(
+      from_date: from_date, to_date: to_date
+    )
+    attachments["#{stem}.xlsx"] =
       { mime_type: XLSX_MIME, content: xlsx_data }
 
     mail(
@@ -104,15 +110,14 @@ class AuditReportsMailer < ActionMailer::Base
     end
 
     # Generate and attach the Excel report with appropriate filename
-    filename_suffix = if mode == 'current'
-                        'current'
-                      else
-                        "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
-                      end
     xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_monthly_xlsx(
       report_data, as_of_time: as_of_time, target_system: target_system
     )
-    attachments["monthly_report_#{target_system.parameterize}_#{filename_suffix}.xlsx"] =
+    stem = NysenateAuditUtils::Reporting::ReportFilenames.monthly_stem(
+      target_system: target_system, mode: mode,
+      selected_year: selected_year, selected_month_num: selected_month_num
+    )
+    attachments["#{stem}.xlsx"] =
       { mime_type: XLSX_MIME, content: xlsx_data }
 
     # Build subject line
@@ -135,8 +140,8 @@ class AuditReportsMailer < ActionMailer::Base
   # @param report_data [Array<Hash>] Report data
   # @param from_date [Time] Start date
   # @param to_date [Time] End date
-  def self.deliver_daily_report(recipients, report_data, from_date, to_date, project_id = nil)
-    daily_report(recipients, report_data, from_date, to_date, project_id).deliver_later
+  def self.deliver_daily_report(recipients, report_data, from_date, to_date, project_id = nil, mode = 'business_day')
+    daily_report(recipients, report_data, from_date, to_date, project_id, mode).deliver_later
   end
 
   # Class method to deliver weekly report
@@ -187,16 +192,13 @@ class AuditReportsMailer < ActionMailer::Base
       @report_url = monthly_project_audit_reports_url(project_id, url_params)
     end
 
-    filename_suffix = if mode == 'current'
-                        'current'
-                      else
-                        "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
-                      end
-
     xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_all_systems_xlsx(
       reports_by_system, as_of_time: as_of_time
     )
-    attachments["monthly_reports_all_systems_#{filename_suffix}.xlsx"] =
+    stem = NysenateAuditUtils::Reporting::ReportFilenames.all_systems_monthly_stem(
+      mode: mode, selected_year: selected_year, selected_month_num: selected_month_num
+    )
+    attachments["#{stem}.xlsx"] =
       { mime_type: XLSX_MIME, content: xlsx_data }
 
     email_subject = if mode == 'current'

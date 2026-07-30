@@ -74,8 +74,11 @@ class AuditReportsController < ApplicationController
         xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_daily_xlsx(
           @report_data, from_date: @from_date, to_date: @to_date
         )
+        stem = NysenateAuditUtils::Reporting::ReportFilenames.daily_stem(
+          from_date: @from_date, to_date: @to_date, mode: @mode
+        )
         send_data xlsx_data,
-                  filename: "daily_report_#{Date.today.strftime('%Y%m%d')}.xlsx",
+                  filename: "#{stem}.xlsx",
                   type: Mime[:xlsx].to_s,
                   disposition: 'attachment'
       end
@@ -145,9 +148,12 @@ class AuditReportsController < ApplicationController
         xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_weekly_xlsx(
           @report_data, from_date: @from_date, to_date: @to_date, update_type: @update_type
         )
+        stem = NysenateAuditUtils::Reporting::ReportFilenames.weekly_stem(
+          from_date: @from_date, to_date: @to_date
+        )
         send_data xlsx_data,
                   type: Mime[:xlsx].to_s,
-                  filename: "weekly_report_#{Date.current.strftime('%Y%m%d')}.xlsx",
+                  filename: "#{stem}.xlsx",
                   disposition: 'attachment'
       end
     end
@@ -346,13 +352,12 @@ class AuditReportsController < ApplicationController
         xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_monthly_xlsx(
           @report_data, as_of_time: @as_of_time, target_system: target_system
         )
-        filename_suffix = if mode == 'current'
-                            'current'
-                          else
-                            "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
-                          end
+        stem = NysenateAuditUtils::Reporting::ReportFilenames.monthly_stem(
+          target_system: target_system, mode: mode,
+          selected_year: selected_year, selected_month_num: selected_month_num
+        )
         send_data xlsx_data,
-                  filename: "monthly_report_#{target_system.parameterize}_#{filename_suffix}.xlsx",
+                  filename: "#{stem}.xlsx",
                   type: Mime[:xlsx].to_s,
                   disposition: 'attachment'
       end
@@ -373,12 +378,12 @@ class AuditReportsController < ApplicationController
 
     if mode == 'current'
       as_of_time = Time.current
-      filename_suffix = 'current'
+      selected_month_num = nil
+      selected_year = nil
     else
       selected_month_num = (params[:month].presence || Date.current.month).to_i
       selected_year = (params[:year].presence || Date.current.year).to_i
       as_of_time = Date.new(selected_year, selected_month_num, 1).beginning_of_month.to_time
-      filename_suffix = "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
     end
 
     reports_by_system = {}
@@ -400,8 +405,11 @@ class AuditReportsController < ApplicationController
     xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_all_systems_xlsx(
       reports_by_system, as_of_time: as_of_time
     )
+    stem = NysenateAuditUtils::Reporting::ReportFilenames.all_systems_monthly_stem(
+      mode: mode, selected_year: selected_year, selected_month_num: selected_month_num
+    )
     send_data xlsx_data,
-              filename: "monthly_reports_all_systems_#{filename_suffix}.xlsx",
+              filename: "#{stem}.xlsx",
               type: Mime[:xlsx].to_s,
               disposition: 'attachment'
   rescue => e

@@ -559,7 +559,7 @@ class AuditReportsControllerTest < ActionController::TestCase
 
     get :monthly, params: { project_id: 1, target_system: 'SFS', mode: 'current' }, format: :xlsx
     assert_response :success
-    assert_match /monthly_report_sfs_current\.xlsx/, response.headers['Content-Disposition']
+    assert_match(/monthly_report_sfs_#{Date.current.strftime('%Y%m%d')}\.xlsx/, response.headers['Content-Disposition'])
   end
 
   # Tests for monthly_zip action
@@ -587,7 +587,7 @@ class AuditReportsControllerTest < ActionController::TestCase
     assert_response :success
     assert_equal Mime[:xlsx].to_s, response.content_type
     assert_match /attachment/, response.headers['Content-Disposition']
-    assert_match /monthly_reports_all_systems_current\.xlsx/, response.headers['Content-Disposition']
+    assert_match(/monthly_reports_all_systems_#{Date.current.strftime('%Y%m%d')}\.xlsx/, response.headers['Content-Disposition'])
     assert_equal 'PK', response.body[0, 2]
   end
 
@@ -964,7 +964,7 @@ class AuditReportsControllerTest < ActionController::TestCase
     NysenateAuditUtils::Reporting::MonthlyReportService.expects(:new).with { |a| a[:target_system] == 'AIX' }.returns(aix_svc)
 
     get :monthly_zip, params: { project_id: 1, mode: 'current', format: 'xlsx' }
-    assert_xlsx_response(/monthly_reports_all_systems_current\.xlsx/)
+    assert_xlsx_response(/monthly_reports_all_systems_#{Date.current.strftime('%Y%m%d')}\.xlsx/)
 
     # One worksheet per target system.
     sheets = nil

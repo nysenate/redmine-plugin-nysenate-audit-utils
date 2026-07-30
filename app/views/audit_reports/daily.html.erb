@@ -152,7 +152,7 @@
                             new_project_account_request_path(@project, employee_id: row[:user_id],
                               target_system: status[:account_type], account_action: 'Delete',
                               related_issue_id: status[:issue_id],
-                              from_date: @from_date.iso8601, to_date: @to_date.iso8601),
+                              mode: @mode, from_date: @from_date.iso8601, to_date: @to_date.iso8601),
                             class: 'action-icon create-removal-ticket',
                             title: l(:label_create_removal_ticket), target: '_blank' %>
                     <% else %>
@@ -182,7 +182,7 @@
               <div class="open-ticket-line create-new-line">
                 <%= link_to sprite_icon('add', l(:button_create_new_account_request), icon_only: true),
                       new_project_account_request_path(@project, employee_id: row[:user_id],
-                        from_date: @from_date.iso8601, to_date: @to_date.iso8601),
+                        mode: @mode, from_date: @from_date.iso8601, to_date: @to_date.iso8601),
                       class: 'action-icon',
                       title: l(:button_create_new_account_request), target: '_blank' %>
               </div>

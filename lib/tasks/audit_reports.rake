@@ -121,17 +121,22 @@ END_DESC
           report_data,
           service.from_date,
           service.to_date,
-          project.identifier
+          project.identifier,
+          mode
         )
       end
     end
 
-    # Archive CSV and Excel to project Files
+    # Archive CSV and Excel to project Files. The stem encodes the report period;
+    # a generation timestamp is appended for uniqueness.
     archive_timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
+    archive_stem = "#{NysenateAuditUtils::Reporting::ReportFilenames.daily_stem(
+      from_date: service.from_date, to_date: service.to_date, mode: mode
+    )}_#{archive_timestamp}"
     archive_description = "Daily audit report #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
     archive_report_to_project_files(
       project: project,
-      filename: "daily_report_#{archive_timestamp}.csv",
+      filename: "#{archive_stem}.csv",
       content: NysenateAuditUtils::Reporting::CsvGenerator.generate_daily_csv(
         report_data, from_date: service.from_date, to_date: service.to_date
       ),
@@ -140,7 +145,7 @@ END_DESC
     )
     archive_report_to_project_files(
       project: project,
-      filename: "daily_report_#{archive_timestamp}.xlsx",
+      filename: "#{archive_stem}.xlsx",
       content: NysenateAuditUtils::Reporting::XlsxGenerator.generate_daily_xlsx(
         report_data, from_date: service.from_date, to_date: service.to_date
       ),
@@ -234,12 +239,16 @@ END_DESC
       end
     end
 
-    # Archive CSV and Excel to project Files
+    # Archive CSV and Excel to project Files. The stem encodes the report period;
+    # a generation timestamp is appended for uniqueness.
     archive_timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
+    archive_stem = "#{NysenateAuditUtils::Reporting::ReportFilenames.weekly_stem(
+      from_date: service.from_date, to_date: service.to_date
+    )}_#{archive_timestamp}"
     archive_description = "Weekly audit report #{service.from_date.strftime('%Y-%m-%d')} to #{service.to_date.strftime('%Y-%m-%d')}"
     archive_report_to_project_files(
       project: project,
-      filename: "weekly_report_#{archive_timestamp}.csv",
+      filename: "#{archive_stem}.csv",
       content: NysenateAuditUtils::Reporting::CsvGenerator.generate_weekly_csv(
         report_data, from_date: service.from_date, to_date: service.to_date
       ),
@@ -248,7 +257,7 @@ END_DESC
     )
     archive_report_to_project_files(
       project: project,
-      filename: "weekly_report_#{archive_timestamp}.xlsx",
+      filename: "#{archive_stem}.xlsx",
       content: NysenateAuditUtils::Reporting::XlsxGenerator.generate_weekly_xlsx(
         report_data, from_date: service.from_date, to_date: service.to_date
       ),
@@ -369,10 +378,18 @@ END_DESC
       end
     end
 
-    # Archive CSV and Excel to project Files
-    filename_suffix = mode == 'current' ? 'current' : "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
+    # Archive CSV and Excel to project Files. The stem encodes the report period
+    # (current mode is stamped with today's date); a generation timestamp is
+    # appended for uniqueness.
+    filename_suffix = NysenateAuditUtils::Reporting::ReportFilenames.monthly_suffix(
+      mode: mode, selected_year: selected_year, selected_month_num: selected_month_num
+    )
+    report_stem = NysenateAuditUtils::Reporting::ReportFilenames.monthly_stem(
+      target_system: target_system, mode: mode,
+      selected_year: selected_year, selected_month_num: selected_month_num
+    )
     archive_timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
-    archive_stem = "monthly_report_#{target_system.parameterize}_#{filename_suffix}_#{archive_timestamp}"
+    archive_stem = "#{report_stem}_#{archive_timestamp}"
     archive_description = "Monthly audit report - #{target_system} - #{filename_suffix}"
     archive_report_to_project_files(
       project: project,
@@ -503,13 +520,21 @@ END_DESC
       end
     end
 
-    # Archive CSV ZIP and Excel workbook to project Files
-    filename_suffix = mode == 'current' ? 'current' : "#{selected_year}#{selected_month_num.to_s.rjust(2, '0')}"
+    # Archive CSV ZIP and Excel workbook to project Files. The stem encodes the
+    # report period (current mode is stamped with today's date); a generation
+    # timestamp is appended for uniqueness.
+    filename_suffix = NysenateAuditUtils::Reporting::ReportFilenames.monthly_suffix(
+      mode: mode, selected_year: selected_year, selected_month_num: selected_month_num
+    )
+    report_stem = NysenateAuditUtils::Reporting::ReportFilenames.all_systems_monthly_stem(
+      mode: mode, selected_year: selected_year, selected_month_num: selected_month_num
+    )
     archive_timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
+    archive_stem = "#{report_stem}_#{archive_timestamp}"
     archive_description = "Monthly audit report - All Systems - #{filename_suffix}"
     archive_report_to_project_files(
       project: project,
-      filename: "monthly_reports_all_systems_#{filename_suffix}_#{archive_timestamp}.zip",
+      filename: "#{archive_stem}.zip",
       content: NysenateAuditUtils::Reporting::CsvGenerator.generate_all_systems_zip(
         reports_by_system, filename_suffix, as_of_time: as_of_time
       ),
@@ -518,7 +543,7 @@ END_DESC
     )
     archive_report_to_project_files(
       project: project,
-      filename: "monthly_reports_all_systems_#{filename_suffix}_#{archive_timestamp}.xlsx",
+      filename: "#{archive_stem}.xlsx",
       content: NysenateAuditUtils::Reporting::XlsxGenerator.generate_all_systems_xlsx(
         reports_by_system, as_of_time: as_of_time
       ),
