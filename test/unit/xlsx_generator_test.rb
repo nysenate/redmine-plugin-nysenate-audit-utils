@@ -33,7 +33,7 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
   PERIODIC_ROW = {
     request_code: 'USRA', user_name: 'Alice Jones', user_uid: 'ajones', office: 'STS',
     created_on: Date.parse('2026-02-01'), closed_on: Date.parse('2026-02-10'),
-    bac_number: 'BAC-1', issue_id: 200, subject: 'SFMS access',
+    issue_id: 200, subject: 'SFMS access',
     description: 'Please grant SFMS access for the new hire.'
   }.freeze
 
@@ -181,6 +181,8 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
     # Description column.
     assert_includes xml, 'Subject'
     assert_includes xml, 'Please grant SFMS access for the new hire.'
+    # The BacNumber column was removed from the report.
+    assert_not_includes xml, 'BacNumber'
     # No metadata preamble — the file is kept clean for import.
     assert_not_includes xml, 'Report Name'
     # header + 1 data row (no metadata preamble)

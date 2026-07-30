@@ -172,7 +172,6 @@ module NysenateAuditUtils
               'Office',
               'EntryDate',
               'CompletedDate',
-              'BacNumber',
               'SenDevNumber',
               'GeneralFormInfoID',
               'Program',
@@ -188,7 +187,6 @@ module NysenateAuditUtils
                 row[:office],
                 row[:created_on]&.strftime('%Y-%m-%d'),
                 row[:closed_on]&.strftime('%Y-%m-%d'),
-                row[:bac_number],
                 row[:issue_id],
                 nil,
                 'SFMS',
@@ -200,7 +198,7 @@ module NysenateAuditUtils
             write_table(sheet, styles,
               headers: headers,
               rows: rows,
-              widths: [14, 24, 14, 20, 14, 16, 14, 14, 18, 12, 44, 60]
+              widths: [14, 24, 14, 20, 14, 16, 14, 18, 12, 44, 60]
             )
           end
         end

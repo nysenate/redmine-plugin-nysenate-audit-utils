@@ -16,7 +16,8 @@ module NysenateAuditUtils
         )
         @account_action_field = IssueCustomField.create!(
           name: 'Account Action', field_format: 'list', is_for_all: true,
-          possible_values: %w[Add Delete], trackers: Tracker.all
+          possible_values: ['Add', 'Delete', 'Reset Password', 'Lock / Unlock'],
+          trackers: Tracker.all
         )
         @bac_field = IssueCustomField.create!(
           name: 'BAC #', field_format: 'string', is_for_all: true, trackers: Tracker.all
@@ -59,6 +60,17 @@ module NysenateAuditUtils
           assert_equal Date.new(2026, 4, 30), quarters[0][:to].to_date
           assert_equal Date.new(2025, 11, 1), quarters[1][:from].to_date
           assert_equal Date.new(2026, 1, 31), quarters[1][:to].to_date
+        end
+      end
+
+      test "recent_sfms_quarters labels by audit month with the date range" do
+        travel_to Time.zone.parse('2026-06-11 12:00:00') do
+          quarters = PeriodicAuditReportService.recent_sfms_quarters(2)
+
+          # Audit month = the month after the window ends; range shown in parens.
+          assert_equal 'May 2026 (Feb 1 – Apr 30, 2026)', quarters[0][:label]
+          # Cross-year window carries the year on the start date too.
+          assert_equal 'February 2026 (Nov 1, 2025 – Jan 31, 2026)', quarters[1][:label]
         end
       end
 
@@ -118,21 +130,34 @@ module NysenateAuditUtils
         assert_not_includes ids, out_window.id
       end
 
-      test "row maps request_code, bac_number and ticket id" do
+      test "row maps request_code and ticket id" do
         issue = make_closed_issue(target_system: 'Oracle / SFMS', action: 'Delete',
-                                  closed_on: 2.days.ago, bac: '67419')
+                                  closed_on: 2.days.ago)
 
         service = PeriodicAuditReportService.new(project: @project, system: :sfms,
                                                  from_date: 1.week.ago, to_date: Time.zone.now)
         row = service.generate.find { |r| r[:issue_id] == issue.id }
 
         assert_equal 'USRI', row[:request_code]
-        assert_equal '67419', row[:bac_number]
         assert_equal issue.id, row[:issue_id]
       end
 
+      test "report excludes Reset Password and Lock / Unlock tickets" do
+        add    = make_closed_issue(target_system: 'Oracle / SFMS', action: 'Add', closed_on: 2.days.ago)
+        reset  = make_closed_issue(target_system: 'Oracle / SFMS', action: 'Reset Password', closed_on: 2.days.ago)
+        lock   = make_closed_issue(target_system: 'Oracle / SFMS', action: 'Lock / Unlock', closed_on: 2.days.ago)
+
+        service = PeriodicAuditReportService.new(project: @project, system: :sfms,
+                                                 from_date: 1.week.ago, to_date: Time.zone.now)
+        ids = service.generate.map { |r| r[:issue_id] }
+
+        assert_includes ids, add.id
+        assert_not_includes ids, reset.id
+        assert_not_includes ids, lock.id
+      end
+
       test "csv uses the legacy spreadsheet headers" do
-        issue = make_closed_issue(target_system: 'Oracle / SFMS', closed_on: 2.days.ago, bac: '67419')
+        issue = make_closed_issue(target_system: 'Oracle / SFMS', closed_on: 2.days.ago)
         service = PeriodicAuditReportService.new(project: @project, system: :sfms,
                                                  from_date: 1.week.ago, to_date: Time.zone.now)
         data = service.generate
@@ -141,11 +166,10 @@ module NysenateAuditUtils
 
         # No metadata preamble: the header is the very first row.
         assert_equal %w[RequestType FullName Userid Office EntryDate CompletedDate
-                        BacNumber SenDevNumber GeneralFormInfoID Program Subject Description], rows.first
-        ticket_row = rows.find { |r| r[7].to_s == issue.id.to_s }
-        assert_equal '67419', ticket_row[6]
-        assert_nil ticket_row[8]
-        assert_equal 'SFMS', ticket_row[9]
+                        SenDevNumber GeneralFormInfoID Program Subject Description], rows.first
+        ticket_row = rows.find { |r| r[6].to_s == issue.id.to_s }
+        assert_nil ticket_row[7]
+        assert_equal 'SFMS', ticket_row[8]
       end
     end
   end

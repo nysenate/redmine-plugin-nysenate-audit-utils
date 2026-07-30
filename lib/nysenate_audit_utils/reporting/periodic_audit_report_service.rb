@@ -8,7 +8,7 @@ module NysenateAuditUtils
     #
     # Output mirrors Kim's spreadsheet columns rather than the Weekly report:
     #   RequestType, FullName, Userid, Office, EntryDate, CompletedDate,
-    #   BacNumber, SenDevNumber (ticket #), Description (subject).
+    #   SenDevNumber (ticket #), Description (subject).
     class PeriodicAuditReportService
       # System selector => request-code prefix used to resolve the configured
       # target-system value(s) to filter on.
@@ -16,6 +16,12 @@ module NysenateAuditUtils
         sfms: 'USR',
         sfs: 'SFS'
       }.freeze
+
+      # Account Actions excluded from the audit report. These are the "S" entries
+      # (Reset Password, Lock / Unlock) the auditors do not include in the SFMS
+      # Quarterly / SFS Annual reviews. Matched by Account Action name so the
+      # filter is independent of the request-code suffix configuration.
+      EXCLUDED_ACCOUNT_ACTIONS = ['Reset Password', 'Lock / Unlock'].freeze
 
       attr_reader :system, :from_date, :to_date, :errors, :project, :target_systems
 
@@ -105,8 +111,14 @@ module NysenateAuditUtils
           last_month = anchor.prev_month(3 * i)
           first_day = last_month.prev_month(2).beginning_of_month
           last_day  = last_month.end_of_month
+          # Audit Quarter month = the month after the window ends
+          # (Nov–Jan → February, Feb–Apr → May, May–Jul → August, Aug–Oct → November).
+          audit_month = (last_day + 1.day).strftime('%B %Y')
+          # Show the year on the start date only when the window spans two years.
+          start_fmt = first_day.year == last_day.year ? '%b %-d' : '%b %-d, %Y'
+          range = "#{first_day.strftime(start_fmt)} – #{last_day.strftime('%b %-d, %Y')}"
           {
-            label: "#{first_day.strftime('%b %Y')} – #{last_day.strftime('%b %Y')}",
+            label: "#{audit_month} (#{range})",
             from: first_day.to_time,
             to: last_day.to_time.end_of_day
           }
@@ -122,7 +134,6 @@ module NysenateAuditUtils
         user_location_field_id = cfg.get_field_id('user_location_field_id')
         account_action_field_id = cfg.account_action_field_id
         target_system_field_id  = cfg.target_system_field_id
-        bac_number_field_id     = cfg.bac_number_field_id
 
         unless target_system_field_id
           @errors << 'Target System custom field is not configured'
@@ -151,8 +162,11 @@ module NysenateAuditUtils
           .includes(:status, :custom_values)
           .order(closed_on: :desc)
 
-        issues.map do |issue|
+        issues.filter_map do |issue|
           account_action = account_action_field_id ? get_custom_field_value(issue, account_action_field_id) : nil
+          # Skip the excluded "S" entries (Reset Password / Lock / Unlock).
+          next if EXCLUDED_ACCOUNT_ACTIONS.include?(account_action)
+
           target_system  = get_custom_field_value(issue, target_system_field_id)
           request_code   = request_code_mapper.get_request_code(account_action, target_system)
 
@@ -163,7 +177,6 @@ module NysenateAuditUtils
             office: user_location_field_id ? get_custom_field_value(issue, user_location_field_id) : nil,
             created_on: issue.created_on,
             closed_on: issue.closed_on,
-            bac_number: bac_number_field_id ? get_custom_field_value(issue, bac_number_field_id) : nil,
             issue_id: issue.id,
             subject: issue.subject,
             description: issue.description

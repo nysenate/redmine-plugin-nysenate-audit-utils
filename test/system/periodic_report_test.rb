@@ -16,14 +16,6 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
 
   setup do
     @project, @tracker, @fields = setup_audit_utils_project
-
-    # The periodic report surfaces a "BAC #" (BacNumber) column. The standard
-    # field setup does not include a BAC field, so add one and register it.
-    @bac_field = create_or_find_field('BAC #', 'string', [], @tracker)
-    Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(
-      'bac_number_field_id' => @bac_field.id.to_s
-    )
-
     log_in_as_admin
   end
 
@@ -32,7 +24,7 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
   # ---------------------------------------------------------------------------
   def test_web_view_renders_seeded_sfms_tickets
     sfms = seed_closed_issue(target_system: 'Oracle / SFMS', subject: 'Yara SFMS Add',
-                             user_name: 'Yara Fakeperson', user_uid: 'yfakeperson', bac: '900777')
+                             user_name: 'Yara Fakeperson', user_uid: 'yfakeperson')
     # An out-of-system ticket that must NOT appear in the SFMS report.
     sfs = seed_closed_issue(target_system: 'SFS', subject: 'Xander SFS Add',
                             user_name: 'Xander Nobody', user_uid: 'xnobody')
@@ -45,7 +37,6 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
       assert_text 'Yara SFMS Add'      # Description (subject)
       assert_text 'Yara Fakeperson'    # FullName
       assert_text 'yfakeperson'        # Userid
-      assert_text '900777'             # BacNumber
       assert_text 'USRA'               # RequestType (Oracle/SFMS + Add)
       assert_no_text 'Xander Nobody'   # SFS ticket excluded from SFMS report
     end
@@ -56,7 +47,7 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
   # ---------------------------------------------------------------------------
   def test_csv_export_has_legacy_spreadsheet_columns
     sfms = seed_closed_issue(target_system: 'Oracle / SFMS', subject: 'Yara SFMS Add',
-                             user_name: 'Yara Fakeperson', user_uid: 'yfakeperson', bac: '900777')
+                             user_name: 'Yara Fakeperson', user_uid: 'yfakeperson')
 
     visit periodic_url(system: 'sfms')
 
@@ -66,16 +57,16 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
     # Periodic CSV has NO metadata preamble -- the header IS the first row.
     table = downloaded_csv { click_link 'Export CSV' }
 
-    %w[RequestType FullName Userid Office EntryDate CompletedDate BacNumber
+    %w[RequestType FullName Userid Office EntryDate CompletedDate
        SenDevNumber GeneralFormInfoID Program Subject Description].each do |col|
       assert_includes table.headers, col
     end
+    assert_not_includes table.headers, 'BacNumber'
 
     row = table.find { |r| r['SenDevNumber'].to_s == sfms.id.to_s }
     assert row, "Expected a CSV row for issue ##{sfms.id}"
     assert_equal 'Yara Fakeperson', row['FullName']
     assert_equal 'yfakeperson', row['Userid']
-    assert_equal '900777', row['BacNumber']
     assert_equal 'USRA', row['RequestType']
     # The legacy "Description" column now carries the ticket Subject, and the
     # ticket Description is appended as its own export-only column.
@@ -96,6 +87,47 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
     assert_selector 'p.nodata', text: /No closed SFS tickets found/
   end
 
+  # ---------------------------------------------------------------------------
+  # 7. SFS: default "end date only" mode auto-selects the one-year-prior start.
+  # ---------------------------------------------------------------------------
+  def test_sfs_end_only_mode_auto_selects_one_year_start
+    # No mode param -> end_only default. end 2020-12-31 -> start 2020-01-01
+    # (inclusive: end - 1 year + 1 day). No tickets in 2020 -> empty state.
+    visit "/projects/#{@project.identifier}/audit_reports/periodic" \
+          "?system=sfs&end_date=2020-12-31"
+
+    assert_checked_field 'End date only'
+    assert_selector '#sfs-endonly-block', visible: true
+    assert_no_selector '#sfs-range-block', visible: true
+    assert_selector 'p.nodata', text: /between 2020-01-01 and 2020-12-31/
+  end
+
+  # ---------------------------------------------------------------------------
+  # 8. SFS: custom range mode uses both dates verbatim (no auto-selection).
+  # ---------------------------------------------------------------------------
+  def test_sfs_custom_range_mode_uses_both_dates
+    visit "/projects/#{@project.identifier}/audit_reports/periodic" \
+          "?system=sfs&mode=range&start_date=2020-03-01&end_date=2020-09-30"
+
+    assert_checked_field 'Custom range'
+    assert_selector '#sfs-range-block', visible: true
+    assert_no_selector '#sfs-endonly-block', visible: true
+    # The window is exactly what was requested -- not auto-widened to a year.
+    assert_selector 'p.nodata', text: /between 2020-03-01 and 2020-09-30/
+  end
+
+  # ---------------------------------------------------------------------------
+  # 9. SFS: choosing the "Custom range" radio reveals the start/end pickers.
+  # ---------------------------------------------------------------------------
+  def test_sfs_mode_toggle_reveals_range_pickers
+    visit periodic_url(system: 'sfs')
+
+    assert_no_selector '#sfs-range-block', visible: true
+    choose 'Custom range'
+    assert_selector '#sfs-range-block', visible: true
+    assert_no_selector '#sfs-endonly-block', visible: true
+  end
+
   private
 
   def periodic_url(system:, start_date: (Date.current - 7).iso8601, end_date: Date.current.iso8601)
@@ -105,7 +137,7 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
 
   # Seed one CLOSED issue for a given target system, with synthetic data.
   def seed_closed_issue(target_system:, subject:, user_name:, user_uid:,
-                        action: 'Add', bac: nil, office: 'Fake Office 9',
+                        action: 'Add', office: 'Fake Office 9',
                         closed_on: 2.days.ago)
     issue = Issue.new(project: @project, tracker_id: @tracker.id, author_id: 1,
                       status_id: 5, subject: subject)
@@ -116,7 +148,6 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
       @fields[:account_action].id => action,
       @fields[:target_system].id  => target_system
     }
-    values[@bac_field.id] = bac if bac
     issue.custom_field_values = values
     issue.save!
     Issue.where(id: issue.id).update_all(created_on: closed_on - 4.days,

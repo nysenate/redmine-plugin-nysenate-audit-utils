@@ -181,6 +181,11 @@ class AuditReportsController < ApplicationController
     service_class = NysenateAuditUtils::Reporting::PeriodicAuditReportService
     @system = params[:system] == 'sfs' ? :sfs : :sfms
 
+    # SFS date-selection mode: 'end_only' (pick end date, start auto-fills to one
+    # year prior) or 'range' (freely-chosen custom window). Mirrors the Daily
+    # report's two-mode toggle. Only meaningful for SFS; SFMS ignores it.
+    @sfs_mode = params[:mode] == 'range' ? 'range' : 'end_only'
+
     # Offset-quarter options for the SFMS picker
     @sfms_quarters = service_class.recent_sfms_quarters(8)
 
@@ -209,7 +214,6 @@ class AuditReportsController < ApplicationController
       'office' => 'office',
       'created_on' => 'created_on',
       'closed_on' => 'closed_on',
-      'bac_number' => 'bac_number',
       'issue_id' => 'issue_id',
       'subject' => 'subject'
                 })
@@ -558,16 +562,19 @@ class AuditReportsController < ApplicationController
   # Resolve the [from, to] window for the periodic (quarterly/annual) report.
   # The start_date/end_date pickers are the single source of truth (the SFMS
   # quarter dropdown is a front-end helper that fills those pickers).
-  #   SFS:  end date drives it; start auto-fills to one year prior (inclusive)
-  #         unless overridden.
+  #   SFS (end_only mode): end date drives it; start auto-fills to one year prior
+  #         (inclusive). Any start_date param is ignored.
+  #   SFS (range mode): explicit start+end custom window, no auto-selection.
   #   SFMS: an explicit start+end window, else the most recent offset quarter.
   def resolve_periodic_window(service_class)
     start_param = parse_date_param(params[:start_date])
     end_param   = parse_date_param(params[:end_date])
 
     if @system == :sfs
-      if end_param
-        from = start_param || service_class.sfs_start_for(end_param.to_date).to_time
+      if @sfs_mode == 'range'
+        return [start_param.beginning_of_day, end_param.end_of_day] if start_param && end_param
+      elsif end_param
+        from = service_class.sfs_start_for(end_param.to_date).to_time
         return [from.beginning_of_day, end_param.end_of_day]
       end
     elsif start_param && end_param

@@ -179,7 +179,7 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     row = {
       request_code: 'USRA', user_name: 'Alice Jones', user_uid: 'ajones', office: 'STS',
       created_on: Date.parse('2026-02-01'), closed_on: Date.parse('2026-02-10'),
-      bac_number: 'BAC-1', issue_id: 200, subject: 'SFMS access',
+      issue_id: 200, subject: 'SFMS access',
       description: 'Please grant SFMS access for the new hire.'
     }
     csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_periodic_csv(
@@ -189,7 +189,7 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     # No metadata preamble — the CSV imports directly into Access.
     assert_not_includes csv, 'Report Name'
     assert_equal 'RequestType,FullName,Userid,Office,EntryDate,CompletedDate,' \
-                 'BacNumber,SenDevNumber,GeneralFormInfoID,Program,Subject,Description',
+                 'SenDevNumber,GeneralFormInfoID,Program,Subject,Description',
                  lines[0].chomp
     assert_match(/,SFMS,SFMS access,Please grant SFMS access for the new hire\.$/, lines[1].chomp)
   end

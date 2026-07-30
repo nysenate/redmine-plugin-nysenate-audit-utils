@@ -1,4 +1,4 @@
-<% html_title("SFMS Quarterly / SFS Annual Report") -%>
+<% html_title("SFMS Quarterly / SFS Annual Reports") -%>
 
 <div class="contextual">
   <%= link_to sprite_icon('download', "Export Excel"), periodic_project_audit_reports_path(@project,
@@ -16,7 +16,7 @@
   <%= link_to sprite_icon('cancel', "Back to Reports"), project_audit_reports_path(@project), class: "icon icon-cancel" %>
 </div>
 
-<h2>SFMS Quarterly / SFS Annual Report</h2>
+<h2>SFMS Quarterly / SFS Annual Reports</h2>
 
 <%
   # Active window dates, used to prefill the override pickers so they always
@@ -28,50 +28,88 @@
   sfms_url = periodic_project_audit_reports_path(@project, system: 'sfms')
   sfs_url  = periodic_project_audit_reports_path(@project, system: 'sfs')
 %>
-<%= form_tag(periodic_project_audit_reports_path(@project), method: :get, id: "periodic-filters", class: "report-filters") do %>
-  <label>
-    System:
-    <%= select_tag :system,
-          options_for_select([['SFMS (Oracle/SFMS)', 'sfms'], ['SFS', 'sfs']], @system.to_s),
-          id: "periodic-system",
-          data: { 'sfms-url': sfms_url, 'sfs-url': sfs_url } %>
-  </label>
+<%= form_tag(periodic_project_audit_reports_path(@project), method: :get, id: "periodic-filter-form") do %>
+  <fieldset class="box">
+    <legend>Query Period</legend>
 
-  <% if @system == :sfms %>
-    <% selected_q = @sfms_quarters.index { |q| q[:from].to_date == @from_date.to_date && q[:to].to_date == @to_date.to_date } %>
-    <label>
-      Quarter:
-      <select id="periodic-quarter">
-        <% if selected_q.nil? %>
-          <option value="" selected>Custom range</option>
-        <% end %>
-        <% @sfms_quarters.each_with_index do |q, i| %>
-          <option value="<%= i %>"
-                  data-from="<%= q[:from].to_date.iso8601 %>"
-                  data-to="<%= q[:to].to_date.iso8601 %>"
-                  <%= 'selected' if i == selected_q %>><%= q[:label] %></option>
-        <% end %>
-      </select>
-    </label>
-    <span class="hint">or custom range &rarr;</span>
-    <label>From: <%= date_field_tag :start_date, from_iso, id: "periodic-start" %></label>
-    <label>To: <%= date_field_tag :end_date, to_iso, id: "periodic-end" %></label>
-  <% else %>
-    <label>End date: <%= date_field_tag :end_date, to_iso, id: "periodic-end" %></label>
-    <label>
-      Start date:
-      <%= date_field_tag :start_date, from_iso, id: "periodic-start" %>
-      <span class="hint">(defaults to one year before end date)</span>
-    </label>
-  <% end %>
+    <p>
+      <%= label_tag :system, "System" %>
+      <%= select_tag :system,
+            options_for_select([['SFMS (Oracle/SFMS)', 'sfms'], ['SFS', 'sfs']], @system.to_s),
+            id: "periodic-system",
+            data: { 'sfms-url': sfms_url, 'sfs-url': sfs_url } %>
+    </p>
 
-  <%= submit_tag "Apply", name: nil %>
-  <%= link_to "Reset to Default", periodic_project_audit_reports_path(@project, system: @system), class: "button-small" %>
+    <% if @system == :sfms %>
+      <% selected_q = @sfms_quarters.index { |q| q[:from].to_date == @from_date.to_date && q[:to].to_date == @to_date.to_date } %>
+      <p>
+        <%= label_tag :periodic_quarter, "Audit Quarter" %>
+        <select id="periodic-quarter">
+          <% if selected_q.nil? %>
+            <option value="" selected>Custom range</option>
+          <% end %>
+          <% @sfms_quarters.each_with_index do |q, i| %>
+            <option value="<%= i %>"
+                    data-from="<%= q[:from].to_date.iso8601 %>"
+                    data-to="<%= q[:to].to_date.iso8601 %>"
+                    <%= 'selected' if i == selected_q %>><%= q[:label] %></option>
+          <% end %>
+        </select>
+      </p>
+      <p>
+        <%= label_tag :start_date, "From" %>
+        <%= date_field_tag :start_date, from_iso, id: "periodic-start", class: "date-picker auto-submit" %>
+      </p>
+      <p>
+        <%= label_tag :end_date, "To" %>
+        <%= date_field_tag :end_date, to_iso, id: "periodic-end", class: "date-picker auto-submit" %>
+      </p>
+    <% else %>
+      <div class="mode-row">
+        <span class="mode-row-label">Mode</span>
+        <label class="mode-radio">
+          <%= radio_button_tag :mode, 'end_only', @sfs_mode == 'end_only', class: 'sfs-mode-toggle' %>
+          <span>End date only</span>
+        </label>
+        <label class="mode-radio">
+          <%= radio_button_tag :mode, 'range', @sfs_mode == 'range', class: 'sfs-mode-toggle' %>
+          <span>Custom range</span>
+        </label>
+      </div>
+
+      <div id="sfs-endonly-block" style="<%= 'display:none;' unless @sfs_mode == 'end_only' %>">
+        <p>
+          <%= label_tag :end_date, "End Date" %>
+          <%= date_field_tag :end_date, to_iso, id: "sfs-endonly-end",
+              class: "date-picker auto-submit", disabled: @sfs_mode != 'end_only' %>
+          <span class="info-text">Start date auto-selects to one year prior.</span>
+        </p>
+      </div>
+
+      <div id="sfs-range-block" style="<%= 'display:none;' unless @sfs_mode == 'range' %>">
+        <p>
+          <%= label_tag :start_date, "Start Date" %>
+          <%= date_field_tag :start_date, from_iso, id: "sfs-range-start",
+              class: "date-picker auto-submit", disabled: @sfs_mode != 'range' %>
+        </p>
+        <p>
+          <%= label_tag :end_date, "End Date" %>
+          <%= date_field_tag :end_date, to_iso, id: "sfs-range-end",
+              class: "date-picker auto-submit", disabled: @sfs_mode != 'range' %>
+        </p>
+      </div>
+    <% end %>
+
+    <p>
+      <label></label>
+      <%= link_to "Reset to Default", periodic_project_audit_reports_path(@project, system: @system), class: "button-small" %>
+    </p>
+  </fieldset>
 <% end %>
 
 <script>
   (function () {
-    var form = document.getElementById('periodic-filters');
+    var form = document.getElementById('periodic-filter-form');
     if (!form) return;
 
     // Switching system resets to that system's default window.
@@ -82,6 +120,11 @@
           ? this.dataset.sfsUrl : this.dataset.sfmsUrl;
       });
     }
+
+    // Any date field auto-applies the report on change (no Apply button).
+    form.querySelectorAll('.auto-submit').forEach(function (input) {
+      input.addEventListener('change', function () { form.submit(); });
+    });
 
     // SFMS: selecting a quarter fills the From/To pickers and applies.
     var quarter = document.getElementById('periodic-quarter');
@@ -98,16 +141,27 @@
       });
     }
 
-    // SFS: changing the End date auto-fills the Start date to one year prior
-    // (inclusive: end - 1 year + 1 day).
-    if (!quarter && startInput && endInput) {
-      endInput.addEventListener('change', function () {
-        if (!this.value) return;
-        var parts = this.value.split('-');
-        var d = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
-        d.setUTCFullYear(d.getUTCFullYear() - 1);
-        d.setUTCDate(d.getUTCDate() + 1);
-        startInput.value = d.toISOString().slice(0, 10);
+    // SFS: two date-selection modes toggled by radio buttons. Enabling the
+    // active block's inputs (and disabling the other's) so only its dates post,
+    // then submitting re-applies the report under the chosen mode. In end-only
+    // mode the start date is computed server-side.
+    var modeRadios = document.querySelectorAll('.sfs-mode-toggle');
+    var endOnlyBlock = document.getElementById('sfs-endonly-block');
+    var rangeBlock = document.getElementById('sfs-range-block');
+    if (modeRadios.length && endOnlyBlock && rangeBlock) {
+      var applySfsMode = function (mode) {
+        var endOnly = mode === 'end_only';
+        endOnlyBlock.style.display = endOnly ? '' : 'none';
+        rangeBlock.style.display = endOnly ? 'none' : '';
+        endOnlyBlock.querySelectorAll('input[type="date"]').forEach(function (i) { i.disabled = !endOnly; });
+        rangeBlock.querySelectorAll('input[type="date"]').forEach(function (i) { i.disabled = endOnly; });
+      };
+      modeRadios.forEach(function (radio) {
+        radio.addEventListener('change', function () {
+          if (!this.checked) return;
+          applySfsMode(this.value);
+          form.submit();
+        });
       });
     }
   })();
@@ -134,7 +188,6 @@
         <%= sort_header_tag('office', caption: 'Office', class: 'holder-col') %>
         <%= sort_header_tag('created_on', caption: 'EntryDate', class: 'date-col') %>
         <%= sort_header_tag('closed_on', caption: 'CompletedDate', default_order: 'desc', class: 'date-col') %>
-        <%= sort_header_tag('bac_number', caption: 'BacNumber') %>
         <%= sort_header_tag('issue_id', caption: 'SenDevNumber', class: 'ticket-col') %>
         <%= sort_header_tag('subject', caption: 'Subject') %>
       </tr>
@@ -148,7 +201,6 @@
           <td><%= row[:office] || '—' %></td>
           <td class="date-col"><%= row[:created_on]&.strftime('%Y-%m-%d') || '—' %></td>
           <td class="date-col"><%= row[:closed_on]&.strftime('%Y-%m-%d') || '—' %></td>
-          <td><%= row[:bac_number] || '—' %></td>
           <td class="ticket-col">
             <%= link_to "##{row[:issue_id]}", issue_path(row[:issue_id]), target: '_blank' %>
           </td>
@@ -163,26 +215,67 @@
 <% end %>
 
 <style>
-  .report-filters {
-    margin-bottom: 1em;
-    padding: 0.5em;
-    background-color: #f8f8f8;
-    border: 1px solid #ddd;
+  #periodic-filter-form {
+    margin-bottom: 2em;
+  }
+
+  #periodic-filter-form fieldset.box {
+    padding: 1em;
+  }
+
+  #periodic-filter-form p {
     display: flex;
     align-items: center;
     gap: 1em;
-    flex-wrap: wrap;
+    margin: 0.5em 0;
   }
 
-  .report-filters label {
+  #periodic-filter-form label {
+    min-width: 150px;
+    font-weight: bold;
+  }
+
+  #periodic-filter-form .date-picker {
+    padding: 0.4em;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 0.95em;
+  }
+
+  /* Wide enough that the longest option ("SFMS (Oracle/SFMS)") fits and the
+     native dropdown arrow stays visible. */
+  #periodic-system {
+    min-width: 14em;
+  }
+
+  #periodic-filter-form .mode-row {
     display: flex;
     align-items: center;
-    gap: 0.3em;
+    gap: 1em;
+    margin: 0.5em 0 1em 0;
   }
 
-  .report-filters .hint {
-    font-size: 0.85em;
-    color: #888;
+  #periodic-filter-form .mode-row-label {
+    min-width: 150px;
+    font-weight: bold;
+  }
+
+  #periodic-filter-form .mode-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-width: 0;
+    font-weight: normal;
+    cursor: pointer;
+  }
+
+  #periodic-filter-form .mode-radio input[type="radio"] {
+    margin: 0;
+  }
+
+  #periodic-filter-form .info-text {
+    font-size: 0.9em;
+    color: #666;
   }
 
   .report-info {
