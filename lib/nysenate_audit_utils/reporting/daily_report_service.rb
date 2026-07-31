@@ -65,7 +65,7 @@ module NysenateAuditUtils
         # Group status changes by employee_id
         grouped_changes = @status_changes.group_by { |change| change.employee.employee_id }
 
-        grouped_changes.map do |employee_id, changes|
+        rows = grouped_changes.map do |employee_id, changes|
           # Use the first change for employee data (all should be the same employee)
           employee = changes.first.employee
 
@@ -97,6 +97,9 @@ module NysenateAuditUtils
             post_date: latest_post_date
           }
         end
+
+        # Default order: earliest post date first; entries lacking a post date sort last.
+        rows.sort_by { |row| [row[:post_date] ? 0 : 1, row[:post_date] || Date.new(0), row[:user_id].to_s] }
       end
 
       # Target systems for which the account holder currently has an active account

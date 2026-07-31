@@ -148,12 +148,11 @@ module NysenateAuditUtils
         # Apply status filter
         report_data = filter_by_status(report_data)
 
-        # Sort by user_id for consistency
-        # Handle both numeric and prefixed IDs
+        # Default order: by Account Holder Name (case-insensitive), blanks last;
+        # user_id breaks ties for a stable order.
         report_data.sort_by do |row|
-          row[:user_id].to_i
-        rescue
-          row[:user_id].to_s
+          name = row[:user_name].to_s.strip
+          [name.empty? ? 1 : 0, name.downcase, row[:user_id].to_i]
         end
       end
 
