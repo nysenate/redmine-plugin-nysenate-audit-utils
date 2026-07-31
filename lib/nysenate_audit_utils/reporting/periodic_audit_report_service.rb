@@ -162,7 +162,7 @@ module NysenateAuditUtils
           .includes(:status, :custom_values)
           .order(closed_on: :desc)
 
-        rows = issues.filter_map do |issue|
+        issues.filter_map do |issue|
           account_action = account_action_field_id ? get_custom_field_value(issue, account_action_field_id) : nil
           # Skip the excluded "S" entries (Reset Password / Lock / Unlock).
           next if EXCLUDED_ACCOUNT_ACTIONS.include?(account_action)
@@ -181,13 +181,6 @@ module NysenateAuditUtils
             subject: issue.subject,
             description: issue.description
           }
-        end
-
-        # Default order: by Account Holder Name (case-insensitive), blanks last;
-        # issue_id breaks ties for a stable order.
-        rows.sort_by do |row|
-          name = row[:user_name].to_s.strip
-          [name.empty? ? 1 : 0, name.downcase, row[:issue_id]]
         end
       end
 

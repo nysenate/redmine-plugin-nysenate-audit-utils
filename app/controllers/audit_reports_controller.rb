@@ -195,7 +195,7 @@ class AuditReportsController < ApplicationController
       return
     end
 
-    sort_init 'user_name', 'asc'
+    sort_init 'closed_on', 'desc'
     sort_update({
                   'request_code' => 'request_code',
       'user_name' => 'user_name',
