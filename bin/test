@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Serialize plugin test runs so concurrent invocations don't clobber the
+# shared test database and tmp/test/attachments directory.
+#
+# A second invocation blocks on the lock until the first finishes.
+# Pass args straight through to `rails test`, e.g.:
+#   plugins/nysenate_audit_utils/bin/test plugins/nysenate_audit_utils/test/unit/foo_test.rb
+# With no args, runs the whole plugin suite.
+set -euo pipefail
+
+# Resolve the Redmine root (two levels up from this script's plugin/bin dir).
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$ROOT"
+
+LOCK=/tmp/redmine-test.lock
+
+if [ "$#" -eq 0 ]; then
+  exec flock "$LOCK" bundle exec rake redmine:plugins:test NAME=nysenate_audit_utils
+else
+  exec flock "$LOCK" bundle exec rails test "$@"
+fi
