@@ -20,6 +20,10 @@ en:
   field_related_issue: "Related issue"
   warning_related_issue_not_linked: "Could not link issue #%{id}; the ticket was created without a related issue."
 
+  # Daily report -> plus-sign "create from template" picker (#18835)
+  label_no_template: "No template (blank ticket)"
+  label_filter_templates: "Filter templates..."
+
   # Settings / autoconfiguration flash messages
   error_autoconfigure_all_failed: "Failed to autoconfigure any fields. Please configure them manually."
   error_no_field_specified: "No field specified for autoconfiguration"

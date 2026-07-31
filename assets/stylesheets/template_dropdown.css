@@ -1,0 +1,25 @@
+/* Daily Report plus-sign template picker (#18835). Base drdn styling comes from
+   Redmine core; this sizes the panel and pulls it out of the clipping context.
+
+   The menu is position:fixed (positioned by template_dropdown.js) so it is not
+   clipped by #content's overflow or the report table — core's default absolute
+   positioning gets cut off at the bottom of the table. */
+.drdn.account-request-templates {
+  display: inline-block;
+}
+
+.drdn.account-request-templates .drdn-content {
+  position: fixed;
+  top: 0;
+  left: 0;
+  inset-inline-end: auto;
+  width: 320px;
+  z-index: 1000;
+}
+
+/* Each option shows "LABEL subject template" on one line, truncated on the right
+   (core supplies nowrap + ellipsis); the full text is available via the title
+   tooltip on hover. */
+.drdn.account-request-templates .drdn-items > a.no-template {
+  font-style: italic;
+}

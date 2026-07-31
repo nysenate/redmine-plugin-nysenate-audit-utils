@@ -1,0 +1,30 @@
+<%# Daily Report plus-sign template picker (feature #18835). Renders a Redmine
+    `drdn` (kebab-style) dropdown: the plus-sign toggles a panel listing the
+    template tickets (labelled with the text before their <TEMPLATE> marker) plus
+    a "No template" option. Each option links to AccountRequestsController#new,
+    carrying this row's employee + report window and (for templates) template_id.
+    locals: row, templates, mode, from_date, to_date %>
+<span class="drdn account-request-templates">
+  <span class="drdn-trigger action-icon" tabindex="0" role="button"
+        title="<%= l(:button_create_new_account_request) %>">
+    <%= sprite_icon('add', l(:button_create_new_account_request), icon_only: true) %>
+  </span>
+  <div class="drdn-content">
+    <div class="quick-search">
+      <%= text_field_tag nil, nil, class: 'autocomplete', autocomplete: 'off',
+            placeholder: l(:label_filter_templates), 'aria-label': l(:label_filter_templates) %>
+    </div>
+    <div class="drdn-items">
+      <%= link_to l(:label_no_template),
+            new_project_account_request_path(@project, employee_id: row[:user_id],
+              mode: mode, from_date: from_date.iso8601, to_date: to_date.iso8601),
+            class: 'template-option no-template', target: '_blank' %>
+      <% templates.each do |t| %>
+        <%= link_to t[:display],
+              new_project_account_request_path(@project, employee_id: row[:user_id],
+                template_id: t[:id], mode: mode, from_date: from_date.iso8601, to_date: to_date.iso8601),
+              class: 'template-option', title: t[:display], target: '_blank' %>
+      <% end %>
+    </div>
+  </div>
+</span>

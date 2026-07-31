@@ -127,7 +127,94 @@ class DailyReportActionsTest < AuditUtilsSystemTestCase
     end
   end
 
+  # 7. Plus-sign template dropdown -> lists templates + "No template", filters ---
+  def test_template_dropdown_lists_options_and_filters
+    setup_templates_project(
+      { subject: 'USRA: <TEMPLATE> Create SFMS account for <Account Holder Name>' },
+      { subject: 'SFSS: <TEMPLATE> Reset SFS password for <Account Holder Name>' }
+    )
+
+    visit daily_project_audit_reports_path(@project)
+    row = find('tr', text: 'Doodlewick, Ulric F.')
+
+    # The plus-sign is now a drdn trigger; opening it reveals the options.
+    row.find('.drdn-trigger').click
+    within(row) do
+      assert_link 'USRA:'
+      assert_link 'SFSS:'
+      assert_link 'No template (blank ticket)'
+
+      # Typing narrows the visible options (client-side filter).
+      fill_in 'Filter templates...', with: 'sfs'
+      assert_link 'SFSS:'
+      assert_no_link 'USRA:'
+    end
+  end
+
+  # 8. Selecting a template -> new-ticket form prefilled from template + ESS ----
+  def test_selecting_template_prefills_new_ticket_form
+    setup_templates_project(
+      { subject: 'USRA: <TEMPLATE> Create SFMS account for <Account Holder Name>',
+        description: 'Mirror <existing user> for <Account Holder Name>',
+        values: { account_action: 'Add', target_system: 'Oracle / SFMS' } }
+    )
+
+    visit daily_project_audit_reports_path(@project)
+    row = find('tr', text: 'Doodlewick, Ulric F.')
+    row.find('.drdn-trigger').click
+
+    new_window = window_opened_by do
+      within(row) { click_link 'USRA:' }
+    end
+
+    within_window(new_window) do
+      assert_selector 'input#issue_subject'
+      # Subject = text after <TEMPLATE>, with the holder token interpolated.
+      assert_equal 'Create SFMS account for Doodlewick, Ulric F.', find('#issue_subject').value
+      # Description keeps the unmatched <existing user> token, fills the holder one.
+      assert_equal 'Mirror <existing user> for Doodlewick, Ulric F.',
+                   find('#issue_description').value
+      # Template custom fields carried over as the base...
+      assert_equal 'Add',
+                   find("#issue_custom_field_values_#{@field_map[:account_action].id}").value
+      assert_equal 'Oracle / SFMS',
+                   find("#issue_custom_field_values_#{@field_map[:target_system].id}").value
+      # ...and Account Holder fields prefilled from ESS on top.
+      assert_equal 'Doodlewick, Ulric F.',
+                   find("#issue_custom_field_values_#{@field_map[:user_name].id}").value
+
+      # The form still saves normally.
+      assert_difference -> { Issue.count }, 1 do
+        click_button 'Create'
+        assert_text 'Create SFMS account for Doodlewick, Ulric F.'
+      end
+    end
+  end
+
   private
+
+  # Create a dedicated templates project holding one issue per passed spec, and
+  # point the plugin's templates_project setting at it. Each spec is a Hash:
+  #   { subject:, description: '', values: { account_action:, target_system:, ... } }
+  # where `values` keys are @field_map symbols. Returns the templates Project.
+  def setup_templates_project(*specs)
+    proj = Project.generate!(name: 'Templates', identifier: "tmpl-#{SecureRandom.hex(4)}")
+    proj.trackers << @tracker unless proj.trackers.include?(@tracker)
+
+    specs.each do |spec|
+      issue = Issue.new(project: proj, tracker: @tracker, author: User.find(1),
+                        status: IssueStatus.where(is_closed: false).first,
+                        priority: IssuePriority.first,
+                        subject: spec[:subject], description: spec[:description].to_s)
+      issue.custom_field_values = (spec[:values] || {}).transform_keys { |k| @field_map[k].id }
+      issue.save!
+    end
+
+    Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(
+      'templates_project_id' => proj.id.to_s
+    )
+    proj
+  end
 
   # Stub the ESS single-employee lookup (/api/v1/redmine/employee/:id) with a
   # { success:, employee: } body, which is what find_by_id reads (the shared

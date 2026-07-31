@@ -25,6 +25,8 @@ require_relative 'lib/nysenate_audit_utils/autofill/employee_mapper'
 require_relative 'lib/nysenate_audit_utils/autofill/hooks'
 require_relative 'lib/nysenate_audit_utils/request_codes/request_code_mapper'
 require_relative 'lib/nysenate_audit_utils/request_codes/formula_helper'
+require_relative 'lib/nysenate_audit_utils/templates/field_interpolator'
+require_relative 'lib/nysenate_audit_utils/templates/template_library'
 
 # Register the .xlsx MIME type so report actions can `respond_to { |f| f.xlsx }`
 # and `format: :xlsx` links resolve. Guard against double-registration on reload.
@@ -105,7 +107,11 @@ Redmine::Plugin.register :nysenate_audit_utils do
     # Target System value identifying the public website (NYSenate.gov). Its
     # Monthly Report includes the extra Account Holder Email column. Must match
     # a Target System custom-field value. Required.
-    'public_website_target_system' => ''
+    'public_website_target_system' => '',
+    # Project holding the template tickets offered by the Daily Report plus-sign
+    # (feature #18835). nil = no templates project configured (plus-sign falls
+    # back to a plain prefilled create).
+    'templates_project_id' => nil
   }, partial: 'settings/audit_utils_settings'
 end
 

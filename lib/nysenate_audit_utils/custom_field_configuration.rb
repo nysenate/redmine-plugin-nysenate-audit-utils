@@ -311,6 +311,14 @@ module NysenateAuditUtils
         value.presence
       end
 
+      # Project holding the template tickets offered by the Daily Report
+      # plus-sign (feature #18835).
+      # @return [Project, nil] the configured project, or nil if unset/missing
+      def templates_project
+        id = (Setting.plugin_nysenate_audit_utils || {})['templates_project_id'].presence
+        id && Project.find_by(id: id)
+      end
+
       # Get all autofill field IDs as a hash
       # @return [Hash<Symbol, Integer>] Hash mapping field purpose to field ID
       # Example: { user_type: 123, user_id: 124, ... }

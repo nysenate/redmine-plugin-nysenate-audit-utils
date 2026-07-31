@@ -27,8 +27,11 @@ class AccountRequestsController < IssuesController
     employee = NysenateAuditUtils::Ess::EssEmployeeService.find_by_id(params[:employee_id])
 
     if employee
+      template = NysenateAuditUtils::Templates::TemplateLibrary.find(params[:template_id])
       if params[:target_system].present?
         prefill_removal_issue(employee, params[:target_system])
+      elsif template
+        prefill_from_template(employee, template)
       else
         prefill_create_issue(employee)
       end
@@ -49,6 +52,31 @@ class AccountRequestsController < IssuesController
     @issue.safe_attributes = {
       'tracker_id' => detect_tracker&.id,
       'custom_field_values' => NysenateAuditUtils::Autofill::EmployeeMapper.map_employee_to_field_values(employee)
+    }
+  end
+
+  # Prefill a new ticket from a template ticket (feature #18835): copy the
+  # template's tracker and custom field values as a base, overlay the account
+  # holder's ESS data on top, then set the subject (text after the <TEMPLATE>
+  # marker) and description with their `<Field Name>` tokens interpolated from
+  # the resulting field values.
+  def prefill_from_template(employee, template)
+    base_cf   = template.custom_field_values.to_h { |v| [v.custom_field_id, v.value] }
+    holder_cf = NysenateAuditUtils::Autofill::EmployeeMapper.map_employee_to_field_values(employee)
+    tracker   = @project.trackers.find_by(id: template.tracker_id) || detect_tracker
+
+    # Assign fields first so interpolation sees the final (merged) values. Any
+    # template field not on the target tracker is dropped by safe_attributes.
+    @issue.safe_attributes = {
+      'tracker_id' => tracker&.id,
+      'custom_field_values' => base_cf.merge(holder_cf)
+    }
+
+    _label, _marker, subject_template =
+      template.subject.partition(NysenateAuditUtils::Templates::TemplateLibrary::MARKER)
+    @issue.safe_attributes = {
+      'subject' => NysenateAuditUtils::Templates::FieldInterpolator.interpolate(subject_template.strip, @issue),
+      'description' => NysenateAuditUtils::Templates::FieldInterpolator.interpolate(template.description.to_s, @issue)
     }
   end
 

@@ -180,11 +180,17 @@
             <% end %>
             <% if User.current.allowed_to?(:add_issues, @project) %>
               <div class="open-ticket-line create-new-line">
-                <%= link_to sprite_icon('add', l(:button_create_new_account_request), icon_only: true),
-                      new_project_account_request_path(@project, employee_id: row[:user_id],
-                        mode: @mode, from_date: @from_date.iso8601, to_date: @to_date.iso8601),
-                      class: 'action-icon',
-                      title: l(:button_create_new_account_request), target: '_blank' %>
+                <% if @ticket_templates.present? %>
+                  <%= render partial: 'audit_reports/template_dropdown',
+                        locals: { row: row, templates: @ticket_templates,
+                                  mode: @mode, from_date: @from_date, to_date: @to_date } %>
+                <% else %>
+                  <%= link_to sprite_icon('add', l(:button_create_new_account_request), icon_only: true),
+                        new_project_account_request_path(@project, employee_id: row[:user_id],
+                          mode: @mode, from_date: @from_date.iso8601, to_date: @to_date.iso8601),
+                        class: 'action-icon',
+                        title: l(:button_create_new_account_request), target: '_blank' %>
+                <% end %>
               </div>
             <% elsif row[:open_requests].blank? %>
               <span class="no-data">—</span>

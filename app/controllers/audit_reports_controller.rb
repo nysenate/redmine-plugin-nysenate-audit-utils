@@ -68,6 +68,10 @@ class AuditReportsController < ApplicationController
       @report_data = sort_report_data(@report_data)
     end
 
+    # Template tickets offered by each row's plus-sign (feature #18835). Loaded
+    # once here to avoid a per-row query in the view.
+    @ticket_templates = NysenateAuditUtils::Templates::TemplateLibrary.templates
+
     respond_to do |format|
       format.html { paginate_report_data }
       format.xlsx do

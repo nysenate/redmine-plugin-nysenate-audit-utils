@@ -84,6 +84,25 @@ Select a single Redmine user to auto-populate as both the **Requested By** and
 Report. Leave it unset to leave those fields blank. Requires the `Requested By`
 and `Authorizing Users` fields to be mapped above.
 
+#### Templates Project
+
+Select the project that holds the **template tickets** offered by the Daily
+Report's create-ticket (plus-sign) menu (**General Configuration → Templates
+Project**). Leave it unset to keep the plus-sign as a plain prefilled create.
+
+Any **open** issue in that project whose subject contains the marker
+`<TEMPLATE>` becomes a menu option:
+
+- The text **before** `<TEMPLATE>` (e.g. `SFSS:`) is the menu label.
+- The text **after** `<TEMPLATE>` becomes the new ticket's subject.
+- The template's tracker and custom field values are copied onto the new ticket
+  as a base; the Account Holder fields are then prefilled from ESS on top.
+- `<Field Name>` tokens in the subject and description are replaced with that
+  field's value (e.g. `<Account Holder Name>`). Tokens that don't match a field
+  name (e.g. `<existing user (name / userID)>`) are left untouched.
+
+The resulting new-issue form is fully editable before saving.
+
 ### 3. Project Module
 
 Enable the **Audit Utils** module per-project at **Projects → \*your project\*

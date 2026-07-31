@@ -156,4 +156,88 @@ class AccountRequestsControllerTest < Redmine::ControllerTest
     get :new, params: { project_id: 999999, employee_id: '12345' }
     assert_response :not_found
   end
+
+  # --- Template mode (#18835) -----------------------------------------------
+
+  # A richer employee stub exposing the fields EmployeeMapper reads, so token
+  # interpolation has real values to substitute.
+  def stub_full_employee
+    OpenStruct.new(
+      employee_id: 12345, formatted_name: 'Doe, John', display_name: 'John Doe',
+      email: 'john@nysenate.gov', work_phone: '555-1234', active: true,
+      uid: 'jdoe', resp_center_head: nil
+    )
+  end
+
+  # Map the standard Account Holder / request fields onto the project's tracker
+  # and point the templates project at this project. setup_standard_bachelp_fields
+  # REPLACES the plugin settings hash, so merge the templates project in after.
+  def setup_template_env
+    @tracker = @project.trackers.first
+    @fields = setup_standard_bachelp_fields(@tracker)
+    Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(
+      'templates_project_id' => @project.id.to_s
+    )
+  end
+
+  def create_template(subject:, description: '', values: {}, closed: false)
+    issue = Issue.new(project: @project, tracker: @tracker, author: User.find(1),
+                      status: IssueStatus.where(is_closed: closed).first,
+                      priority: IssuePriority.first, subject: subject, description: description)
+    issue.custom_field_values = values
+    issue.save!
+    issue
+  end
+
+  test "template mode copies template fields and interpolates subject and description" do
+    setup_template_env
+    template = create_template(
+      subject: 'USRA: <TEMPLATE> Create account for <Account Holder Name> / <Account Holder UID>',
+      description: 'Mirror <existing user> for <Account Holder Name>',
+      values: { @fields[:account_action].id => 'Add', @fields[:target_system].id => 'Oracle / SFMS' }
+    )
+    NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).with('12345').returns(stub_full_employee)
+    stub_report
+
+    get_new(template_id: template.id)
+
+    assert_response :success
+    # Subject = text after <TEMPLATE>, with holder tokens filled and the unknown
+    # <existing user> token left intact.
+    assert_select 'input#issue_subject[value=?]', 'Create account for Doe, John / jdoe'
+    assert_select 'textarea#issue_description', 'Mirror <existing user> for Doe, John'
+    # Template custom fields carried over as a base...
+    assert_select "select#issue_custom_field_values_#{@fields[:account_action].id} option[selected][value=?]", 'Add'
+    assert_select "select#issue_custom_field_values_#{@fields[:target_system].id} option[selected][value=?]",
+                  'Oracle / SFMS'
+    # ...and the Account Holder fields prefilled from ESS on top.
+    assert_select "input#issue_custom_field_values_#{@fields[:user_name].id}[value=?]", 'Doe, John'
+    assert_select "input#issue_custom_field_values_#{@fields[:user_uid].id}[value=?]", 'jdoe'
+  end
+
+  test "an unknown template_id falls back to a plain prefilled create" do
+    setup_template_env
+    NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).with('12345').returns(stub_full_employee)
+    stub_report
+
+    get_new(template_id: '999999')
+
+    assert_response :success
+    # Account Holder still prefilled, but no template subject applied.
+    assert_select "input#issue_custom_field_values_#{@fields[:user_name].id}[value=?]", 'Doe, John'
+    assert_select 'input#issue_subject[value=?]', 'Create account for Doe, John / jdoe', count: 0
+  end
+
+  test "a closed template_id is ignored by the open-only gate" do
+    setup_template_env
+    closed = create_template(subject: 'USRA: <TEMPLATE> Create for <Account Holder Name>', closed: true)
+    NysenateAuditUtils::Ess::EssEmployeeService.stubs(:find_by_id).with('12345').returns(stub_full_employee)
+    stub_report
+
+    get_new(template_id: closed.id)
+
+    assert_response :success
+    assert_select "input#issue_custom_field_values_#{@fields[:user_name].id}[value=?]", 'Doe, John'
+    assert_select 'input#issue_subject[value=?]', 'Create for Doe, John', count: 0
+  end
 end

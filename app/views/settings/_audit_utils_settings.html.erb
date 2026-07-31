@@ -210,6 +210,27 @@
           </div>
         <% end %>
       </div>
+
+      <h4 class="config-subsection">Templates Project</h4>
+      <div class="box tabular settings">
+        <p style="margin: 1em 0 0.5em 0; padding: 0;">
+          Select the project that holds the <strong>template tickets</strong> offered by the
+          Daily Report's create-ticket (plus-sign) menu. Each open issue whose subject contains
+          <code>&lt;TEMPLATE&gt;</code> becomes a menu option: the text before the marker is the
+          menu label, the text after it becomes the new ticket's subject, and
+          <code>&lt;Field Name&gt;</code> tokens in the subject/description are filled from the
+          ticket's field values. Leave unset to keep the plus-sign as a plain prefilled create.
+        </p>
+
+        <p>
+          <%= content_tag 'label', 'Templates Project' %>
+          <%= select_tag 'settings[templates_project_id]',
+                options_for_select([['-- None --', '']] +
+                  Project.active.sorted.map { |p| [p.name, p.id] },
+                  @settings['templates_project_id']) %>
+          <em class="info">Project whose <code>&lt;TEMPLATE&gt;</code> tickets prefill new account requests</em>
+        </p>
+      </div>
     </div>
   </div>
 
