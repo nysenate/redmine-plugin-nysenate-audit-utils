@@ -239,8 +239,9 @@ class AuditReportsController < ApplicationController
     # Get valid target systems from custom field configuration
     target_system_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
     real_target_systems = target_system_field&.possible_values || ['Oracle / SFMS']
-    # Offer an "All Systems" option in the dropdown (aggregates all systems)
-    @target_systems = real_target_systems + [ALL_SYSTEMS_OPTION]
+    # Offer an "All Systems" option first in the dropdown (aggregates all
+    # systems). It is not the default — that stays the first real system.
+    @target_systems = [ALL_SYSTEMS_OPTION] + real_target_systems
 
     # Calculate earliest closed issue date in the project
     earliest_closed_date = calculate_earliest_closed_date(@project)
