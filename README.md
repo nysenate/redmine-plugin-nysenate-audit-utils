@@ -41,54 +41,42 @@ A comprehensive Redmine plugin providing audit utilities, user data integration,
 
 ## Configuration
 
-### 1. ESS Integration Settings
+Plugin settings at **Administration → Plugins → NY Senate Audit Utils →
+Configure** are grouped into three accordions: **General Configuration**,
+**Custom Field Configuration**, and **Request Code Configuration**. Each shows a
+✓ / ✗ status badge summarizing whether its settings are complete.
+
+### 1. General Configuration
+
+#### ESS API Configuration
 
 Configure access to the Employee Self Service API:
 
 - **ESS Base URL**: Base URL for the ESS API endpoint
 - **ESS API Key**: Authentication key for ESS API access
 
-### 2. Custom Field Configuration
+#### Report Data Options
 
-The plugin stores user and request data in custom fields. Ensure the following
-fields exist and are enabled on the desired projects/trackers, then map them
-under **Administration → Plugins → Configure**:
-
-**User Fields:**
-- `User Type` - List (Employee/Vendor/Volunteer)
-- `User ID` - Integer
-- `User Name` - Text
-- `User Email` - Text
-- `User Phone` - Text
-- `User Status` - List (Active/Inactive)
-- `User UID` - Text
-- `User Office` - Text
-
-**Request Fields:**
-- `Account Action` - List
-- `Target System` - List
-- `Requested By` - User (single) — auto-populated on removal tickets (see [Removal Ticket Defaults](#removal-ticket-defaults))
-- `Authorizing Users` - User (multiple) — auto-populated on removal tickets (see [Removal Ticket Defaults](#removal-ticket-defaults))
-
-**Reporting Fields:**
-- `BAC #` - Text — legacy BAC ticket number shown on the Quarterly/Annual report. The value may be blank once the legacy system is retired, but the field mapping must still be configured.
-
-Use **"Auto-Configure All Fields"** to detect fields by name; if auto-detection
-fails, select field IDs manually. Status indicators (✓ / ✗) confirm which
-required fields are mapped.
+Select the **public website Target System** — the Target System value whose
+Monthly Report includes the extra Account Holder Email column. This setting is
+**required**: leave it blank and the General Configuration badge reports an
+error. The dropdown lists the possible values of the `Target System` custom
+field, so map that field (see [Custom Field
+Configuration](#2-custom-field-configuration)) first.
 
 #### Removal Ticket Defaults
 
 Select a single Redmine user to auto-populate as both the **Requested By** and
-**Authorizing Users** fields whenever a removal ticket is created from the Daily
-Report. Leave it unset to leave those fields blank. Requires the `Requested By`
-and `Authorizing Users` fields to be mapped above.
+**Authorizing User(s)** fields whenever a removal ticket is created from the
+Daily Report. Leave it unset to leave those fields blank. Requires the
+`Requested By` and `Authorizing User(s)` fields to be mapped under [Custom Field
+Configuration](#2-custom-field-configuration).
 
 #### Templates Project
 
 Select the project that holds the **template tickets** offered by the Daily
-Report's create-ticket (plus-sign) menu (**General Configuration → Templates
-Project**). Leave it unset to keep the plus-sign as a plain prefilled create.
+Report's create-ticket (plus-sign) menu. Leave it unset to keep the plus-sign as
+a plain prefilled create.
 
 Any **open** issue in that project whose subject contains the marker
 `<TEMPLATE>` becomes a menu option:
@@ -102,6 +90,38 @@ Any **open** issue in that project whose subject contains the marker
   name (e.g. `<existing user (name / userID)>`) are left untouched.
 
 The resulting new-issue form is fully editable before saving.
+
+The **Email Reporting Configuration** sub-section also lives here; see
+[Email Reporting Configuration](#5-email-reporting-configuration-optional).
+
+### 2. Custom Field Configuration
+
+The plugin stores user and request data in custom fields. Ensure the following
+fields exist and are enabled on the desired projects/trackers, then map them
+under **Administration → Plugins → Configure**:
+
+**Account Holder Fields:**
+- `Account Holder Type` - List (Employee/Vendor/Volunteer)
+- `Account Holder ID` - Integer
+- `Account Holder Name` - Text
+- `Account Holder Email` - Text
+- `Account Holder Phone` - Text
+- `Account Holder Status` - List (Active/Inactive)
+- `Account Holder UID` - Text
+- `Account Holder Location` - Text
+
+**Request Fields:**
+- `Account Action` - List
+- `Target System` - List
+- `Requested By` - User (single) — auto-populated on removal tickets (see [Removal Ticket Defaults](#removal-ticket-defaults))
+- `Authorizing User(s)` - User (multiple) — auto-populated on removal tickets (see [Removal Ticket Defaults](#removal-ticket-defaults))
+
+**Reporting Fields:**
+- `BAC #` - Text — legacy BAC ticket number. No report displays it any longer, but the field mapping is still required.
+
+Use **"Auto-Configure All Fields"** to detect fields by name; if auto-detection
+fails, select field IDs manually. Status indicators (✓ / ✗) confirm which
+required fields are mapped.
 
 ### 3. Project Module
 
@@ -127,9 +147,10 @@ Assign the role(s) to users under **Projects → \*your project\* → Settings �
 ### 5. Email Reporting Configuration (Optional)
 
 Set **Default Report Recipients** (comma-separated email addresses) in the
-**Email Reporting Configuration** section of the plugin settings. This is the
-default recipient list for all report rake tasks; individual tasks can override
-it with a `recipients` parameter. Schedule reports with cron jobs (see
+**Email Reporting Configuration** sub-section of
+[General Configuration](#1-general-configuration). This is the default recipient
+list for all report rake tasks; individual tasks can override it with a
+`recipients` parameter. Schedule reports with cron jobs (see
 [Rake Tasks](#rake-tasks)).
 
 Redmine's email delivery must be configured in `config/configuration.yml`
@@ -160,13 +181,20 @@ bundle exec rake redmine:email:test[admin_login] RAILS_ENV=production
 Access via the project menu: **Reports → Audit Utils**. Report types:
 
 - **Daily Reports**: Employees with recent status changes, with inline actions
-  to create pre-filled account-request and removal tickets. Two modes — *Last
-  Business Day* (default, single date) and *Date Range* (explicit start/end).
-- **Weekly Reports**: Tickets closed during the previous full week (Sunday–Sunday).
+  to create pre-filled account-request and removal tickets — optionally from a
+  template ticket (see [Templates Project](#templates-project)). Two modes —
+  *Last Business Day* (default, single date) and *Date Range* (explicit
+  start/end).
+- **Weekly Reports**: Tickets updated during a Sunday–Saturday week, with
+  previous/next week navigation and an *Update Type* filter (All Updates,
+  Opened, Closed, Other Updates).
 - **Quarterly / Annual Reports**: Closed tickets for a single target system,
   feeding the SFMS Quarterly Audit and the SFS Annual Audit, with Excel columns
-  matching the legacy audit spreadsheet.
-- **Monthly Reports**: Account status snapshot for a target system.
+  matching the legacy audit spreadsheet. SFMS selects an audit quarter; SFS
+  offers two modes — *End date only* (start auto-selects one year prior) and
+  *Custom range*.
+- **Monthly Reports**: Account status snapshot for a single target system, or
+  *All Systems* for a combined snapshot across every configured system.
 - **Account Holder Access Report**: One row per account (account holder ×
   system) showing derived active/inactive status, filterable by search, account
   holder type, target system, and status.
@@ -243,7 +271,7 @@ rake nysenate_audit_utils:send_daily_report project_id="bachelp-2" mode="range" 
 
 ### Send Weekly Report
 
-Generates and emails the report of tickets closed in the previous full week (Sunday–Sunday, by close date).
+Generates and emails the report of tickets updated in the previous full week (Sunday–Sunday, by update date).
 
 ```bash
 rake nysenate_audit_utils:send_weekly_report project_id="bachelp-2" RAILS_ENV=production
@@ -318,6 +346,11 @@ Run the unit/functional suite from the Redmine root:
 ```bash
 bundle exec rake redmine:plugins:test NAME=nysenate_audit_utils
 ```
+
+The test database and attachment directory are shared state, so two concurrent
+test runs corrupt each other. `plugins/nysenate_audit_utils/bin/test` runs the
+suite under a file lock so a second invocation waits instead; it passes any
+arguments through to `rails test`.
 
 ### End-to-end (browser) tests
 
