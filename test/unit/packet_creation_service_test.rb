@@ -67,7 +67,9 @@ class PacketCreationServiceTest < NysenateAuditUtilsTestCase
     assert_includes filenames, "test2.txt"
 
     # Verify file contents (both files use same fixture content)
-    expected_content = "this is a text file for upload tests\r\nwith multiple lines\r\n"
+    # Read the fixture rather than hardcoding its bytes: core changed
+    # testfile.txt from CRLF to LF in Redmine 7 (#44330).
+    expected_content = File.binread(Rails.root.join('test/fixtures/files/testfile.txt'))
     assert_equal expected_content, file_contents["test1.txt"]
     assert_equal expected_content, file_contents["test2.txt"]
 
@@ -106,7 +108,9 @@ class PacketCreationServiceTest < NysenateAuditUtilsTestCase
     assert_includes filenames, "duplicate(2).txt"
 
     # Verify each file has the correct content (all use same fixture content)
-    expected_content = "this is a text file for upload tests\r\nwith multiple lines\r\n"
+    # Read the fixture rather than hardcoding its bytes: core changed
+    # testfile.txt from CRLF to LF in Redmine 7 (#44330).
+    expected_content = File.binread(Rails.root.join('test/fixtures/files/testfile.txt'))
     assert_equal expected_content, file_contents["duplicate.txt"]
     assert_equal expected_content, file_contents["duplicate(1).txt"]
     assert_equal expected_content, file_contents["duplicate(2).txt"]
