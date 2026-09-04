@@ -185,6 +185,22 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
     assert_match(/ESS down/, result.unmatched.first[:message])
   end
 
+  test 'aborts with an ESS error instead of blaming tickets when ESS is unreachable' do
+    create_issue(user_type: 'Employee', user_id: '12345')
+    create_issue(user_type: 'Employee', user_id: '67890')
+    NysenateAuditUtils::Users::UserService.any_instance
+                                          .stubs(:find_by_id)
+                                          .raises(NysenateAuditUtils::Ess::EssApiClient::NetworkError,
+                                                  'Connection refused by http://ess.example/')
+
+    result = Service.new(project: @project).run
+
+    assert_not result.success?
+    assert_empty result.unmatched, 'ESS outage must not be reported as unmatched tickets'
+    assert_match(/ESS is unavailable/, result.errors.join)
+    assert_match(/Connection refused/, result.errors.join)
+  end
+
   test 'records user_not_found unmatched row when lookup returns nil' do
     create_issue(user_type: 'Employee', user_id: '99999')
     stub_lookup(returns: nil)

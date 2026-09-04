@@ -196,9 +196,11 @@ function initializeUserSearch() {
         } else if (this.status === 403) {
           showError('Access denied. You do not have permission to search users.');
         } else if (this.status === 503) {
-          showError('User search temporarily unavailable. Please try again later.');
+          // Prefer the server's reason (e.g. an ESS connection failure) over a
+          // generic message, so an outage is diagnosable from the widget.
+          showError(serverError(this) || 'User search temporarily unavailable. Please try again later.');
         } else {
-          showError('Search failed. Please try again.');
+          showError(serverError(this) || 'Search failed. Please try again.');
         }
 
         userSearchState.currentRequest = null;
@@ -436,6 +438,15 @@ function initializeUserSearch() {
 
   function hideLoading() {
     loadingIndicator.style.display = 'none';
+  }
+
+  // Pull the `error` field out of a JSON error response, if there is one.
+  function serverError(xhr) {
+    try {
+      return JSON.parse(xhr.responseText).error || null;
+    } catch (e) {
+      return null;
+    }
   }
 
   function showError(message) {

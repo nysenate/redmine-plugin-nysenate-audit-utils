@@ -39,6 +39,14 @@ class UserSearchController < ApplicationController
         has_more: tracked_users.length == limit,
         type: user_type
       }
+    rescue NysenateAuditUtils::Ess::EssApiClient::ApiError => e
+      # Surface the ESS-specific reason: a search that returns nothing because
+      # ESS is unreachable looks identical to one with no matches otherwise.
+      logger.error "ESS user search failed: #{e.class}: #{e.message}"
+      render json: {
+        error: "Employee search is unavailable: #{e.message}",
+        users: []
+      }, status: :service_unavailable
     rescue => e
       logger.error "User search error: #{e.message}"
       logger.error e.backtrace.join("\n")

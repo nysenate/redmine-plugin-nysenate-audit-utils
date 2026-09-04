@@ -205,6 +205,24 @@ class UserSearchControllerTest < ActionController::TestCase
     assert_equal [], response_data['users']
   end
 
+  def test_search_with_ess_error_returns_ess_specific_message
+    @admin.stubs(:allowed_to?).with(:use_user_autofill, @project).returns(true)
+    @request.session[:user_id] = @admin.id
+    @mock_service.stubs(:search).raises(
+      NysenateAuditUtils::Ess::EssApiClient::NetworkError.new(
+        'Connection refused by http://ess.example/; ESS does not appear to be running there.'
+      )
+    )
+
+    get :search, params: { q: 'John', project_id: @project.id }
+
+    assert_response :service_unavailable
+    response_data = JSON.parse(@response.body)
+    assert_match(/Employee search is unavailable/, response_data['error'])
+    assert_match(/Connection refused/, response_data['error'])
+    assert_equal [], response_data['users']
+  end
+
   def test_search_sanitizes_input
     @admin.stubs(:allowed_to?).with(:use_user_autofill, @project).returns(true)
     @request.session[:user_id] = @admin.id

@@ -93,7 +93,18 @@ class AuditUtilsSettingsController < ApplicationController
     test_term = 'fdsafsda'
     client = NysenateAuditUtils::Ess::EssApiClient.new(base_url, api_key)
     response = client.get('/api/v1/redmine/employee/search', term: test_term, limit: 1, offset: 0)
-    count = (response && response['result'].is_a?(Array)) ? response['result'].size : 0
+    if response.nil?
+      # get() returns nil only for an ESS "not found" response; the search
+      # endpoint should never answer that way, so treat it as a failure rather
+      # than reporting a successful connection with zero results.
+      render json: {
+        success: false,
+        message: "ESS did not return a search response from #{base_url}. #{NysenateAuditUtils::Ess::EssApiClient::CONFIG_HINT}"
+      }, status: :ok
+      return
+    end
+
+    count = response['result'].is_a?(Array) ? response['result'].size : 0
 
     render json: {
       success: true,

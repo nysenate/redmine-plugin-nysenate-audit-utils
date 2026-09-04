@@ -19,7 +19,9 @@ module NysenateAuditUtils
         initialize_account_tracking_service
         build_report_data
       rescue StandardError => e
-        @errors << "Report generation failed: #{e.message}"
+        # fetch_status_changes already recorded a specific, ESS-aware message;
+        # only add a generic one when nothing else explained the failure.
+        @errors << "Report generation failed: #{e.message}" if @errors.empty?
         Rails.logger.error("DailyReportService error: #{e.message}\n#{e.backtrace.join("\n")}")
         nil
       end
@@ -49,6 +51,10 @@ module NysenateAuditUtils
           @from_date,
           @to_date
         )
+      rescue NysenateAuditUtils::Ess::EssApiClient::ApiError => e
+        @errors << "Could not load status changes from ESS: #{e.message}"
+        Rails.logger.error("ESS API error: #{e.class}: #{e.message}")
+        raise
       rescue StandardError => e
         @errors << "Failed to fetch status changes from ESS API: #{e.message}"
         Rails.logger.error("ESS API error: #{e.message}")
