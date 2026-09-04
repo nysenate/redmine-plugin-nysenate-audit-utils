@@ -99,7 +99,7 @@ class AuditUtilsSettingsController < ApplicationController
       # than reporting a successful connection with zero results.
       render json: {
         success: false,
-        message: "ESS did not return a search response from #{base_url}. #{NysenateAuditUtils::Ess::EssApiClient::CONFIG_HINT}"
+        message: 'ESS connection error (no search response)'
       }, status: :ok
       return
     end
@@ -110,12 +110,10 @@ class AuditUtilsSettingsController < ApplicationController
       success: true,
       message: "ESS API connection successful. Search for '#{test_term}' returned #{count} result(s)."
     }
-  rescue NysenateAuditUtils::Ess::EssApiClient::AuthenticationError => e
-    render json: { success: false, message: "Authentication failed: #{e.message}" }, status: :ok
-  rescue NysenateAuditUtils::Ess::EssApiClient::NetworkError => e
-    render json: { success: false, message: "Network error: #{e.message}" }, status: :ok
   rescue NysenateAuditUtils::Ess::EssApiClient::ApiError => e
-    render json: { success: false, message: "API error: #{e.message}" }, status: :ok
+    # Covers AuthenticationError and NetworkError too; the client already
+    # phrases each one for display.
+    render json: { success: false, message: e.message }, status: :ok
   rescue => e
     logger.error "ESS connection test error: #{e.message}"
     logger.error e.backtrace.join("\n")

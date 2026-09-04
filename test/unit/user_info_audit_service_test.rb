@@ -191,14 +191,13 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
     NysenateAuditUtils::Users::UserService.any_instance
                                           .stubs(:find_by_id)
                                           .raises(NysenateAuditUtils::Ess::EssApiClient::NetworkError,
-                                                  'Connection refused by http://ess.example/')
+                                                  'ESS connection error (connection refused)')
 
     result = Service.new(project: @project).run
 
     assert_not result.success?
     assert_empty result.unmatched, 'ESS outage must not be reported as unmatched tickets'
-    assert_match(/ESS is unavailable/, result.errors.join)
-    assert_match(/Connection refused/, result.errors.join)
+    assert_equal ['Audit stopped: ESS connection error (connection refused)'], result.errors
   end
 
   test 'records user_not_found unmatched row when lookup returns nil' do

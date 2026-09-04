@@ -44,7 +44,7 @@ class UserSearchController < ApplicationController
       # ESS is unreachable looks identical to one with no matches otherwise.
       logger.error "ESS user search failed: #{e.class}: #{e.message}"
       render json: {
-        error: "Employee search is unavailable: #{e.message}",
+        error: e.message,
         users: []
       }, status: :service_unavailable
     rescue => e

@@ -19,9 +19,6 @@ module NysenateAuditUtils
       # deployed here" from "nothing is listening".
       class UnexpectedResponseError < ApiError; end
 
-      CONFIG_HINT = 'Check the ESS Base URL and API Key in ' \
-                    'Administration → Plugins → NY Senate Audit Utils → Configure.'
-
       def initialize(base_url = nil, api_key = nil)
         @base_url = base_url || NysenateAuditUtils::Ess::EssConfiguration.base_url
         @api_key = api_key || NysenateAuditUtils::Ess::EssConfiguration.api_key
@@ -90,21 +87,18 @@ module NysenateAuditUtils
           parse_json!(response, uri)
         when 401
           Rails.logger.error "ESS API authentication failed (401) for #{uri}"
-          raise AuthenticationError,
-                "ESS rejected our credentials (HTTP 401) at #{@base_url}. #{CONFIG_HINT}"
+          raise AuthenticationError, 'ESS authentication failed'
         when 404
           handle_not_found(response, uri)
         when 400..499
           Rails.logger.error "ESS API client error (#{response.code}): #{response.body}"
-          raise ApiError, "ESS returned HTTP #{response.code} for #{uri.path} at #{@base_url}."
+          raise ApiError, "ESS returned HTTP #{response.code}"
         when 500..599
           Rails.logger.error "ESS API server error (#{response.code}): #{response.body}"
-          raise ApiError,
-                "ESS returned a server error (HTTP #{response.code}) at #{@base_url}. " \
-                'ESS may be down or restarting.'
+          raise ApiError, "ESS server error (HTTP #{response.code})"
         else
           Rails.logger.error "ESS API unexpected response (#{response.code}): #{response.body}"
-          raise ApiError, "ESS returned an unexpected HTTP #{response.code} at #{@base_url}."
+          raise ApiError, "ESS returned an unexpected HTTP #{response.code}"
         end
       end
 
@@ -123,18 +117,14 @@ module NysenateAuditUtils
         Rails.logger.error(
           "ESS API returned a non-JSON 404 for #{uri}: #{response.body.to_s.first(200)}"
         )
-        raise UnexpectedResponseError,
-              "No ESS API responded at #{@base_url} (HTTP 404 with a non-JSON body for " \
-              "#{uri.path}). ESS may not be deployed there. #{CONFIG_HINT}"
+        raise UnexpectedResponseError, 'ESS connection error (unexpected response)'
       end
 
       def parse_json!(response, uri)
         JSON.parse(response.body)
       rescue JSON::ParserError => e
         Rails.logger.error "ESS API invalid JSON response from #{uri}: #{e.message}"
-        raise UnexpectedResponseError,
-              "#{@base_url} returned a non-JSON response for #{uri.path}; it does not " \
-              "look like the ESS API. #{CONFIG_HINT}"
+        raise UnexpectedResponseError, 'ESS connection error (unexpected response)'
       end
 
       # Parsed response body when it is a JSON object, else nil.
@@ -150,24 +140,22 @@ module NysenateAuditUtils
       def handle_error(error)
         case error
         when Net::OpenTimeout, Net::ReadTimeout
-          Rails.logger.error "ESS API timeout: #{error.message}"
-          raise NetworkError, "ESS did not respond within #{@timeout} seconds at #{@base_url}."
+          Rails.logger.error "ESS API timeout for #{@base_url}: #{error.message}"
+          raise NetworkError, 'ESS connection error (timed out)'
         when Errno::ECONNREFUSED
-          Rails.logger.error "ESS API connection refused: #{error.message}"
-          raise NetworkError,
-                "Connection refused by #{@base_url}; ESS does not appear to be running " \
-                "there. #{CONFIG_HINT}"
+          Rails.logger.error "ESS API connection refused by #{@base_url}: #{error.message}"
+          raise NetworkError, 'ESS connection error (connection refused)'
         when SocketError
-          Rails.logger.error "ESS API connection error: #{error.message}"
-          raise NetworkError, "Cannot reach ESS at #{@base_url} (#{error.message}). #{CONFIG_HINT}"
+          Rails.logger.error "ESS API cannot reach #{@base_url}: #{error.message}"
+          raise NetworkError, 'ESS connection error (host unreachable)'
         when Errno::EHOSTUNREACH, Errno::ENETUNREACH, Errno::ECONNRESET, Errno::EPIPE
-          Rails.logger.error "ESS API network error: #{error.message}"
-          raise NetworkError, "Network error contacting ESS at #{@base_url}: #{error.message}"
+          Rails.logger.error "ESS API network error for #{@base_url}: #{error.message}"
+          raise NetworkError, 'ESS connection error'
         when ApiError
           raise error
         else
-          Rails.logger.error "ESS API unexpected error: #{error.class}: #{error.message}"
-          raise ApiError, "Unexpected error contacting ESS at #{@base_url}: #{error.message}"
+          Rails.logger.error "ESS API unexpected error for #{@base_url}: #{error.class}: #{error.message}"
+          raise ApiError, 'ESS connection error'
         end
       end
     end

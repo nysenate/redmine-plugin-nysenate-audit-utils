@@ -52,7 +52,7 @@ module NysenateAuditUtils
           @to_date
         )
       rescue NysenateAuditUtils::Ess::EssApiClient::ApiError => e
-        @errors << "Could not load status changes from ESS: #{e.message}"
+        @errors << e.message
         Rails.logger.error("ESS API error: #{e.class}: #{e.message}")
         raise
       rescue StandardError => e

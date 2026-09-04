@@ -109,8 +109,7 @@ class EssApiClientTest < ActiveSupport::TestCase
     error = assert_raises NysenateAuditUtils::Ess::EssApiClient::UnexpectedResponseError do
       @client.get('/redmine/employee/999999')
     end
-    assert_includes error.message, 'https://api.test.com'
-    assert_includes error.message, 'ESS may not be deployed there'
+    assert_equal 'ESS connection error (unexpected response)', error.message
   end
 
   def test_empty_body_not_found_raises_unexpected_response
@@ -130,7 +129,7 @@ class EssApiClientTest < ActiveSupport::TestCase
     error = assert_raises NysenateAuditUtils::Ess::EssApiClient::UnexpectedResponseError do
       @client.get('/redmine/employee/search')
     end
-    assert_includes error.message, 'does not look like the ESS API'
+    assert_equal 'ESS connection error (unexpected response)', error.message
   end
 
   def test_connection_refused_names_ess_and_base_url
@@ -140,8 +139,7 @@ class EssApiClientTest < ActiveSupport::TestCase
     error = assert_raises NysenateAuditUtils::Ess::EssApiClient::NetworkError do
       @client.get('/redmine/employee/search')
     end
-    assert_includes error.message, 'https://api.test.com'
-    assert_includes error.message, 'does not appear to be running'
+    assert_equal 'ESS connection error (connection refused)', error.message
   end
 
   def test_unknown_host_names_ess_and_base_url
@@ -151,7 +149,7 @@ class EssApiClientTest < ActiveSupport::TestCase
     error = assert_raises NysenateAuditUtils::Ess::EssApiClient::NetworkError do
       @client.get('/redmine/employee/search')
     end
-    assert_includes error.message, 'Cannot reach ESS at https://api.test.com'
+    assert_equal 'ESS connection error (host unreachable)', error.message
   end
 
   def test_timeout_names_ess_and_base_url
@@ -161,7 +159,7 @@ class EssApiClientTest < ActiveSupport::TestCase
     error = assert_raises NysenateAuditUtils::Ess::EssApiClient::NetworkError do
       @client.get('/redmine/employee/search')
     end
-    assert_includes error.message, 'ESS did not respond'
+    assert_equal 'ESS connection error (timed out)', error.message
   end
 
   def test_server_error_message_names_ess
@@ -171,7 +169,7 @@ class EssApiClientTest < ActiveSupport::TestCase
     error = assert_raises NysenateAuditUtils::Ess::EssApiClient::ApiError do
       @client.get('/redmine/employee/search')
     end
-    assert_includes error.message, 'ESS returned a server error (HTTP 503)'
+    assert_equal 'ESS server error (HTTP 503)', error.message
   end
 
   private

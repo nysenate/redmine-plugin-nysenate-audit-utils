@@ -103,8 +103,7 @@ module NysenateAuditUtils
             # unmatched blames the tickets for an infrastructure failure. Abort
             # so the caller reports the ESS error instead of a misleading audit.
             return Result.new(changes: [], unmatched: [], summary: {},
-                              errors: ["ESS is unavailable, so the audit cannot verify " \
-                                       "Employee records: #{e.message}"])
+                              errors: ["Audit stopped: #{e.message}"])
           rescue StandardError => e
             unmatched.concat(pair_unmatched(user_type, user_id, issue_ids, 'data_source_error',
                                             "#{e.class}: #{e.message}"))

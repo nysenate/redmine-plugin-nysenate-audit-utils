@@ -210,7 +210,7 @@ class UserSearchControllerTest < ActionController::TestCase
     @request.session[:user_id] = @admin.id
     @mock_service.stubs(:search).raises(
       NysenateAuditUtils::Ess::EssApiClient::NetworkError.new(
-        'Connection refused by http://ess.example/; ESS does not appear to be running there.'
+        'ESS connection error (connection refused)'
       )
     )
 
@@ -218,8 +218,7 @@ class UserSearchControllerTest < ActionController::TestCase
 
     assert_response :service_unavailable
     response_data = JSON.parse(@response.body)
-    assert_match(/Employee search is unavailable/, response_data['error'])
-    assert_match(/Connection refused/, response_data['error'])
+    assert_equal 'ESS connection error (connection refused)', response_data['error']
     assert_equal [], response_data['users']
   end
 

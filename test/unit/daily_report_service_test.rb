@@ -55,16 +55,14 @@ class DailyReportServiceTest < ActiveSupport::TestCase
     NysenateAuditUtils::Ess::EssStatusChangeService
       .stubs(:changes_for_date_range)
       .raises(NysenateAuditUtils::Ess::EssApiClient::NetworkError,
-              'Connection refused by http://ess.example/; ESS does not appear to be running there.')
+              'ESS connection error (connection refused)')
 
     result = @service.generate
 
     assert_nil result
     assert_not @service.success?
     # One specific message, not a generic "Report generation failed" burying it.
-    assert_equal 1, @service.errors.size
-    assert_match(/Could not load status changes from ESS/, @service.errors.first)
-    assert_match(/Connection refused/, @service.errors.first)
+    assert_equal ['ESS connection error (connection refused)'], @service.errors
   end
 
   test 'generate builds report data with single status change' do
