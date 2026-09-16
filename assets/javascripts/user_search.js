@@ -488,26 +488,80 @@ function initializeUserSearch() {
   // `terms` is the per-result matchedTerms array from the ESS search (normalized,
   // uppercased tokens). When it is empty (e.g. Vendor/Volunteer results from the
   // local DB, or the non-search endpoints), fall back to the raw query string so
-  // highlighting still works. Matching is case-insensitive.
+  // highlighting still works.
+  //
+  // ESS normalizes terms by upper-casing and *removing* everything other than
+  // A-Z, 0-9 and space, so "O'Brien" arrives as "OBRIEN". Matching is therefore
+  // done against a copy of `text` normalized the same way, with a map from each
+  // kept character back to its original index; the highlighted span runs from
+  // the first to the last matched original character, punctuation included.
   function highlightTerms(text, terms, fallbackQuery) {
     if (!text) {
       return escapeHtml(text);
     }
 
-    const tokens = (terms && terms.length)
-      ? terms
-      : (fallbackQuery ? [fallbackQuery] : []);
-    const pattern = tokens.map(escapeRegex).filter(Boolean).join('|');
-    if (!pattern) {
+    const tokens = ((terms && terms.length) ? terms : [fallbackQuery])
+      .map(normalizeForMatch)
+      .filter(token => token.trim());
+    if (!tokens.length) {
       return escapeHtml(text);
     }
 
-    const regex = new RegExp(`(${pattern})`, 'gi');
-    return escapeHtml(text).replace(regex, '<mark class="search-highlight">$1</mark>');
+    const { normalized, indexMap } = normalizeWithIndexMap(text);
+    const ranges = [];
+    tokens.forEach(token => {
+      let pos = normalized.indexOf(token);
+      while (pos !== -1) {
+        ranges.push([indexMap[pos], indexMap[pos + token.length - 1] + 1]);
+        pos = normalized.indexOf(token, pos + token.length);
+      }
+    });
+    if (!ranges.length) {
+      return escapeHtml(text);
+    }
+
+    // Merge overlapping/adjacent ranges, then build escaped output.
+    ranges.sort((a, b) => a[0] - b[0]);
+    const merged = [ranges[0]];
+    ranges.slice(1).forEach(([start, end]) => {
+      const last = merged[merged.length - 1];
+      if (start <= last[1]) {
+        last[1] = Math.max(last[1], end);
+      } else {
+        merged.push([start, end]);
+      }
+    });
+
+    let html = '';
+    let cursor = 0;
+    merged.forEach(([start, end]) => {
+      html += escapeHtml(text.slice(cursor, start));
+      html += `<mark class="search-highlight">${escapeHtml(text.slice(start, end))}</mark>`;
+      cursor = end;
+    });
+    return html + escapeHtml(text.slice(cursor));
   }
 
-  function escapeRegex(str) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Mirror of the ESS search normalization.
+  function normalizeForMatch(str) {
+    return String(str || '').toUpperCase().replace(/[^A-Z0-9 ]/g, '');
+  }
+
+  function normalizeWithIndexMap(text) {
+    const str = String(text);
+    let normalized = '';
+    const indexMap = [];
+    // Upper-case per character: toUpperCase can lengthen a string ("ß" -> "SS"),
+    // which would otherwise misalign the map.
+    for (let i = 0; i < str.length; i++) {
+      for (const ch of str[i].toUpperCase()) {
+        if (/[A-Z0-9 ]/.test(ch)) {
+          normalized += ch;
+          indexMap.push(i);
+        }
+      }
+    }
+    return { normalized, indexMap };
   }
 }
 

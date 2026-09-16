@@ -122,7 +122,55 @@ class AutofillWidgetTest < AuditUtilsSystemTestCase
     assert_no_selector '#user-search-widget'
   end
 
+  # --------------------------------------------------------------------------
+  # 4. Highlighting ignores punctuation. ESS returns matchedTerms with
+  #    punctuation stripped (e.g. "OBRIEN"), which must still highlight the
+  #    punctuated span of the displayed name/uid (issue #19058).
+  # --------------------------------------------------------------------------
+  def test_matched_terms_highlight_punctuated_names
+    project, tracker, _fields = setup_audit_utils_project
+    stub_ess_search_results(
+      { 'lastName' => 'Stewart-Cousins', 'firstName' => 'Andrea', 'uid' => 'a.cousins',
+        'matchedTerms' => %w[STEWARTCOUSINS ACOUSINS] },
+      { 'lastName' => "O'Brien", 'firstName' => 'Pat', 'uid' => 'pobrien',
+        'matchedTerms' => %w[OBRIEN] },
+      { 'lastName' => 'Smith', 'firstName' => 'John', 'suffix' => 'Jr.', 'uid' => 'jsmith',
+        'matchedTerms' => %w[SMITH JR] },
+      { 'lastName' => 'Doe', 'firstName' => 'Jane', 'uid' => 'jdoe',
+        'matchedTerms' => %w[JANE DOE] }
+    )
+    log_in_as_admin
+
+    visit new_issue_path_for(project, tracker)
+    fill_in 'user-search-input', with: 'anything'
+
+    within '#user-results-list' do
+      assert_selector 'mark.search-highlight', exact_text: 'Stewart-Cousins'
+      assert_selector 'mark.search-highlight', exact_text: 'a.cousins'
+      assert_selector 'mark.search-highlight', exact_text: "O'Brien"
+      assert_selector 'mark.search-highlight', exact_text: 'Smith'
+      assert_selector 'mark.search-highlight', exact_text: 'Jr'
+      # Unpunctuated names highlight exactly as before.
+      assert_selector 'mark.search-highlight', exact_text: 'Doe'
+      assert_selector 'mark.search-highlight', exact_text: 'Jane'
+      assert_no_selector 'mark.search-highlight', text: 'Pat'
+    end
+  end
+
   private
+
+  # Stub ESS search with the first fixture record, overridden per entry.
+  def stub_ess_search_results(*overrides)
+    fixture = JSON.parse(File.read(File.join(FIXTURES_PATH, 'employee_search_response.json')))
+    base = fixture['result'].first
+    fixture['result'] = overrides.each_with_index.map do |attrs, i|
+      base.merge('employeeId' => 900_901 + i, 'fullName' => nil, 'initial' => '', 'suffix' => '')
+          .merge(attrs)
+    end
+    fixture['total'] = fixture['result'].size
+    stub_request(:get, %r{\A#{Regexp.escape(ESS_BASE_URL)}api/v1/redmine/employee/search}o)
+      .to_return(status: 200, headers: { 'Content-Type' => 'application/json' }, body: fixture.to_json)
+  end
 
   # Seed synthetic Vendor/Volunteer rows for the local (tracked_users) search
   # path. Done inline rather than via the tracked_users.yml fixture because that
