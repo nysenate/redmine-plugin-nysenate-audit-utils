@@ -44,7 +44,7 @@ Redmine::Plugin.register :nysenate_audit_utils do
   url 'https://github.com/nysenate/redmine-plugin-nysenate-audit-utils'
   author_url 'https://github.com/nysenate'
 
-  requires_redmine version_or_higher: '5.0.0'
+  requires_redmine version_or_higher: '7.0.0'
 
   # Consolidated project module for all audit utils functionality
   project_module :audit_utils do
