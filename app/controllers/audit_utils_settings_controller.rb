@@ -4,6 +4,10 @@
 # Provides autoconfiguration functionality for custom field mappings
 class AuditUtilsSettingsController < ApplicationController
   before_action :require_admin
+  # These actions write plugin settings, so they need the same password
+  # re-entry (sudo mode) as core's plugin settings page.
+  require_sudo_mode :autoconfigure_all, :autoconfigure_field,
+                    :delete_dangling_mapping, :delete_all_dangling_mappings
 
   # Autoconfigure all custom fields by finding them by name
   # POST /nysenate_audit_utils_settings/autoconfigure_all
@@ -78,17 +82,21 @@ class AuditUtilsSettingsController < ApplicationController
   # Test the ESS API connection by performing a search expected to return no results.
   # Verifies that base URL, API key, and network connectivity all work.
   # Uses base_url/api_key from params when provided (to test unsaved form values),
-  # otherwise falls back to saved settings.
+  # otherwise falls back to saved settings. Nothing is saved.
+  #
+  # The saved API key is only used for the saved base URL, so this endpoint
+  # can't be used to send the stored key to another host.
   # POST /audit_utils_settings/test_ess_connection
   def test_ess_connection
-    base_url = params[:ess_base_url].presence || NysenateAuditUtils::Ess::EssConfiguration.base_url
-    api_key = params[:ess_api_key].presence || NysenateAuditUtils::Ess::EssConfiguration.api_key
+    saved_url = NysenateAuditUtils::Ess::EssConfiguration.base_url
+    base_url = params[:ess_base_url].presence || saved_url
+    api_key = params[:ess_api_key].presence
+    api_key ||= NysenateAuditUtils::Ess::EssConfiguration.api_key if base_url == saved_url
 
-    # Persist the submitted values so the test reflects what will be saved.
-    settings = Setting.plugin_nysenate_audit_utils || {}
-    settings['ess_base_url'] = base_url
-    settings['ess_api_key'] = api_key
-    Setting.plugin_nysenate_audit_utils = settings
+    if base_url.blank? || api_key.blank?
+      render json: { success: false, message: 'ESS Base URL and API Key are required' }
+      return
+    end
 
     test_term = 'fdsafsda'
     client = NysenateAuditUtils::Ess::EssApiClient.new(base_url, api_key)

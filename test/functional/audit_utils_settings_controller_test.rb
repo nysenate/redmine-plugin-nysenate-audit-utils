@@ -189,4 +189,86 @@ class AuditUtilsSettingsControllerTest < ActionController::TestCase
 
     assert_response :forbidden
   end
+
+  test 'should require sudo mode for settings-changing actions' do
+    Redmine::SudoMode.stubs(:enabled?).returns(true)
+    Setting.plugin_nysenate_audit_utils = {
+      'request_code_system_prefixes' => { 'Old System' => 'OLD' }
+    }
+
+    delete :delete_dangling_mapping, params: { type: 'system', value: 'Old System' }
+
+    assert_response :success
+    assert_select 'form#sudo-form'
+    assert_equal({ 'Old System' => 'OLD' },
+                 Setting.plugin_nysenate_audit_utils['request_code_system_prefixes'])
+
+    post :autoconfigure_all
+    assert_response :success
+    assert_select 'form#sudo-form'
+  end
+
+  test 'should run settings-changing action once sudo password is given' do
+    Redmine::SudoMode.stubs(:enabled?).returns(true)
+    Setting.plugin_nysenate_audit_utils = {
+      'request_code_system_prefixes' => { 'Old System' => 'OLD' }
+    }
+
+    delete :delete_dangling_mapping,
+           params: { type: 'system', value: 'Old System', sudo_password: 'admin' }
+
+    assert_redirected_to plugin_settings_path('nysenate_audit_utils')
+    assert_equal({}, Setting.plugin_nysenate_audit_utils['request_code_system_prefixes'])
+  end
+
+  test 'test_ess_connection should not save the submitted values' do
+    Setting.plugin_nysenate_audit_utils = {
+      'ess_base_url' => 'https://ess.example.com',
+      'ess_api_key' => 'saved-key'
+    }
+    stub_request(:get, %r{\Ahttps://other\.example\.com/api/v1/redmine/employee/search})
+      .with(headers: { 'X-API-Key' => 'new-key' })
+      .to_return(status: 200, body: { result: [] }.to_json,
+                 headers: { 'Content-Type' => 'application/json' })
+
+    post :test_ess_connection,
+         params: { ess_base_url: 'https://other.example.com', ess_api_key: 'new-key' }
+
+
+    assert_response :success
+    assert_equal true, response.parsed_body['success']
+    assert_equal 'https://ess.example.com', Setting.plugin_nysenate_audit_utils['ess_base_url']
+    assert_equal 'saved-key', Setting.plugin_nysenate_audit_utils['ess_api_key']
+  end
+
+  test 'test_ess_connection should use the saved key for the saved url' do
+    Setting.plugin_nysenate_audit_utils = {
+      'ess_base_url' => 'https://ess.example.com',
+      'ess_api_key' => 'saved-key'
+    }
+    stub_request(:get, %r{\Ahttps://ess\.example\.com/api/v1/redmine/employee/search})
+      .with(headers: { 'X-API-Key' => 'saved-key' })
+      .to_return(status: 200, body: { result: [] }.to_json,
+                 headers: { 'Content-Type' => 'application/json' })
+
+    post :test_ess_connection
+
+    assert_response :success
+    assert_equal true, response.parsed_body['success']
+  end
+
+  test 'test_ess_connection should not send the saved key to another url' do
+    Setting.plugin_nysenate_audit_utils = {
+      'ess_base_url' => 'https://ess.example.com',
+      'ess_api_key' => 'saved-key'
+    }
+
+    post :test_ess_connection,
+         params: { ess_base_url: 'https://attacker.example.com' }
+
+
+    assert_response :success
+    assert_equal false, response.parsed_body['success']
+    assert_not_requested :get, %r{attacker\.example\.com}
+  end
 end
