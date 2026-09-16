@@ -7,7 +7,7 @@ class IssueContextMenuHook < Redmine::Hook::ViewListener
     user = User.current
     issues = context[:issues]
 
-    return '' unless issues.all? { |issue| user.allowed_to?(:view_issues, issue.project) }
+    return '' unless issues.all? { |issue| issue.attachments_visible?(user) }
 
     if issues.size == 1
       # Single issue selected - show single packet option

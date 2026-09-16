@@ -87,4 +87,14 @@ class IssueContextMenuHookTest < ActiveSupport::TestCase
 
     assert_equal '', result
   end
+
+  def test_view_issues_context_menu_end_hidden_when_an_issue_is_private
+    # User 3 has view_issues on project 1 but can't see a private issue they
+    # neither authored nor are assigned to.
+    @issue2.update_columns(is_private: true, author_id: 1, assigned_to_id: nil)
+    User.current = User.find(3)
+
+    assert_not_equal '', @hook.view_issues_context_menu_end(issues: [@issue1])
+    assert_equal '', @hook.view_issues_context_menu_end(issues: [@issue1, @issue2.reload])
+  end
 end

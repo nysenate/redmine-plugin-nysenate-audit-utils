@@ -61,8 +61,18 @@ class PacketCreationControllerTest < Redmine::ControllerTest
     @request.session[:user_id] = user_without_access.id
 
     post :create, params: { id: @issue.id }
-    # Should return 404 since user cannot view the issue
-    assert_response :not_found
+    # Core find_issue denies access when the user cannot view the issue
+    assert_response :forbidden
+  end
+
+  def test_create_packet_denied_for_private_issue
+    # User 3 has view_issues on the project but can't see a private issue
+    # they neither authored nor are assigned to.
+    @issue.update_columns(is_private: true, author_id: 1, assigned_to_id: nil)
+    @request.session[:user_id] = 3
+
+    post :create, params: { id: @issue.id }
+    assert_response :forbidden
   end
 
   def test_create_packet_nonexistent_issue

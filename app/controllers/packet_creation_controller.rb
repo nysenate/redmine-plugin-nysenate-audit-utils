@@ -12,8 +12,11 @@ class PacketCreationController < ApplicationController
   include ActionView::Helpers::OutputSafetyHelper
   include Rails.application.routes.url_helpers
 
+  # Core find_issue/find_issues deny access unless every issue is visible to
+  # the current user (private issues, "own issues only" roles, etc.).
   before_action :find_issue, except: [:create_multi_packet]
   before_action :authorize_packet_creation, except: [:create_multi_packet]
+  before_action :require_issue_ids, only: [:create_multi_packet]
   before_action :find_issues, only: [:create_multi_packet]
   before_action :authorize_multi_packet_creation, only: [:create_multi_packet]
 
@@ -71,51 +74,30 @@ class PacketCreationController < ApplicationController
     Rails.logger.error e.backtrace.join("\n")
 
     flash[:error] = l(:error_multi_packet_creation_failed)
-    redirect_back(fallback_location: home_path)
+    redirect_back_or_to(home_path)
   end
 
   private
 
-  def find_issue
-    @issue = Issue.find(params[:id])
-    @project = @issue.project
-  rescue ActiveRecord::RecordNotFound
-    render_404
-  end
+  def require_issue_ids
+    return if params[:ids].present?
 
-  def find_issues
-    issue_ids = params[:ids]
-    if issue_ids.blank?
-      flash[:error] = l(:error_no_issues_selected)
-      redirect_back(fallback_location: home_path)
-      return
-    end
-
-    @issues = Issue.where(id: issue_ids)
-    if @issues.empty?
-      render_404
-      return
-    end
-  rescue ActiveRecord::RecordNotFound
-    render_404
+    flash[:error] = l(:error_no_issues_selected)
+    redirect_back_or_to(home_path)
   end
 
   def authorize_packet_creation
-    unless @issue.visible?(User.current)
-      render_404
-      return
-    end
-    unless @issue.attachments_visible?(User.current)
-      flash[:error] = l(:notice_not_authorized)
-      redirect_to issue_path(@issue)
-      return
-    end
+    return if @issue.attachments_visible?(User.current)
+
+    flash[:error] = l(:notice_not_authorized)
+    redirect_to issue_path(@issue)
   end
 
   def authorize_multi_packet_creation
-    return if @issues.all? { |issue| User.current.allowed_to?(:view_issues, issue.project) }
+    return if @issues.all? { |issue| issue.attachments_visible?(User.current) }
 
-    render_404
+    flash[:error] = l(:notice_not_authorized)
+    redirect_back_or_to(home_path)
   end
 
   # Provide the h method alias for HTML escaping (used by view helpers)
