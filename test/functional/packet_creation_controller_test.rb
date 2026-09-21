@@ -21,26 +21,14 @@ class PacketCreationControllerTest < Redmine::ControllerTest
 
     post :create, params: { id: @issue.id }
 
-    # Check if there was an error and the response was redirected
-    if @response.redirect?
-      # Check if there's a flash error
-      assert_not_nil flash[:error], "Expected error message in flash"
+    assert_response :success
+    assert_equal 'application/zip', @response.media_type
+    assert_equal "attachment", @response.headers['Content-Disposition'].split(';').first
+    assert_match /packet_1\.zip/, @response.headers['Content-Disposition']
 
-      # For now, let's just verify the redirect happened
-      assert_redirected_to issue_path(@issue)
-
-      # TODO: Fix PDF generation context issue in controller
-      skip "PDF generation context issue - needs controller context setup"
-    else
-      assert_response :success
-      assert_equal 'application/zip', @response.media_type
-      assert_equal "attachment", @response.headers['Content-Disposition'].split(';').first
-      assert_match /packet_1\.zip/, @response.headers['Content-Disposition']
-
-      # Verify the response contains actual zip data
-      assert !@response.body.empty?
-      assert @response.body.start_with?("PK") # ZIP file magic number
-    end
+    # Verify the response contains actual zip data
+    assert !@response.body.empty?
+    assert @response.body.start_with?("PK") # ZIP file magic number
   end
 
   def test_create_packet_without_project_access
