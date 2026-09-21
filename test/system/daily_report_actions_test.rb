@@ -191,6 +191,96 @@ class DailyReportActionsTest < AuditUtilsSystemTestCase
     end
   end
 
+  # 9. Keyboard selection: type to filter, arrow to an option, Enter opens it ---
+  def test_template_dropdown_keyboard_selection
+    setup_templates_project(
+      { subject: 'USRA: <TEMPLATE> Grant SFMS account for <Account Holder Name>' },
+      { subject: 'SFSA: <TEMPLATE> Grant SFS account for <Account Holder Name>' },
+      { subject: 'SFSS: <TEMPLATE> Reset SFS password for <Account Holder Name>' }
+    )
+
+    visit daily_project_audit_reports_path(@project)
+    row = find('tr', text: 'Doodlewick, Ulric F.')
+    row.find('.drdn-trigger').click
+
+    input = row.find_field('Filter templates...')
+    input.send_keys('grant')
+    # Typing highlights the first match (options are sorted, so SFSA:); the
+    # non-match is hidden.
+    within(row) do
+      assert_selector 'a.template-option.active', text: 'SFSA:'
+      assert_no_link 'SFSS:'
+    end
+
+    # ArrowDown moves the highlight to the next *visible* option, keeping focus
+    # in the filter box.
+    input.send_keys(:down)
+    within(row) { assert_selector 'a.template-option.active', text: 'USRA:' }
+    assert_equal 1, row.all('a.template-option.active').size
+    assert_equal input, page.active_element
+
+    new_window = window_opened_by { input.send_keys(:enter) }
+    within_window(new_window) do
+      assert_equal 'Grant SFMS account for Doodlewick, Ulric F.', find('#issue_subject').value
+    end
+    # The menu closes once an option is opened.
+    assert_no_selector '.drdn.account-request-templates.expanded'
+  end
+
+  # 10. Reopening the dropdown starts scrolled to the top ----------------------
+  def test_template_dropdown_reopens_scrolled_to_top
+    # Enough options to overflow the list's max height.
+    setup_templates_project(*(1..20).map do |i|
+      { subject: format('T%02d: <TEMPLATE> Template number %d for <Account Holder Name>', i, i) }
+    end)
+
+    visit daily_project_audit_reports_path(@project)
+    row = find('tr', text: 'Doodlewick, Ulric F.')
+    trigger = row.find('.drdn-trigger')
+    scroll_top = "document.querySelector('.drdn.account-request-templates.expanded .drdn-items').scrollTop"
+
+    trigger.click
+    execute_script("#{scroll_top} = 10000")
+    assert_operator evaluate_script(scroll_top), :>, 0
+
+    trigger.click # close
+    assert_no_selector '.drdn.account-request-templates.expanded'
+    trigger.click # reopen
+    assert_selector '.drdn.account-request-templates.expanded'
+    assert_equal 0, evaluate_script(scroll_top)
+  end
+
+  # 11. Hovering an option clipped at the list's edge highlights it without
+  #     scrolling (scrolling would slide the next option under the pointer).
+  def test_template_dropdown_hover_does_not_scroll
+    setup_templates_project(*(1..20).map do |i|
+      { subject: format('T%02d: <TEMPLATE> Template number %d for <Account Holder Name>', i, i) }
+    end)
+
+    visit daily_project_audit_reports_path(@project)
+    row = find('tr', text: 'Doodlewick, Ulric F.')
+    row.find('.drdn-trigger').click
+    assert_selector '.drdn.account-request-templates.expanded'
+
+    # Dispatch the mousemove directly: driver hover helpers scroll the target
+    # into view first, which would mask the bug.
+    hovered = evaluate_script(<<~JS)
+      (function () {
+        var items = document.querySelector('.drdn.account-request-templates.expanded .drdn-items');
+        var bottom = items.getBoundingClientRect().bottom;
+        var clipped = Array.prototype.find.call(items.children, function (a) {
+          var r = a.getBoundingClientRect();
+          return r.top < bottom && r.bottom > bottom;
+        });
+        clipped.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+        return { text: clipped.textContent, scrollTop: items.scrollTop };
+      })()
+    JS
+
+    assert_selector 'a.template-option.active', text: hovered['text']
+    assert_equal 0, hovered['scrollTop']
+  end
+
   private
 
   # Create a dedicated templates project holding one issue per passed spec, and

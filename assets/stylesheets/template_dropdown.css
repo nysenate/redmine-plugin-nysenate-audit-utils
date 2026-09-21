@@ -13,13 +13,36 @@
   top: 0;
   left: 0;
   inset-inline-end: auto;
-  width: 320px;
+  width: 440px;
+  max-width: calc(100vw - 8px);
   z-index: 1000;
 }
 
-/* Each option shows "LABEL subject template" on one line, truncated on the right
-   (core supplies nowrap + ellipsis); the full text is available via the title
-   tooltip on hover. */
+/* Each option shows "LABEL subject template". Template subjects are long, so
+   options wrap (with a hanging indent) instead of core's nowrap + ellipsis; the
+   full text is always visible and no hover tooltip is needed. */
+.drdn.account-request-templates .drdn-items > a.template-option {
+  white-space: normal;
+  padding-inline-start: 20px;
+  text-indent: -12px;
+  line-height: 1.35;
+  /* A light divider between options, since wrapped multi-line options are hard
+     to tell apart otherwise. */
+  border-block-end-color: var(--oc-gray-3);
+}
+
+.drdn.account-request-templates .drdn-items > a.template-option:last-child {
+  border-block-end-color: transparent;
+}
+
 .drdn.account-request-templates .drdn-items > a.no-template {
   font-style: italic;
+}
+
+/* The highlighted option: set by template_dropdown.js from both mouse hover and
+   arrow-key navigation, so there is only ever one highlight. */
+.drdn.account-request-templates .drdn-items > a.template-option.active {
+  color: var(--oc-blue-9);
+  border-color: var(--oc-blue-7);
+  background-color: var(--oc-blue-0);
 }

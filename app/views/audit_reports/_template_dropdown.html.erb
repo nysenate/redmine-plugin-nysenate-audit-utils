@@ -23,7 +23,7 @@
         <%= link_to t[:display],
               new_project_account_request_path(@project, employee_id: row[:user_id],
                 template_id: t[:id], mode: mode, from_date: from_date.iso8601, to_date: to_date.iso8601),
-              class: 'template-option', title: t[:display], target: '_blank' %>
+              class: 'template-option', target: '_blank' %>
       <% end %>
     </div>
   </div>
