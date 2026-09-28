@@ -264,8 +264,14 @@ class DailyReportActionsTest < AuditUtilsSystemTestCase
 
     # Dispatch the mousemove directly: driver hover helpers scroll the target
     # into view first, which would mask the bug.
-    hovered = evaluate_script(<<~JS)
-      (function () {
+    #
+    # The open-click handler resets scroll/active in a requestAnimationFrame
+    # callback (so it runs after the menu's size is known). That callback may
+    # not have fired yet by the time this synchronous script runs, racing our
+    # synthetic hover against its reset — so wait a frame first to run after it.
+    hovered = evaluate_async_script(<<~JS)
+      var callback = arguments[arguments.length - 1];
+      requestAnimationFrame(function () {
         var items = document.querySelector('.drdn.account-request-templates.expanded .drdn-items');
         var bottom = items.getBoundingClientRect().bottom;
         var clipped = Array.prototype.find.call(items.children, function (a) {
@@ -273,8 +279,8 @@ class DailyReportActionsTest < AuditUtilsSystemTestCase
           return r.top < bottom && r.bottom > bottom;
         });
         clipped.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
-        return { text: clipped.textContent, scrollTop: items.scrollTop };
-      })()
+        callback({ text: clipped.textContent, scrollTop: items.scrollTop });
+      });
     JS
 
     assert_selector 'a.template-option.active', text: hovered['text']
