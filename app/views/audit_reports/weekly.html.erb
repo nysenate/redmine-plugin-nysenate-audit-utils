@@ -100,7 +100,6 @@
         <%= sort_header_tag('user_uid', caption: 'Account Holder Username', class: 'holder-col') %>
         <%= sort_header_tag('office', caption: 'Account Holder Office', class: 'holder-col') %>
         <%= sort_header_tag('user_type', caption: 'Account Holder Type', class: 'holder-col') %>
-        <%= sort_header_tag('user_id', caption: 'Account Holder ID', class: 'holder-col') %>
       </tr>
     </thead>
     <tbody>
@@ -119,7 +118,6 @@
           <td><%= row[:user_uid] || '—' %></td>
           <td><%= row[:office] || '—' %></td>
           <td><%= row[:user_type] || '—' %></td>
-          <td><%= row[:user_id] || '—' %></td>
         </tr>
       <% end %>
     </tbody>

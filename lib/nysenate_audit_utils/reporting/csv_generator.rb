@@ -154,8 +154,7 @@ module NysenateAuditUtils
             'Account Holder Name',
             'Account Holder Username',
             'Account Holder Office',
-            'Account Holder Type',
-            'Account Holder ID'
+            'Account Holder Type'
           ]
 
           # Data rows
@@ -171,8 +170,7 @@ module NysenateAuditUtils
               row[:user_name],
               row[:user_uid],
               row[:office],
-              row[:user_type],
-              row[:user_id]
+              row[:user_type]
             ]
           end
         end
@@ -255,7 +253,6 @@ module NysenateAuditUtils
           # Header row (matches web view layout with user_type and request_code added)
           header = [
             'Account Holder Name',
-            'Account Holder ID',
             'Account Holder Type',
             'Account Holder Username',
             'Account Holder Office',
@@ -272,7 +269,6 @@ module NysenateAuditUtils
           data.each do |row|
             values = [
               row[:user_name],
-              row[:user_id],
               row[:user_type],
               row[:user_uid],
               row[:user_office],

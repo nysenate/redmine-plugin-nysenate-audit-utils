@@ -47,7 +47,6 @@ class MonthlyReportTest < AuditUtilsSystemTestCase
       # Active Oracle holder shows; the Delete holder is hidden by the default
       # 'active' status filter.
       assert_text 'Ada Testwell'
-      assert_text '900101'
       assert_no_text 'Ben Sample'
     end
   end

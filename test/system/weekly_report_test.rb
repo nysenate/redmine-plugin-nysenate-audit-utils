@@ -34,7 +34,6 @@ class WeeklyReportTest < AuditUtilsSystemTestCase
       assert_text "##{issue.id}"
       assert_text 'Zeta Fakeholder SFMS Add'   # subject
       assert_text 'Zeta Fakeholder'            # Account Holder Name
-      assert_text '900123'                     # Account Holder ID
       assert_text 'zfakeholder'                # Account Holder Username
       assert_text 'Fake Office 9'              # Account Holder Office
       assert_text 'USRA'                       # Request Code (Oracle/SFMS + Add)
@@ -59,9 +58,10 @@ class WeeklyReportTest < AuditUtilsSystemTestCase
     assert header, "Expected an 'Updated On' header row in the workbook (saw: #{rows.first(6).inspect})"
     ['Updated On', 'Open Date', 'Closed Date', 'Ticket #', 'Ticket Status', 'Subject',
      'Request Code', 'Account Holder Name', 'Account Holder Username',
-     'Account Holder Office', 'Account Holder Type', 'Account Holder ID'].each do |col|
+     'Account Holder Office', 'Account Holder Type'].each do |col|
       assert_includes header, col
     end
+    assert_not_includes header, 'Account Holder ID'
 
     # "Ticket #" is no longer the first column (the reorder put "Updated On"
     # first), so locate the row by the Ticket # column via the header index.
@@ -69,7 +69,6 @@ class WeeklyReportTest < AuditUtilsSystemTestCase
     data_row = rows.find { |r| r[ticket_col].to_s == issue.id.to_s }
     assert data_row, "Expected a data row for issue ##{issue.id}"
     assert_includes data_row, 'Zeta Fakeholder'
-    assert_includes data_row, '900123'
     assert_includes data_row, 'zfakeholder'
     assert_includes data_row, 'USRA'
     assert_includes data_row, 'Zeta Fakeholder SFMS Add'

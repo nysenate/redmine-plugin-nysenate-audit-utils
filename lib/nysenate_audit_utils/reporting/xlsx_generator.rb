@@ -120,8 +120,7 @@ module NysenateAuditUtils
               'Account Holder Name',
               'Account Holder Username',
               'Account Holder Office',
-              'Account Holder Type',
-              'Account Holder ID'
+              'Account Holder Type'
             ]
 
             rows = data.map do |row|
@@ -136,15 +135,14 @@ module NysenateAuditUtils
                 row[:user_name],
                 row[:user_uid],
                 row[:office],
-                row[:user_type],
-                row[:user_id]
+                row[:user_type]
               ]
             end
 
             write_table(sheet, styles,
               headers: headers,
               rows: rows,
-              widths: [18, 14, 14, 10, 14, 44, 14, 24, 20, 20, 16, 14]
+              widths: [18, 14, 14, 10, 14, 44, 14, 24, 20, 20, 16]
             )
           end
         end
@@ -338,7 +336,6 @@ module NysenateAuditUtils
 
         headers = [
           'Account Holder Name',
-          'Account Holder ID',
           'Account Holder Type',
           'Account Holder Username',
           'Account Holder Office',
@@ -353,7 +350,6 @@ module NysenateAuditUtils
         rows = data.map do |row|
           values = [
             row[:user_name],
-            row[:user_id],
             row[:user_type],
             row[:user_uid],
             row[:user_office],
@@ -367,7 +363,7 @@ module NysenateAuditUtils
           values
         end
 
-        widths = [24, 14, 16, 20, 20, 16, 14, 12, 20, 14]
+        widths = [24, 16, 20, 20, 16, 14, 12, 20, 14]
         widths << 28 if include_email
 
         write_table(sheet, styles,

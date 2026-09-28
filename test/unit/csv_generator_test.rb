@@ -53,7 +53,6 @@ class CsvGeneratorTest < ActiveSupport::TestCase
       csv_content = zip.read
       assert_match /Account Holder Name/, csv_content
       assert_match /Alice/, csv_content
-      assert_match /55555/, csv_content
     end
   end
 
@@ -250,12 +249,12 @@ class CsvGeneratorTest < ActiveSupport::TestCase
   def test_monthly_csv_header_includes_office_and_access_status
     csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv([MONTHLY_ROW])
     header = csv.lines.first.chomp
-    assert_equal 'Account Holder Name,Account Holder ID,Account Holder Type,' \
+    assert_equal 'Account Holder Name,Account Holder Type,' \
                  'Account Holder Username,Account Holder Office,Account Access Status,' \
                  'Last Updated,Last Issue,Last Action,Request Code', header
     # Office value lands in the right column; email is not included by default.
     row = CSV.parse(csv)[1]
-    assert_equal 'Senate Office', row[4]
+    assert_equal 'Senate Office', row[3]
     assert_not_includes header, 'Account Holder Email'
   end
 
