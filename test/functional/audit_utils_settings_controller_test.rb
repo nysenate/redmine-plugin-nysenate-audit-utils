@@ -3,7 +3,7 @@
 require_relative '../test_helper'
 
 class AuditUtilsSettingsControllerTest < ActionController::TestCase
-  fixtures :users, :roles
+  fixtures :users, :roles, :projects, :trackers, :projects_trackers, :issue_statuses
 
   def setup
     @admin = User.find(1)
@@ -206,6 +206,45 @@ class AuditUtilsSettingsControllerTest < ActionController::TestCase
     post :autoconfigure_all
     assert_response :success
     assert_select 'form#sudo-form'
+
+    post :autoconfigure_triennial_account_request
+    assert_response :success
+    assert_select 'form#sudo-form'
+  end
+
+  test 'autoconfigure_triennial_account_request adds the Account Request source row' do
+    tracker = Tracker.create!(name: 'Account Request', default_status_id: 1)
+    Project.find(1).trackers << tracker
+    action = IssueCustomField.create!(name: 'Triennial Action', field_format: 'list',
+                                      possible_values: %w[Add], is_for_all: true, trackers: [tracker])
+    system = IssueCustomField.create!(name: 'Triennial System', field_format: 'list',
+                                      possible_values: %w[AIX], is_for_all: true, trackers: [tracker])
+    Setting.plugin_nysenate_audit_utils = {
+      'account_action_field_id' => action.id.to_s, 'target_system_field_id' => system.id.to_s
+    }
+
+    post :autoconfigure_triennial_account_request
+
+    assert_redirected_to plugin_settings_path('nysenate_audit_utils')
+    assert_equal I18n.t(:notice_triennial_account_request_autoconfigured), flash[:notice]
+    assert_equal [{ 'project_id' => 1, 'tracker_id' => tracker.id, 'mapping_mode' => 'account_request_code' }],
+                 NysenateAuditUtils::TriennialAuditConfiguration.sources
+  end
+
+  test 'autoconfigure_triennial_account_request warns when the tracker is missing' do
+    post :autoconfigure_triennial_account_request
+
+    assert_redirected_to plugin_settings_path('nysenate_audit_utils')
+    assert_equal I18n.t(:warning_triennial_account_request_not_found), flash[:warning]
+    assert_empty NysenateAuditUtils::TriennialAuditConfiguration.sources
+  end
+
+  test 'should require admin for autoconfigure_triennial_account_request' do
+    @request.session[:user_id] = 2
+
+    post :autoconfigure_triennial_account_request
+
+    assert_response :forbidden
   end
 
   test 'should run settings-changing action once sudo password is given' do

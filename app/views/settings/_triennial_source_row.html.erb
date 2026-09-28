@@ -1,0 +1,78 @@
+<%
+  # Locals: index, row, projects, project_trackers, pair_info, field_values
+  project_id = row['project_id'].presence
+  tracker_id = row['tracker_id'].presence
+  mode = row['mapping_mode'].presence || 'tracker'
+  field_id = row['field_id'].presence
+  value_codes = row['value_codes'] || {}
+
+  field_name = ->(key) { "settings[triennial_audit_sources][#{index}][#{key}]" }
+  # Lookup maps hold [value, label] pairs; options_for_select wants [label, value].
+  label_first = ->(pairs) { pairs.map { |value, label| [label, value] } }
+
+  tracker_pairs = project_id ? (project_trackers[project_id.to_i] || []) : []
+  pair = pair_info["#{project_id}-#{tracker_id}"] || { 'fields' => [], 'arc' => false }
+  field_pairs = pair['fields']
+  arc_available = pair['arc']
+  values = field_id ? (field_values[field_id.to_i] || []) : []
+
+  mode_options = [
+    ['Tracker', 'tracker'],
+    ['Field', 'field'],
+    [arc_available ? 'Account Request Code' : 'Account Request Code (fields not enabled)', 'account_request_code']
+  ]
+  # A saved row keeps the option selectable so its value survives a save;
+  # the Code(s) panel then explains why it won't resolve.
+  arc_disabled = !arc_available && mode != 'account_request_code'
+%>
+<tr class="triennial-source-row" data-index="<%= index %>">
+  <td class="ts-project-col">
+    <%= select_tag field_name.('project_id'),
+          options_for_select([['-- Select Project --', '']] + projects.map { |p| [p.name, p.id] }, project_id),
+          class: 'ts-project-select', id: nil %>
+  </td>
+  <td class="ts-tracker-col">
+    <%= select_tag field_name.('tracker_id'),
+          options_for_select([['-- Select Tracker --', '']] + label_first.(tracker_pairs), tracker_id),
+          class: 'ts-tracker-select', id: nil %>
+  </td>
+  <td class="ts-mode-col">
+    <%= select_tag field_name.('mapping_mode'),
+          options_for_select(mode_options, selected: mode, disabled: arc_disabled ? ['account_request_code'] : []),
+          class: 'ts-mode-select', id: nil %>
+    <%= select_tag field_name.('field_id'),
+          options_for_select([['-- Select Field --', '']] + label_first.(field_pairs), field_id),
+          class: "ts-field-select #{'ts-hidden' unless mode == 'field'}", id: nil %>
+  </td>
+  <td class="ts-codes-col">
+    <div class="ts-panel" data-mode="tracker"<%= ' hidden' unless mode == 'tracker' %>>
+      <%= text_field_tag field_name.('code'), row['code'], size: 10, placeholder: 'Code', id: nil %>
+    </div>
+    <div class="ts-panel" data-mode="field"<%= ' hidden' unless mode == 'field' %>>
+      <div class="ts-note ts-warning ts-no-field-warning"<%= ' hidden' if field_id %>>
+        ⚠ Select a field to map its values to codes.
+      </div>
+      <div class="ts-value-codes">
+        <% values.each do |value| %>
+          <div class="ts-value-code">
+            <span class="ts-value-label"><%= value %></span>
+            <%= text_field_tag "#{field_name.('value_codes')}[#{value}]", value_codes[value],
+                  size: 8, placeholder: 'Code', id: nil %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    <div class="ts-panel" data-mode="account_request_code"<%= ' hidden' unless mode == 'account_request_code' %>>
+      <div class="ts-note ts-arc-note"<%= ' hidden' unless arc_available %>>
+        Codes come from the <strong>Account Request Code Configuration</strong> section.
+      </div>
+      <div class="ts-note ts-warning ts-arc-unavailable-warning"<%= ' hidden' if arc_available %>>
+        ⚠ The Account Action and Target System fields are not enabled for this project/tracker,
+        so its tickets will get blank codes.
+      </div>
+    </div>
+  </td>
+  <td class="ts-remove-col">
+    <button type="button" class="button-small ts-remove-row">Remove</button>
+  </td>
+</tr>

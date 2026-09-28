@@ -2,6 +2,7 @@
 
 # Load library files explicitly since Rails autoloading doesn't work well with plugin lib directories
 require_relative 'lib/nysenate_audit_utils/custom_field_configuration'
+require_relative 'lib/nysenate_audit_utils/triennial_audit_configuration'
 require_relative 'lib/nysenate_audit_utils/configuration_status_service'
 require_relative 'lib/nysenate_audit_utils/ess/ess_configuration'
 require_relative 'lib/nysenate_audit_utils/ess/ess_api_client'
@@ -95,8 +96,12 @@ Redmine::Plugin.register :nysenate_audit_utils do
     'target_system_field_id' => nil,
     'requested_by_field_id' => nil,
     'authorizing_users_field_id' => nil,
+    'selected_for_audit_field_id' => nil,
     # Default requester/authorizer auto-populated on daily-report removal tickets
     'removal_ticket_requester_user_id' => nil,
+    # Triennial Audit Report source rows (project/tracker + code mapping).
+    # See NysenateAuditUtils::TriennialAuditConfiguration.
+    'triennial_audit_sources' => [],
     # Request Code Mapping settings (stored in DB via migration 006)
     'request_code_system_prefixes' => {}, # System to prefix mappings (managed via migration)
     'request_code_action_suffixes' => {}, # Action to suffix mappings (managed via migration)

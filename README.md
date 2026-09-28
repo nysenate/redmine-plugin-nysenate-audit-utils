@@ -43,7 +43,7 @@ A comprehensive Redmine plugin providing audit utilities, user data integration,
 
 Plugin settings at **Administration → Plugins → NY Senate Audit Utils →
 Configure** are grouped into three accordions: **General Configuration**,
-**Custom Field Configuration**, and **Request Code Configuration**. Each shows a
+**Custom Field Configuration**, and **Account Request Code Configuration**. Each shows a
 ✓ / ✗ status badge summarizing whether its settings are complete.
 
 ### 1. General Configuration

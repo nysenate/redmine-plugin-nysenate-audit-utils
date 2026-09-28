@@ -28,6 +28,7 @@ Rails.application.routes.draw do
     collection do
       post :autoconfigure_all
       post :autoconfigure_field
+      post :autoconfigure_triennial_account_request
       get :configuration_status
       post :test_ess_connection
       delete :delete_dangling_mapping

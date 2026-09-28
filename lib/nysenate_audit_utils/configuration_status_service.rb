@@ -18,6 +18,7 @@ module NysenateAuditUtils
         report_data_status = self.report_data_status
         request_codes_status = self.request_codes_status
         removal_defaults_status = self.removal_defaults_status
+        triennial_audit_status = self.triennial_audit_status
 
         # Collect all errors and warnings
         all_errors = []
@@ -27,6 +28,7 @@ module NysenateAuditUtils
         all_errors += report_data_status[:errors] if report_data_status[:errors].any?
         all_errors += request_codes_status[:errors] if request_codes_status[:errors].any?
         all_errors += removal_defaults_status[:errors] if removal_defaults_status[:errors].any?
+        all_errors += triennial_audit_status[:errors] if triennial_audit_status[:errors].any?
 
         all_warnings = []
         all_warnings += ess_status[:warnings] if ess_status[:warnings].any?
@@ -35,6 +37,7 @@ module NysenateAuditUtils
         all_warnings += report_data_status[:warnings] if report_data_status[:warnings].any?
         all_warnings += request_codes_status[:warnings] if request_codes_status[:warnings].any?
         all_warnings += removal_defaults_status[:warnings] if removal_defaults_status[:warnings].any?
+        all_warnings += triennial_audit_status[:warnings] if triennial_audit_status[:warnings].any?
 
         {
           sections: {
@@ -43,7 +46,8 @@ module NysenateAuditUtils
             email_reporting: email_status,
             report_data: report_data_status,
             request_codes: request_codes_status,
-            removal_defaults: removal_defaults_status
+            removal_defaults: removal_defaults_status,
+            triennial_audit: triennial_audit_status
           },
           all_errors: all_errors,
           all_warnings: all_warnings,
@@ -245,6 +249,36 @@ module NysenateAuditUtils
           dangling_systems: dangling_systems,
           dangling_actions: dangling_actions
         }
+      end
+
+      # Get Triennial Audit Report configuration status.
+      # The 'Selected for Audit' field is already covered by the generic
+      # Custom Fields section. An empty source list is only a warning; an
+      # Account Request Code row whose project/tracker lacks the Account
+      # Action / Target System fields is an error, since every ticket from
+      # it would get a blank code.
+      # @return [Hash] Status hash with :status, :errors, :warnings
+      def triennial_audit_status
+        config = NysenateAuditUtils::TriennialAuditConfiguration
+        errors = config.unavailable_account_request_code_sources.map do |row|
+          project = Project.find_by(id: row['project_id'])&.name || "project ##{row['project_id']}"
+          tracker = Tracker.find_by(id: row['tracker_id'])&.name || "tracker ##{row['tracker_id']}"
+          "Triennial Audit: #{project} / #{tracker} uses Account Request Code, but the " \
+            'Account Action and Target System fields are not enabled for it.'
+        end
+
+        warnings = []
+        warnings << 'Triennial Audit: No project/tracker sources configured yet.' if config.sources.empty?
+
+        status = if errors.any?
+                   STATUS_ERROR
+                 elsif warnings.any?
+                   STATUS_WARNING
+                 else
+                   STATUS_OK
+                 end
+
+        { status: status, valid: errors.empty?, errors: errors, warnings: warnings }
       end
 
       # Combine several section status hashes into one, taking the worst status

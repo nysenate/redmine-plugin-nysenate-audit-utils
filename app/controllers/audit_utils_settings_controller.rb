@@ -7,7 +7,8 @@ class AuditUtilsSettingsController < ApplicationController
   # These actions write plugin settings, so they need the same password
   # re-entry (sudo mode) as core's plugin settings page.
   require_sudo_mode :autoconfigure_all, :autoconfigure_field,
-                    :delete_dangling_mapping, :delete_all_dangling_mappings
+                    :delete_dangling_mapping, :delete_all_dangling_mappings,
+                    :autoconfigure_triennial_account_request
 
   # Autoconfigure all custom fields by finding them by name
   # POST /nysenate_audit_utils_settings/autoconfigure_all
@@ -58,6 +59,24 @@ class AuditUtilsSettingsController < ApplicationController
     redirect_to plugin_settings_path('nysenate_audit_utils')
   rescue => e
     logger.error "Autoconfiguration error: #{e.message}"
+    logger.error e.backtrace.join("\n")
+    flash[:error] = "An error occurred during autoconfiguration: #{e.message}"
+    redirect_to plugin_settings_path('nysenate_audit_utils')
+  end
+
+  # Seed a base Triennial Audit source row for the Account Request tracker's
+  # project, if found by name and not already configured.
+  # POST /nysenate_audit_utils_settings/autoconfigure_triennial_account_request
+  def autoconfigure_triennial_account_request
+    if NysenateAuditUtils::TriennialAuditConfiguration.autoconfigure_account_request!
+      flash[:notice] = l(:notice_triennial_account_request_autoconfigured)
+    else
+      flash[:warning] = l(:warning_triennial_account_request_not_found)
+    end
+
+    redirect_to plugin_settings_path('nysenate_audit_utils')
+  rescue => e
+    logger.error "Triennial autoconfigure error: #{e.message}"
     logger.error e.backtrace.join("\n")
     flash[:error] = "An error occurred during autoconfiguration: #{e.message}"
     redirect_to plugin_settings_path('nysenate_audit_utils')

@@ -31,6 +31,8 @@ en:
   error_invalid_delete_dangling_mappings: "Invalid parameters for deleting dangling mappings"
   warning_no_dangling_mappings: "No dangling mappings found"
   error_no_issues_selected: "No issues selected"
+  notice_triennial_account_request_autoconfigured: "Added a Triennial Audit source row for the Account Request tracker."
+  warning_triennial_account_request_not_found: "Could not find an Account Request tracker on a project with the Account Action and Target System fields enabled, or a row for it already exists."
 
   # Packet creation labels
   button_create_packet: "Create Packet"

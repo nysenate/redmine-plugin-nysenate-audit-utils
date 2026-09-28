@@ -289,4 +289,34 @@ class ConfigurationStatusServiceTest < ActiveSupport::TestCase
     assert overall[:sections].key?(:report_data)
     assert overall[:sections][:report_data].is_a?(Hash)
   end
+
+  test 'triennial audit status warns when no sources are configured' do
+    status = NysenateAuditUtils::ConfigurationStatusService.triennial_audit_status
+
+    assert_equal :warning, status[:status]
+    assert_includes status[:warnings].first, 'No project/tracker sources'
+    assert_includes NysenateAuditUtils::ConfigurationStatusService.overall_status[:all_warnings],
+                    status[:warnings].first
+  end
+
+  test 'triennial audit status is ok once a source is configured' do
+    Setting.plugin_nysenate_audit_utils = {
+      'triennial_audit_sources' => [{ 'project_id' => '1', 'tracker_id' => '1', 'mapping_mode' => 'tracker' }]
+    }
+
+    assert_equal :ok, NysenateAuditUtils::ConfigurationStatusService.triennial_audit_status[:status]
+  end
+
+  test 'triennial audit status errors on account request code rows missing the fields' do
+    Setting.plugin_nysenate_audit_utils = {
+      'triennial_audit_sources' => [
+        { 'project_id' => '1', 'tracker_id' => '1', 'mapping_mode' => 'account_request_code' }
+      ]
+    }
+
+    status = NysenateAuditUtils::ConfigurationStatusService.triennial_audit_status
+
+    assert_equal :error, status[:status]
+    assert_includes status[:errors].first, 'uses Account Request Code'
+  end
 end

@@ -7,6 +7,7 @@
   report_data_status = status[:sections][:report_data]
   request_codes_status = status[:sections][:request_codes]
   removal_defaults_status = status[:sections][:removal_defaults]
+  triennial_audit_status = status[:sections][:triennial_audit]
 
   # Single badge for the consolidated General Configuration accordion:
   # worst status among its sub-sections.
@@ -319,12 +320,12 @@
     </div>
   </div>
 
-  <!-- Request Code Configuration Section -->
+  <!-- Account Request Code Configuration Section -->
   <div class="config-accordion">
     <div class="accordion-header" data-section="request-codes">
       <h3>
         <span class="accordion-toggle">▶</span>
-        Request Code Configuration
+        Account Request Code Configuration
         <span class="status-badge <%= NysenateAuditUtils::ConfigurationStatusService.status_badge_class(request_codes_status) %>">
           <%= NysenateAuditUtils::ConfigurationStatusService.status_badge(request_codes_status) %>
           <%= NysenateAuditUtils::ConfigurationStatusService.status_description(request_codes_status) %>
@@ -487,6 +488,211 @@
             <p><strong>Configuration Required:</strong> Please configure the Account Action and Target System custom fields before setting up request code mappings.</p>
           </div>
         <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Triennial Audit Report Configuration Section -->
+  <div class="config-accordion">
+    <div class="accordion-header" data-section="triennial-audit">
+      <h3>
+        <span class="accordion-toggle">▶</span>
+        Triennial Audit Report Configuration
+        <span class="status-badge <%= NysenateAuditUtils::ConfigurationStatusService.status_badge_class(triennial_audit_status) %>">
+          <%= NysenateAuditUtils::ConfigurationStatusService.status_badge(triennial_audit_status) %>
+          <%= NysenateAuditUtils::ConfigurationStatusService.status_description(triennial_audit_status) %>
+        </span>
+      </h3>
+    </div>
+
+    <div class="accordion-body" id="triennial-audit-section">
+      <div class="box tabular settings">
+        <%
+          triennial_projects = Project.active.sorted.to_a
+
+          # project_id => [[tracker_id, tracker_name], ...]
+          triennial_project_trackers = triennial_projects.to_h do |p|
+            [p.id, p.trackers.sorted.map { |t| [t.id, t.name] }]
+          end
+
+          # "project_id-tracker_id" => { 'fields' => [[field_id, field_name], ...]
+          # (List fields enabled on both), 'arc' => whether Account Request Code
+          # mode is usable (Account Action + Target System enabled on both) }
+          triennial_config = NysenateAuditUtils::TriennialAuditConfiguration
+          triennial_pair_info = {}
+          triennial_projects.each do |p|
+            p.trackers.sorted.each do |t|
+              triennial_pair_info["#{p.id}-#{t.id}"] = {
+                'fields' => triennial_config.available_list_fields(p, t).map { |f| [f.id, f.name] },
+                'arc' => triennial_config.account_request_code_available?(p, t)
+              }
+            end
+          end
+
+          # field_id => possible_values, for the per-value code inputs
+          triennial_field_ids = triennial_pair_info.values.flat_map { |info| info['fields'].map(&:first) }.uniq
+          triennial_field_values = IssueCustomField.where(id: triennial_field_ids).to_h do |f|
+            [f.id, f.possible_values]
+          end
+
+          triennial_row_locals = {
+            projects: triennial_projects,
+            project_trackers: triennial_project_trackers,
+            pair_info: triennial_pair_info,
+            field_values: triennial_field_values
+          }
+        %>
+
+        <p style="margin: 1em 0 0.5em 0; padding: 0;">
+          Configure the project/tracker pairs the Triennial Audit Report pulls tickets from, and
+          how each pair's tickets get a Request Code: one code for the whole tracker, a code per
+          value of a List field, or the Account Request Code mapping. A ticket with no mapped code
+          still appears in the report with a blank Request Code, so gaps stay visible.
+        </p>
+
+        <%= link_to 'Autoconfigure Account Request Source',
+            autoconfigure_triennial_account_request_audit_utils_settings_path,
+            method: :post,
+            class: 'button',
+            style: 'margin: 0 0 1em 0; display: inline-block;',
+            data: { confirm: 'Add a Triennial Audit source row for the Account Request tracker (found by name)?' } %>
+
+        <table class="list triennial-sources-config" id="triennial-sources-table">
+          <thead>
+            <tr>
+              <th class="ts-project-col">Project</th>
+              <th class="ts-tracker-col">Tracker</th>
+              <th class="ts-mode-col">Mapping Mode</th>
+              <th class="ts-codes-col">Code(s)</th>
+              <th class="ts-remove-col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% NysenateAuditUtils::TriennialAuditConfiguration.sources.each_with_index do |row, i| %>
+              <%= render partial: 'settings/triennial_source_row',
+                         locals: triennial_row_locals.merge(index: "existing_#{i}", row: row) %>
+            <% end %>
+          </tbody>
+        </table>
+
+        <button type="button" id="triennial-add-source" class="button">Add Source</button>
+
+        <template id="triennial-source-row-template">
+          <%= render partial: 'settings/triennial_source_row',
+                     locals: triennial_row_locals.merge(index: '__INDEX__', row: {}) %>
+        </template>
+
+        <script>
+        (function() {
+          'use strict';
+
+          var PROJECT_TRACKERS = <%= raw(triennial_project_trackers.to_json) %>;
+          var PAIR_INFO = <%= raw(triennial_pair_info.to_json) %>;
+          var FIELD_VALUES = <%= raw(triennial_field_values.to_json) %>;
+
+          function setOptions(select, pairs, placeholder) {
+            select.innerHTML = '';
+            select.appendChild(new Option(placeholder, ''));
+            pairs.forEach(function(pair) {
+              select.appendChild(new Option(pair[1], pair[0]));
+            });
+          }
+
+          function inputName(row, key) {
+            return 'settings[triennial_audit_sources][' + row.dataset.index + '][' + key + ']';
+          }
+
+          function renderValueCodes(row) {
+            var fieldId = row.querySelector('.ts-field-select').value;
+            var container = row.querySelector('.ts-value-codes');
+            container.innerHTML = '';
+            (FIELD_VALUES[fieldId] || []).forEach(function(value) {
+              var line = document.createElement('div');
+              line.className = 'ts-value-code';
+              var label = document.createElement('span');
+              label.className = 'ts-value-label';
+              label.textContent = value;
+              var input = document.createElement('input');
+              input.type = 'text';
+              input.size = 8;
+              input.placeholder = 'Code';
+              input.name = inputName(row, 'value_codes') + '[' + value + ']';
+              line.appendChild(label);
+              line.appendChild(input);
+              container.appendChild(line);
+            });
+            row.querySelector('.ts-no-field-warning').hidden = !!fieldId;
+          }
+
+          function updateMode(row) {
+            var mode = row.querySelector('.ts-mode-select').value;
+            row.querySelector('.ts-field-select').classList.toggle('ts-hidden', mode !== 'field');
+            row.querySelectorAll('.ts-panel').forEach(function(panel) {
+              panel.hidden = panel.dataset.mode !== mode;
+            });
+          }
+
+          function pairInfo(row) {
+            var key = row.querySelector('.ts-project-select').value + '-' +
+                      row.querySelector('.ts-tracker-select').value;
+            return PAIR_INFO[key] || { fields: [], arc: false };
+          }
+
+          // Account Request Code needs Account Action + Target System enabled
+          // on the chosen project/tracker; otherwise disable it and fall back.
+          function refreshPair(row) {
+            var info = pairInfo(row);
+            setOptions(row.querySelector('.ts-field-select'), info.fields, '-- Select Field --');
+            renderValueCodes(row);
+
+            var modeSelect = row.querySelector('.ts-mode-select');
+            var arcOption = modeSelect.querySelector('option[value="account_request_code"]');
+            arcOption.disabled = !info.arc;
+            arcOption.textContent = info.arc ? 'Account Request Code' : 'Account Request Code (fields not enabled)';
+            row.querySelector('.ts-arc-note').hidden = !info.arc;
+            row.querySelector('.ts-arc-unavailable-warning').hidden = info.arc;
+            if (!info.arc && modeSelect.value === 'account_request_code') {
+              modeSelect.value = 'tracker';
+              updateMode(row);
+            }
+          }
+
+          function wireRow(row) {
+            var projectSelect = row.querySelector('.ts-project-select');
+            var trackerSelect = row.querySelector('.ts-tracker-select');
+            var fieldSelect = row.querySelector('.ts-field-select');
+
+            projectSelect.addEventListener('change', function() {
+              setOptions(trackerSelect, PROJECT_TRACKERS[projectSelect.value] || [], '-- Select Tracker --');
+              refreshPair(row);
+            });
+            trackerSelect.addEventListener('change', function() { refreshPair(row); });
+            fieldSelect.addEventListener('change', function() { renderValueCodes(row); });
+            row.querySelector('.ts-mode-select').addEventListener('change', function() { updateMode(row); });
+            row.querySelector('.ts-remove-row').addEventListener('click', function() {
+              row.parentNode.removeChild(row);
+            });
+          }
+
+          document.addEventListener('DOMContentLoaded', function() {
+            var table = document.getElementById('triennial-sources-table');
+            if (!table) { return; }
+            var tbody = table.querySelector('tbody');
+
+            tbody.querySelectorAll('.triennial-source-row').forEach(wireRow);
+
+            var template = document.getElementById('triennial-source-row-template');
+            var counter = 0;
+            document.getElementById('triennial-add-source').addEventListener('click', function() {
+              var holder = document.createElement('tbody');
+              holder.innerHTML = template.innerHTML.split('__INDEX__').join('new_' + (counter++));
+              var row = holder.querySelector('.triennial-source-row');
+              tbody.appendChild(row);
+              wireRow(row);
+            });
+          });
+        })();
+        </script>
       </div>
     </div>
   </div>
@@ -990,4 +1196,90 @@
   color: #ff6600;
   font-weight: 500;
 }
+
+/* Triennial Audit Sources Table */
+.triennial-sources-config {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  table-layout: fixed;
+}
+
+.triennial-sources-config .ts-project-col { width: 18%; }
+.triennial-sources-config .ts-tracker-col { width: 14%; }
+.triennial-sources-config .ts-mode-col { width: 17%; }
+.triennial-sources-config .ts-codes-col { width: auto; }
+.triennial-sources-config .ts-remove-col { width: 80px; }
+
+.triennial-sources-config thead th {
+  background-color: #f5f5f5;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 2px solid #ddd;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
+.triennial-sources-config tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e0e0e0;
+  vertical-align: top;
+  overflow-wrap: break-word;
+  text-align: left;
+}
+
+.triennial-sources-config tbody td.ts-remove-col {
+  text-align: center;
+}
+
+.triennial-sources-config select {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.triennial-sources-config .ts-field-select {
+  margin-top: 6px;
+}
+
+/* Value -> code mappings: right-aligned value labels beside their inputs */
+.triennial-sources-config .ts-value-codes {
+  display: grid;
+  grid-template-columns: fit-content(65%) 7em;
+  column-gap: 0.75em;
+  row-gap: 4px;
+  align-items: center;
+}
+
+.triennial-sources-config .ts-value-code {
+  display: contents;
+}
+
+.triennial-sources-config .ts-value-label {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.triennial-sources-config .ts-value-code input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.triennial-sources-config .ts-note {
+  margin: 0;
+  padding: 0;
+  padding-inline: 0;
+  color: #666;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.triennial-sources-config .ts-warning {
+  color: #856404;
+}
+
+.triennial-sources-config .ts-hidden {
+  display: none !important;
+}
 </style>
+

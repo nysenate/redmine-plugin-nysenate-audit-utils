@@ -85,6 +85,14 @@ module NysenateAuditUtils
         description: 'Authorizing User(s) (multiple users) field, auto-populated on removal tickets',
         required: true,
         category: :request_codes
+      },
+      'selected_for_audit_field_id' => {
+        name: 'Selected for Audit',
+        description: 'Dropdown (No / audit year) set by the Triennial Audit Report\'s ' \
+                     '"Flag Selected" action. Must be enabled on every tracker configured ' \
+                     'as a Triennial Audit source.',
+        required: true,
+        category: :triennial_audit
       }
     }.freeze
 
@@ -301,6 +309,16 @@ module NysenateAuditUtils
       # Get Authorizing Users field
       def authorizing_users_field
         get_field('authorizing_users_field_id')
+      end
+
+      # Get Selected for Audit field ID
+      def selected_for_audit_field_id
+        get_field_id('selected_for_audit_field_id')
+      end
+
+      # Get Selected for Audit field
+      def selected_for_audit_field
+        get_field('selected_for_audit_field_id')
       end
 
       # Target System value identifying the public website (NYSenate.gov).
