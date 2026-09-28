@@ -278,6 +278,42 @@ module NysenateAuditUtils
         end
       end
 
+      # Generate the "Employee Access" workbook — a trimmed/renamed variant of
+      # the Account Holder Access report for the Quarterly Audit. Unlike that
+      # report, this has no metadata preamble (the source screenshot marks the
+      # Report Name/Description/Generated at rows "DELETE ABOVE") and drops the
+      # Account Holder Type, Account Access Status, and Request Code columns.
+      # @param data [Array<Hash>] rows from AccountHolderAccessReportService
+      def self.generate_employee_access_xlsx(data)
+        return ''.b unless data
+
+        build_package do |wb, styles|
+          wb.add_worksheet(name: 'Employee Access') do |sheet|
+            if data.empty?
+              write_no_entries(sheet, styles, CsvGenerator::ACCOUNT_HOLDER_ACCESS_NO_ENTRIES)
+              next
+            end
+
+            headers = %w[FullName UserID OfficeName EmpAccess]
+
+            rows = data.map do |row|
+              [
+                row[:user_name],
+                row[:user_uid],
+                row[:user_office],
+                row[:account_type]
+              ]
+            end
+
+            write_table(sheet, styles,
+              headers: headers,
+              rows: rows,
+              widths: [24, 20, 20, 18]
+            )
+          end
+        end
+      end
+
       # --- Shared helpers ------------------------------------------------------
 
       # Build a package with the shared style set, yield (workbook, styles) for

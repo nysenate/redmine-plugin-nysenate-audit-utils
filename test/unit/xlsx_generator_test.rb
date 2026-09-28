@@ -276,4 +276,43 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
   def test_account_holder_access_xlsx_nil_data_returns_blank
     assert_equal '', GEN.generate_account_holder_access_xlsx(nil)
   end
+
+  # --- employee access -------------------------------------------------------
+
+  def test_employee_access_xlsx_structure_and_content
+    xlsx = GEN.generate_employee_access_xlsx([
+                                              ACCOUNT_HOLDER_ACCESS_ROW,
+                                              ACCOUNT_HOLDER_ACCESS_ROW.merge(account_type: 'AIX')
+                                            ])
+    assert_valid_xlsx(xlsx)
+    assert_equal ['Employee Access'], sheet_names(xlsx)
+    xml = sheet_xml(xlsx)
+    assert_includes xml, 'FullName'
+    assert_includes xml, 'UserID'
+    assert_includes xml, 'OfficeName'
+    assert_includes xml, 'EmpAccess'
+    assert_includes xml, 'John Doe'
+    assert_includes xml, 'jdoe'
+    assert_includes xml, 'Senate Office'
+    assert_includes xml, 'Oracle / SFMS'
+    assert_includes xml, 'AIX'
+    # No metadata preamble — just header + 2 data rows.
+    assert_equal 3, row_count(xlsx)
+    assert_not_includes xml, 'Account Holder Type'
+    assert_not_includes xml, 'Account Access Status'
+    assert_not_includes xml, 'Request Code'
+    assert_not_includes xml, 'Report Name'
+  end
+
+  def test_employee_access_xlsx_empty_writes_no_entries_message
+    xlsx = GEN.generate_employee_access_xlsx([])
+    assert_valid_xlsx(xlsx)
+    xml = sheet_xml(xlsx)
+    assert_includes xml, NysenateAuditUtils::Reporting::CsvGenerator::ACCOUNT_HOLDER_ACCESS_NO_ENTRIES
+    assert_equal 0, table_part_count(xlsx)
+  end
+
+  def test_employee_access_xlsx_nil_data_returns_blank
+    assert_equal '', GEN.generate_employee_access_xlsx(nil)
+  end
 end

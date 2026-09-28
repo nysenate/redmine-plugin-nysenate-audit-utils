@@ -467,9 +467,15 @@ class AuditReportsController < ApplicationController
         paginate_report_data
       end
       format.xlsx do
-        xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_account_holder_access_xlsx(@report_data)
+        if params[:employee_access].present?
+          xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_employee_access_xlsx(@report_data)
+          filename = "employee_access_report_#{Date.current.strftime('%Y%m%d')}.xlsx"
+        else
+          xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_account_holder_access_xlsx(@report_data)
+          filename = "account_holder_access_report_#{Date.current.strftime('%Y%m%d')}.xlsx"
+        end
         send_data xlsx_data,
-                  filename: "account_holder_access_report_#{Date.current.strftime('%Y%m%d')}.xlsx",
+                  filename: filename,
                   type: Mime[:xlsx].to_s,
                   disposition: 'attachment'
       end

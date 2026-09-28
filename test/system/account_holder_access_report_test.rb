@@ -216,6 +216,25 @@ class AccountHolderAccessReportTest < AuditUtilsSystemTestCase
     assert_includes names, 'Cee Exportrow 30'
   end
 
+  # 4b. Employee Access export: the renamed/trimmed variant used for the
+  #     Quarterly Audit, exported via a second button next to "Export Excel".
+  def test_employee_access_export_contains_renamed_trimmed_columns
+    seed_account('900001', 'Ada Testwell', 'Oracle / SFMS', 'Add', uid: 'atestwell', type: 'Employee', office: 'Chamber A')
+    seed_account('900002', 'Ben Sampleton', 'AIX', 'Add', uid: 'bsampleton', type: 'Vendor', office: 'Annex B')
+
+    visit_report
+    assert_link 'Export Employee Access'
+
+    rows = downloaded_xlsx_rows('*.xlsx') { click_link 'Export Employee Access' }
+    # No metadata preamble -- the header is the very first row.
+    assert_equal %w[FullName UserID OfficeName EmpAccess], rows.first
+
+    data_rows = rows[1..].reject { |r| r.compact.empty? }
+    assert_equal 2, data_rows.size
+    assert_includes data_rows, ['Ada Testwell', 'atestwell', 'Chamber A', 'Oracle / SFMS']
+    assert_includes data_rows, ['Ben Sampleton', 'bsampleton', 'Annex B', 'AIX']
+  end
+
   # 5. Empty state: a filter matching nothing renders cleanly (no table, nodata).
   def test_empty_state_renders_cleanly
     seed_account('900001', 'Ada Testwell', 'Oracle / SFMS', 'Add', uid: 'atestwell', type: 'Employee')
