@@ -223,9 +223,9 @@ class AccountHolderAccessReportTest < AuditUtilsSystemTestCase
     seed_account('900002', 'Ben Sampleton', 'AIX', 'Add', uid: 'bsampleton', type: 'Vendor', office: 'Annex B')
 
     visit_report
-    assert_link 'Export Employee Access'
+    assert_link 'Export Excel (Quarterly Audit Format)'
 
-    rows = downloaded_xlsx_rows('*.xlsx') { click_link 'Export Employee Access' }
+    rows = downloaded_xlsx_rows('*.xlsx') { click_link 'Export Excel (Quarterly Audit Format)' }
     # No metadata preamble -- the header is the very first row.
     assert_equal %w[FullName UserID OfficeName EmpAccess], rows.first
 
