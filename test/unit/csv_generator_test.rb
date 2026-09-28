@@ -275,8 +275,11 @@ class CsvGeneratorTest < ActiveSupport::TestCase
       [MONTHLY_ROW], target_system: 'NYSenate.gov Website'
     )
     header = csv.lines.first.chomp
-    assert_includes header, 'Account Holder Email'
-    assert_equal 'jdoe@example.com', CSV.parse(csv)[1].last
+    # Website export uses its own column order (see monthly_website_header).
+    assert_equal 'Account Access Status,Account Holder Username,Account Holder Name,' \
+                 'Account Holder Type,Account Holder Email,Last Updated,' \
+                 'Account Holder Office,Request Code,Last Issue,Last Action', header
+    assert_equal 'jdoe@example.com', CSV.parse(csv)[1][4]
 
     # A different system does not get the email column.
     other = NysenateAuditUtils::Reporting::CsvGenerator.generate_monthly_csv(

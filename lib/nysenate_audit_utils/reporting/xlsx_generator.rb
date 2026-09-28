@@ -332,39 +332,43 @@ module NysenateAuditUtils
           return
         end
 
-        include_email = CsvGenerator.monthly_include_email?(target_system)
+        website_export = CsvGenerator.monthly_website_export?(target_system)
 
-        headers = [
-          'Account Holder Name',
-          'Account Holder Type',
-          'Account Holder Username',
-          'Account Holder Office',
-          'Account Access Status',
-          'Last Updated',
-          'Last Issue',
-          'Last Action',
-          'Request Code'
-        ]
-        headers << 'Account Holder Email' if include_email
-
-        rows = data.map do |row|
-          values = [
-            row[:user_name],
-            row[:user_type],
-            row[:user_uid],
-            row[:user_office],
-            row[:status],
-            row[:closed_on]&.strftime('%Y-%m-%d'),
-            row[:issue_id],
-            row[:account_action],
-            row[:request_code]
+        if website_export
+          # Public website (NYSenate.gov) export uses its own column order,
+          # matching the target system's internal spreadsheet listing.
+          headers = CsvGenerator.monthly_website_header
+          rows = data.map { |row| CsvGenerator.monthly_website_row(row) }
+          widths = [16, 20, 24, 16, 28, 14, 20, 14, 12, 20]
+        else
+          headers = [
+            'Account Holder Name',
+            'Account Holder Type',
+            'Account Holder Username',
+            'Account Holder Office',
+            'Account Access Status',
+            'Last Updated',
+            'Last Issue',
+            'Last Action',
+            'Request Code'
           ]
-          values << row[:user_email] if include_email
-          values
-        end
 
-        widths = [24, 16, 20, 20, 16, 14, 12, 20, 14]
-        widths << 28 if include_email
+          rows = data.map do |row|
+            [
+              row[:user_name],
+              row[:user_type],
+              row[:user_uid],
+              row[:user_office],
+              row[:status],
+              row[:closed_on]&.strftime('%Y-%m-%d'),
+              row[:issue_id],
+              row[:account_action],
+              row[:request_code]
+            ]
+          end
+
+          widths = [24, 16, 20, 20, 16, 14, 12, 20, 14]
+        end
 
         write_table(sheet, styles,
           headers: headers,

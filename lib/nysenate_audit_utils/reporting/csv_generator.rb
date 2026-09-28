@@ -232,7 +232,7 @@ module NysenateAuditUtils
       def self.generate_monthly_csv(data, as_of_time: nil, target_system: nil)
         return '' unless data
 
-        include_email = monthly_include_email?(target_system)
+        website_export = monthly_website_export?(target_system)
 
         CSV.generate do |csv|
           if as_of_time
@@ -250,38 +250,72 @@ module NysenateAuditUtils
             next
           end
 
-          # Header row (matches web view layout with user_type and request_code added)
-          header = [
-            'Account Holder Name',
-            'Account Holder Type',
-            'Account Holder Username',
-            'Account Holder Office',
-            'Account Access Status',
-            'Last Updated',
-            'Last Issue',
-            'Last Action',
-            'Request Code'
-          ]
-          header << 'Account Holder Email' if include_email
-          csv << header
-
-          # Data rows
-          data.each do |row|
-            values = [
-              row[:user_name],
-              row[:user_type],
-              row[:user_uid],
-              row[:user_office],
-              row[:status],
-              row[:closed_on]&.strftime('%Y-%m-%d'),
-              row[:issue_id],
-              row[:account_action],
-              row[:request_code]
+          if website_export
+            # Public website (NYSenate.gov) export uses its own column order,
+            # matching the target system's internal spreadsheet listing.
+            csv << monthly_website_header
+            data.each { |row| csv << monthly_website_row(row) }
+          else
+            # Header row (matches web view layout with user_type and request_code added)
+            csv << [
+              'Account Holder Name',
+              'Account Holder Type',
+              'Account Holder Username',
+              'Account Holder Office',
+              'Account Access Status',
+              'Last Updated',
+              'Last Issue',
+              'Last Action',
+              'Request Code'
             ]
-            values << row[:user_email] if include_email
-            csv << values
+
+            data.each do |row|
+              csv << [
+                row[:user_name],
+                row[:user_type],
+                row[:user_uid],
+                row[:user_office],
+                row[:status],
+                row[:closed_on]&.strftime('%Y-%m-%d'),
+                row[:issue_id],
+                row[:account_action],
+                row[:request_code]
+              ]
+            end
           end
         end
+      end
+
+      # Column order/headers for the Monthly export when it covers the
+      # configured public website target system (see monthly_website_export?).
+      def self.monthly_website_header
+        [
+          'Account Access Status',
+          'Account Holder Username',
+          'Account Holder Name',
+          'Account Holder Type',
+          'Account Holder Email',
+          'Last Updated',
+          'Account Holder Office',
+          'Request Code',
+          'Last Issue',
+          'Last Action'
+        ]
+      end
+
+      def self.monthly_website_row(row)
+        [
+          row[:status],
+          row[:user_uid],
+          row[:user_name],
+          row[:user_type],
+          row[:user_email],
+          row[:closed_on]&.strftime('%Y-%m-%d'),
+          row[:user_office],
+          row[:request_code],
+          row[:issue_id],
+          row[:account_action]
+        ]
       end
 
       # Report description for the Monthly export, mentioning the target system.
@@ -295,10 +329,11 @@ module NysenateAuditUtils
         end
       end
 
-      # Whether the Account Holder Email column should be included for the given
-      # target system — true only for the configured public website
-      # (public_website_target_system plugin setting).
-      def self.monthly_include_email?(target_system)
+      # Whether the Monthly export for the given target system is the special
+      # public-website (NYSenate.gov) variant — true only for the configured
+      # public website (public_website_target_system plugin setting). Governs
+      # both the reordered column layout and the Account Holder Email column.
+      def self.monthly_website_export?(target_system)
         configured = NysenateAuditUtils::CustomFieldConfiguration.public_website_target_system
         configured.present? && target_system == configured
       end
