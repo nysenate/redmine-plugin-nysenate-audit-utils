@@ -129,6 +129,29 @@ module NysenateAuditUtils
         end
       end
 
+      # Whether the Selected for Audit field is configured but not enabled on
+      # this project/tracker, so the report's Flag Selected can't set it.
+      # False when the field isn't configured — the Custom Field
+      # Configuration section covers that.
+      # @return [Boolean]
+      def selected_for_audit_missing?(project, tracker)
+        field_id = CustomFieldConfiguration.selected_for_audit_field_id
+        return false unless field_id
+
+        available_fields(project, tracker).map(&:id).exclude?(field_id)
+      end
+
+      # Rows whose project/tracker doesn't have Selected for Audit enabled
+      # (rows for a deleted project/tracker are skipped).
+      # @return [Array<Hash>]
+      def sources_missing_selected_for_audit
+        sources.select do |row|
+          project = Project.find_by(id: row['project_id'])
+          tracker = Tracker.find_by(id: row['tracker_id'])
+          project && tracker && selected_for_audit_missing?(project, tracker)
+        end
+      end
+
       # Seed a row for the Account Request tracker, on the first of its
       # projects that has Account Action / Target System enabled, unless
       # that pair is already configured. Other project/tracker pairs need

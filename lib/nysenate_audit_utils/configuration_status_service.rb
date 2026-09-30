@@ -269,6 +269,11 @@ module NysenateAuditUtils
 
         warnings = []
         warnings << 'Triennial Audit: No project/tracker sources configured yet.' if config.sources.empty?
+        field_name = NysenateAuditUtils::CustomFieldConfiguration.selected_for_audit_field&.name
+        config.sources_missing_selected_for_audit.each do |row|
+          warnings << "Triennial Audit: #{config.source_label(row['project_id'], row['tracker_id'])} does not have the " \
+                      "#{field_name} field enabled, so its tickets can't be flagged from the report."
+        end
 
         status = if errors.any?
                    STATUS_ERROR

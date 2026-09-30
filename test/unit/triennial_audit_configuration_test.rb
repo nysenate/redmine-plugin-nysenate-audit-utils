@@ -188,4 +188,27 @@ class TriennialAuditConfigurationTest < ActiveSupport::TestCase
     assert_not Config.autoconfigure_account_request!
     assert_equal [], Config.sources
   end
+  test 'sources_missing_selected_for_audit lists rows whose pair lacks the field' do
+    field = IssueCustomField.create!(name: 'Triennial Selected', field_format: 'list', possible_values: %w[No 2025],
+                                     is_for_all: true, trackers: [@tracker])
+    Setting.plugin_nysenate_audit_utils = {
+      'selected_for_audit_field_id' => field.id.to_s,
+      'triennial_audit_sources' => [
+        { 'project_id' => '1', 'tracker_id' => '1', 'mapping_mode' => 'tracker' },
+        { 'project_id' => '1', 'tracker_id' => '2', 'mapping_mode' => 'tracker' },
+        { 'project_id' => '999', 'tracker_id' => '2', 'mapping_mode' => 'tracker' }
+      ]
+    }
+
+    assert_not Config.selected_for_audit_missing?(@project, @tracker)
+    assert Config.selected_for_audit_missing?(@project, Tracker.find(2))
+    assert_equal [['1', '2']], Config.sources_missing_selected_for_audit.map { |r| [r['project_id'], r['tracker_id']] }
+  end
+
+  test 'sources_missing_selected_for_audit is empty when the field is not configured' do
+    configure({ 'project_id' => '1', 'tracker_id' => '2', 'mapping_mode' => 'tracker' })
+
+    assert_not Config.selected_for_audit_missing?(@project, Tracker.find(2))
+    assert_empty Config.sources_missing_selected_for_audit
+  end
 end

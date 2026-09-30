@@ -14,6 +14,8 @@
   pair = pair_info["#{project_id}-#{tracker_id}"] || { 'fields' => [], 'arc' => false }
   field_pairs = pair['fields']
   arc_available = pair['arc']
+  sfa_missing = pair['sfa_missing']
+  sfa_name = NysenateAuditUtils::CustomFieldConfiguration.selected_for_audit_field&.name || 'Selected for Audit'
   values = field_id ? (field_values[field_id.to_i] || []) : []
 
   mode_options = [
@@ -70,6 +72,10 @@
         ⚠ The Account Action and Target System fields are not enabled for this project/tracker,
         so its tickets will get blank codes.
       </div>
+    </div>
+    <div class="ts-note ts-warning ts-sfa-warning"<%= ' hidden' unless sfa_missing %>>
+      ⚠ The <%= sfa_name %> field is not enabled for this project/tracker, so its tickets
+      can't be flagged from the report.
     </div>
   </td>
   <td class="ts-remove-col">

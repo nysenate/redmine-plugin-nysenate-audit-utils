@@ -180,4 +180,20 @@ class TriennialSettingsTest < Redmine::ControllerTest
     header = css_select('.accordion-header[data-section="request-codes"] h3').first.text
     assert_includes header, 'Account Request Code Configuration'
   end
+  test 'warns on source rows whose project/tracker lacks Selected for Audit' do
+    field = IssueCustomField.create!(name: 'Triennial Selected', field_format: 'list', possible_values: %w[No 2025],
+                                     is_for_all: true, trackers: [@tracker])
+    Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(
+      'selected_for_audit_field_id' => field.id.to_s
+    )
+
+    get :plugin, params: { id: 'nysenate_audit_utils' }
+
+    warnings = source_rows.map { |row| row.at_css('.ts-sfa-warning') }
+    assert warnings[0]['hidden'], 'project 1 / tracker 1 has the field'
+    assert_nil warnings[1]['hidden'], 'project 1 / tracker 2 lacks the field'
+    assert_match(/Triennial Selected field is not enabled/, warnings[1].text)
+    assert_select '#triennial-source-row-template'
+    assert_match(/does not have the Triennial Selected field enabled/, response.body)
+  end
 end

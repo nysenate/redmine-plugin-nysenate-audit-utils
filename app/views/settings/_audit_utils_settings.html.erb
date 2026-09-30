@@ -517,14 +517,16 @@
 
           # "project_id-tracker_id" => { 'fields' => [[field_id, field_name], ...]
           # (List fields enabled on both), 'arc' => whether Account Request Code
-          # mode is usable (Account Action + Target System enabled on both) }
+          # mode is usable (Account Action + Target System enabled on both),
+          # 'sfa_missing' => whether Selected for Audit is configured but not enabled }
           triennial_config = NysenateAuditUtils::TriennialAuditConfiguration
           triennial_pair_info = {}
           triennial_projects.each do |p|
             p.trackers.sorted.each do |t|
               triennial_pair_info["#{p.id}-#{t.id}"] = {
                 'fields' => triennial_config.available_list_fields(p, t).map { |f| [f.id, f.name] },
-                'arc' => triennial_config.account_request_code_available?(p, t)
+                'arc' => triennial_config.account_request_code_available?(p, t),
+                'sfa_missing' => triennial_config.selected_for_audit_missing?(p, t)
               }
             end
           end
@@ -651,6 +653,7 @@
             arcOption.textContent = info.arc ? 'Account Request Code' : 'Account Request Code (fields not enabled)';
             row.querySelector('.ts-arc-note').hidden = !info.arc;
             row.querySelector('.ts-arc-unavailable-warning').hidden = info.arc;
+            row.querySelector('.ts-sfa-warning').hidden = !info.sfa_missing;
             if (!info.arc && modeSelect.value === 'account_request_code') {
               modeSelect.value = 'tracker';
               updateMode(row);

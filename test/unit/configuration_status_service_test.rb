@@ -319,4 +319,22 @@ class ConfigurationStatusServiceTest < ActiveSupport::TestCase
     assert_equal :error, status[:status]
     assert_includes status[:errors].first, 'uses Account Request Code'
   end
+  test 'triennial audit status warns about sources without Selected for Audit enabled' do
+    field = IssueCustomField.create!(name: 'Triennial Selected', field_format: 'list', possible_values: %w[No 2025],
+                                     is_for_all: true, trackers: [Tracker.find(1)])
+    Setting.plugin_nysenate_audit_utils = {
+      'selected_for_audit_field_id' => field.id.to_s,
+      'triennial_audit_sources' => [
+        { 'project_id' => '1', 'tracker_id' => '1', 'mapping_mode' => 'tracker' },
+        { 'project_id' => '1', 'tracker_id' => '2', 'mapping_mode' => 'tracker' }
+      ]
+    }
+
+    status = NysenateAuditUtils::ConfigurationStatusService.triennial_audit_status
+
+    assert_equal :warning, status[:status]
+    assert_equal ["Triennial Audit: #{Project.find(1).name} / #{Tracker.find(2).name} does not have the " \
+                  "Triennial Selected field enabled, so its tickets can't be flagged from the report."],
+                 status[:warnings]
+  end
 end
