@@ -42,8 +42,9 @@ A comprehensive Redmine plugin providing audit utilities, user data integration,
 ## Configuration
 
 Plugin settings at **Administration → Plugins → NY Senate Audit Utils →
-Configure** are grouped into three accordions: **General Configuration**,
-**Custom Field Configuration**, and **Account Request Code Configuration**. Each shows a
+Configure** are grouped into four accordions: **General Configuration**,
+**Custom Field Configuration**, **Account Request Code Configuration**, and
+**Triennial Audit Report Configuration**. Each shows a
 ✓ / ✗ status badge summarizing whether its settings are complete.
 
 ### 1. General Configuration
@@ -118,6 +119,7 @@ under **Administration → Plugins → Configure**:
 
 **Reporting Fields:**
 - `BAC #` - Text — legacy BAC ticket number. No report displays it any longer, but the field mapping is still required.
+- `Selected for Audit` - List (`No` plus audit years, e.g. `2022`, `2025`) — optional; set by the Triennial Audit Report's **Flag Selected** action (see [Triennial Audit Report Configuration](#6-triennial-audit-report-configuration-optional)).
 
 Use **"Auto-Configure All Fields"** to detect fields by name; if auto-detection
 fails, select field IDs manually. Status indicators (✓ / ✗) confirm which
@@ -134,7 +136,7 @@ tracked-user features described below.
 Under **Administration → Roles and Permissions**, grant roles the desired
 permissions in the **Audit Utils** group:
 
-- **View audit reports** - Access to daily/weekly/monthly reports (also gates their Excel export)
+- **View audit reports** - Access to daily/weekly/monthly/triennial reports (also gates their Excel export)
 - **Use user autofill** - User search and autofill functionality
 - **Manage Vendors/Volunteers** - Create/edit/delete vendor, volunteer, and contractor records
 
@@ -143,6 +145,12 @@ action) is not a separate permission — it follows issue and attachment
 visibility (**View issues**), matching Redmine's own gating.
 
 Assign the role(s) to users under **Projects → \*your project\* → Settings → Members**.
+
+The Triennial Audit Report also requires **View issues** on every configured
+source project/tracker (with Issues visibility of *All issues*); a user missing
+any of these gets an error listing the missing permissions rather than a
+partial report. **Flag Selected** additionally requires **Edit issues** on the
+tickets being flagged.
 
 ### 5. Email Reporting Configuration (Optional)
 
@@ -174,6 +182,28 @@ Test email delivery with Redmine's built-in test:
 bundle exec rake redmine:email:test[admin_login] RAILS_ENV=production
 ```
 
+### 6. Triennial Audit Report Configuration (Optional)
+
+Configure the project/tracker pairs the Triennial Audit Report draws tickets
+from in the **Triennial Audit Report Configuration** accordion. Each row picks a
+project and tracker plus how its tickets get a request code:
+
+- **Tracker** — one code for every ticket in that tracker.
+- **Field** — a List custom field on the tracker; map each of its values to a code.
+- **Account Request Code** — the Account Action + Target System mapping from
+  **Account Request Code Configuration**. Offered only where both fields are
+  enabled.
+
+**Autoconfigure Account Request Source** adds the Account Request tracker's row.
+Tickets whose code can't be resolved still appear, with a blank code.
+
+To flag tickets from the report, map the `Selected for Audit` field (see
+[Custom Field Configuration](#2-custom-field-configuration)) and enable it on
+**every** source project/tracker. The accordion warns about any source that
+lacks it. Add a new audit year to the field's possible values before each
+audit; the report warns when the field has no year covering the selected date
+range.
+
 ## Features
 
 ### Reporting
@@ -195,6 +225,12 @@ Access via the project menu: **Reports → Audit Utils**. Report types:
   *Custom range*.
 - **Monthly Reports**: Account status snapshot for a single target system, or
   *All Systems* for a combined snapshot across every configured system.
+- **Triennial Audit Report**: Tickets opened in a date range (default: the
+  last three years) across the configured project/tracker sources, grouped by
+  request code, with an Excel export for the auditors. Tickets the auditors pick
+  are then checked in the web view and marked with **Flag Selected**, which sets
+  `Selected for Audit` to the audit year. See [Triennial Audit Report
+  Configuration](#6-triennial-audit-report-configuration-optional).
 - **Account Holder Access Report**: One row per account (account holder ×
   system) showing derived active/inactive status, filterable by search, account
   holder type, target system, and status.
