@@ -1,6 +1,14 @@
 <% html_title(l(:label_audit_triennial_report)) -%>
 
 <div class="contextual">
+  <%= link_to sprite_icon('download', "Export Excel"), triennial_project_audit_reports_path(@project,
+        format: :xlsx,
+        start_date: @from_date.to_date.iso8601,
+        end_date: @to_date.to_date.iso8601,
+        source: @source_filter,
+        code: @code_filter,
+        search: @search.presence),
+      class: "icon icon-download" %>
   <%= link_to sprite_icon('cancel', "Back to Reports"), project_audit_reports_path(@project), class: "icon icon-cancel" %>
 </div>
 

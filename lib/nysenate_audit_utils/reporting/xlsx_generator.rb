@@ -314,6 +314,63 @@ module NysenateAuditUtils
         end
       end
 
+      TRIENNIAL_DESCRIPTION = 'Every ticket opened in the date range across the configured ' \
+                              'project/tracker sources, grouped by request code.'
+      TRIENNIAL_NO_ENTRIES = 'No tickets were opened in the selected date range.'
+
+      # Generate the Triennial Audit workbook. Mirrors the legacy spreadsheet:
+      # rows grouped by request code with a blank spacer row between groups,
+      # and a trailing blank "Selected by Auditors" column for the auditors to
+      # mark up by hand. Not an Excel table (the spacer rows would break its
+      # sort/filter), just a styled header and bordered body rows.
+      # @param groups [Array<Array(String, Array<Hash>)>] from
+      #   TriennialAuditReportService.group_by_code
+      # @param filters [String, nil] description of any report filters applied
+      def self.generate_triennial_xlsx(groups, from_date: nil, to_date: nil, filters: nil)
+        return ''.b unless groups
+
+        build_package do |wb, styles|
+          wb.add_worksheet(name: 'Triennial Audit') do |sheet|
+            if from_date && to_date
+              write_metadata_rows(sheet, styles,
+                name: 'Triennial Audit',
+                description: TRIENNIAL_DESCRIPTION,
+                start_time: from_date.to_date.strftime('%Y-%m-%d'),
+                end_time: to_date.to_date.strftime('%Y-%m-%d'),
+                extras: filters ? { 'Filters' => filters } : {}
+              )
+            end
+
+            if groups.empty?
+              write_no_entries(sheet, styles, TRIENNIAL_NO_ENTRIES)
+              next
+            end
+
+            headers = ['Request Code', 'Subject', 'Ticket #', 'Open Date', 'Closed Date', 'Status',
+                       'Selected by Auditors']
+            sheet.add_row headers, style: Array.new(headers.length, styles[:header])
+
+            body_styles = Array.new(headers.length, styles[:body])
+            groups.each_with_index do |(_code, rows), i|
+              sheet.add_row [] if i.positive?
+              rows.each do |row|
+                sheet.add_row [
+                  row[:request_code],
+                  row[:subject],
+                  row[:issue_id],
+                  row[:open_date]&.strftime('%Y-%m-%d'),
+                  row[:closed_date]&.strftime('%Y-%m-%d'),
+                  row[:status],
+                  nil
+                ], style: body_styles
+              end
+            end
+
+            sheet.column_widths(14, 50, 10, 12, 12, 14, 20)
+          end
+        end
+      end
+
       # --- Shared helpers ------------------------------------------------------
 
       # Build a package with the shared style set, yield (workbook, styles) for
@@ -415,7 +472,8 @@ module NysenateAuditUtils
 
       # Write the metadata preamble (parity with CsvGenerator.write_metadata)
       # followed by a blank separator row.
-      def self.write_metadata_rows(sheet, styles, name:, description:, start_time: nil, end_time: nil, purpose: nil, show_times: true)
+      def self.write_metadata_rows(sheet, styles, name:, description:, start_time: nil, end_time: nil, purpose: nil,
+                                   show_times: true, extras: {})
         label = styles[:metadata_label]
         sheet.add_row ['Report Name', name], style: [label, nil]
         sheet.add_row ['Report Description', description], style: [label, nil]
@@ -424,6 +482,7 @@ module NysenateAuditUtils
           sheet.add_row ['Start time', CsvGenerator.format_metadata_time(start_time)], style: [label, nil]
           sheet.add_row ['End time', CsvGenerator.format_metadata_time(end_time)], style: [label, nil]
         end
+        extras.each { |key, value| sheet.add_row [key, value], style: [label, nil] }
         sheet.add_row ['Generated at', CsvGenerator.format_metadata_time(Time.now)], style: [label, nil]
         sheet.add_row []
       end

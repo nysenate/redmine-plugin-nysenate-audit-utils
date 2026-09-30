@@ -254,10 +254,25 @@ class AuditReportsController < ApplicationController
 
     @report_data = service_class.filter_rows(window_rows, source: @source_filter, code: @code_filter,
                                                           search: @search)
-    # Group headers show each code's total across all pages, not just this one.
-    @group_totals = @report_data.map { |r| service_class.code_key(r) }.tally
-    paginate_report_data
-    @report_groups = service_class.group_by_code(@report_data)
+
+    respond_to do |format|
+      format.html do
+        # Group headers show each code's total across all pages, not just this one.
+        @group_totals = @report_data.map { |r| service_class.code_key(r) }.tally
+        paginate_report_data
+        @report_groups = service_class.group_by_code(@report_data)
+      end
+      format.xlsx do
+        xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_triennial_xlsx(
+          service_class.group_by_code(@report_data),
+          from_date: @from_date, to_date: @to_date, filters: triennial_filter_description
+        )
+        send_data xlsx_data,
+                  type: Mime[:xlsx].to_s,
+                  filename: "triennial_audit_#{@from_date.strftime('%Y%m%d')}_#{@to_date.strftime('%Y%m%d')}.xlsx",
+                  disposition: 'attachment'
+      end
+    end
   rescue => e
     Rails.logger.error "Triennial report generation failed: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
@@ -528,6 +543,21 @@ class AuditReportsController < ApplicationController
   # other's current selection (a code that no ticket in the selected
   # project/tracker has, and vice versa), within the current date window.
   # A selected option is never disabled, so it still submits.
+  # Human-readable summary of the triennial report's active filters for the
+  # export's metadata, or nil when unfiltered.
+  def triennial_filter_description
+    parts = []
+    if @source_filter
+      parts << "Project / Tracker: #{@source_options.rassoc(@source_filter)&.first || @source_filter}"
+    end
+    if @code_filter
+      no_code = @code_filter == NysenateAuditUtils::Reporting::TriennialAuditReportService::NO_CODE
+      parts << "Request Code: #{no_code ? 'No request code' : @code_filter}"
+    end
+    parts << "Search: #{@search}" if @search.present?
+    parts.join('; ').presence
+  end
+
   def build_triennial_filter_options(rows)
     service_class = NysenateAuditUtils::Reporting::TriennialAuditReportService
 

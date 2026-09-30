@@ -315,4 +315,44 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
   def test_employee_access_xlsx_nil_data_returns_blank
     assert_equal '', GEN.generate_employee_access_xlsx(nil)
   end
+  # --- triennial -----------------------------------------------------------
+
+  def triennial_row(code, id, subject: 'Access request')
+    { request_code: code, subject: subject, issue_id: id, status: 'Closed',
+      open_date: Time.zone.parse('2025-01-02 09:00'), closed_date: Time.zone.parse('2025-01-05 09:00') }
+  end
+
+  def test_triennial_xlsx_groups_with_spacer_rows_and_blank_auditor_column
+    groups = NysenateAuditUtils::Reporting::TriennialAuditReportService.group_by_code(
+      [triennial_row('AAA', 1), triennial_row('AAA', 2), triennial_row('BBB', 3), triennial_row(nil, 4)]
+    )
+    xlsx = GEN.generate_triennial_xlsx(groups, from_date: Date.parse('2023-10-01'),
+                                               to_date: Date.parse('2026-09-30'))
+    assert_valid_xlsx(xlsx)
+    assert_equal ['Triennial Audit'], sheet_names(xlsx)
+    assert_equal 0, table_part_count(xlsx), 'spacer rows would break an Excel table'
+
+    xml = sheet_xml(xlsx)
+    assert_includes xml, 'Selected by Auditors'
+    assert_includes xml, '2023-10-01'
+    assert_includes xml, '2025-01-05'
+    assert_not_includes xml, 'Filters'
+    # 5 metadata + blank + header + 4 data + 2 spacers between 3 groups
+    assert_equal 13, row_count(xlsx)
+  end
+
+  def test_triennial_xlsx_lists_filters_in_metadata
+    xlsx = GEN.generate_triennial_xlsx([['AAA', [triennial_row('AAA', 1)]]],
+                                       from_date: Date.parse('2023-10-01'), to_date: Date.parse('2026-09-30'),
+                                       filters: 'Request Code: AAA')
+    xml = sheet_xml(xlsx)
+    assert_includes xml, 'Filters'
+    assert_includes xml, 'Request Code: AAA'
+  end
+
+  def test_triennial_xlsx_empty_writes_no_entries_message
+    xlsx = GEN.generate_triennial_xlsx([])
+    assert_equal 1, row_count(xlsx)
+    assert_includes sheet_xml(xlsx), 'No tickets were opened in the selected date range.'
+  end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require File.expand_path('../test_helper', __dir__)
+require 'zip'
 
 class TriennialReportTest < ActionController::TestCase
   tests AuditReportsController
@@ -170,5 +171,32 @@ class TriennialReportTest < ActionController::TestCase
     assert_select 'a[href=?]', "/issues/#{coded.id}"
     assert_select 'a[href=?]', "/issues/#{other.id}", count: 0
     assert_select 'td.code-col span.highlight', text: 'BUGA'
+  end
+  test 'exports the filtered report as xlsx' do
+    coded = make_issue(project_id: 1, tracker_id: 1)
+    make_issue(project_id: 2, tracker_id: 2)
+
+    get :triennial, params: { project_id: 1, start_date: '2026-01-01', end_date: '2026-09-30', code: 'BUGA' },
+                    format: :xlsx
+
+    assert_response :success
+    assert_equal Mime[:xlsx].to_s, response.media_type
+    assert_match(/triennial_audit_20260101_20260930\.xlsx/, response.headers['Content-Disposition'])
+    xml = nil
+    Zip::File.open_buffer(response.body) { |z| xml = z.read('xl/worksheets/sheet1.xml') }
+    assert_includes xml, 'Request Code: BUGA'
+    assert_includes xml, coded.subject
+    assert_not_includes xml, 'Triennial 2/2', 'only the BUGA ticket is exported'
+  end
+
+  test 'export link carries the current filters' do
+    get :triennial, params: { project_id: 1, source: '1-1', search: 'foo' }
+
+    assert_select 'a.icon-download[href*=?]', 'triennial.xlsx' do |links|
+      href = links.first['href']
+      assert_includes href, 'source=1-1'
+      assert_includes href, 'search=foo'
+      assert_not_includes href, 'code='
+    end
   end
 end
