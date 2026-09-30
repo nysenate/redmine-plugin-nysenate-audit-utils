@@ -29,6 +29,10 @@
       <%= link_to "Account Holder Access Report", account_holder_access_project_audit_reports_path(@project) %>
       <p class="small">Listing of current account access, including active, inactive, or both statuses, with one row per account.</p>
     </li>
+    <li>
+      <%= link_to "Triennial Audit Report", triennial_project_audit_reports_path(@project) %>
+      <p class="small">Tickets opened in a date range across every project/tracker configured for the Triennial audit, grouped by request code.</p>
+    </li>
   </ul>
 </div>
 

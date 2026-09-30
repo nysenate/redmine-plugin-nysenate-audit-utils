@@ -53,6 +53,14 @@ module NysenateAuditUtils
         end.uniq
       end
 
+      # "Project / Tracker" display label for a source pair, tolerating a
+      # deleted project or tracker.
+      # @return [String]
+      def source_label(project_id, tracker_id)
+        "#{Project.find_by(id: project_id)&.name || "project ##{project_id}"} / " \
+          "#{Tracker.find_by(id: tracker_id)&.name || "tracker ##{tracker_id}"}"
+      end
+
       # Source row for an issue's (project, tracker), or nil.
       # @param issue [Issue]
       # @return [Hash, nil]

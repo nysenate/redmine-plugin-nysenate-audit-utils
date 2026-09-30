@@ -51,7 +51,7 @@ Redmine::Plugin.register :nysenate_audit_utils do
   project_module :audit_utils do
     # Reporting permissions (CSV export is served by each report action via
     # format.csv, so it is gated by :view_audit_reports along with the report).
-    permission :view_audit_reports, { audit_reports: [:index, :daily, :weekly, :periodic, :monthly, :monthly_zip, :account_holder_access] }
+    permission :view_audit_reports, { audit_reports: [:index, :daily, :weekly, :periodic, :monthly, :monthly_zip, :account_holder_access, :triennial] }
 
     # User autofill permissions
     permission :use_user_autofill, { user_search: [:search, :field_mappings] }

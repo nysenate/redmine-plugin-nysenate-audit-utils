@@ -231,6 +231,40 @@ class AuditReportsController < ApplicationController
     render :error
   end
 
+  # Triennial Audit Report: tickets opened in a window across every configured
+  # project/tracker source (not just @project). Per-source failures are shown
+  # above the table instead of replacing the whole report.
+  def triennial
+    service_class = NysenateAuditUtils::Reporting::TriennialAuditReportService
+    window = service_class.default_window
+    from_date = parse_date_param(params[:start_date]) || window[:from]
+    to_date = parse_date_param(params[:end_date]) || window[:to]
+    validate_date_range!(from_date, to_date)
+
+    @source_filter = params[:source].presence
+    @code_filter = params[:code].presence
+    @search = params[:search].to_s.strip
+
+    service = service_class.new(from_date: from_date, to_date: to_date)
+    window_rows = service_class.sort_rows(service.generate)
+    @from_date = service.from_date
+    @to_date = service.to_date
+    @source_errors = service.errors
+    build_triennial_filter_options(window_rows)
+
+    @report_data = service_class.filter_rows(window_rows, source: @source_filter, code: @code_filter,
+                                                          search: @search)
+    # Group headers show each code's total across all pages, not just this one.
+    @group_totals = @report_data.map { |r| service_class.code_key(r) }.tally
+    paginate_report_data
+    @report_groups = service_class.group_by_code(@report_data)
+  rescue => e
+    Rails.logger.error "Triennial report generation failed: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    @error_message = "Unable to generate report: #{e.message}"
+    render :error
+  end
+
   # Sentinel value offered in the Target System dropdown that aggregates every
   # configured target system into a single combined table.
   ALL_SYSTEMS_OPTION = 'All Systems'
@@ -488,6 +522,31 @@ class AuditReportsController < ApplicationController
   end
 
   private
+
+  # Options for the Triennial report's Project / Tracker and Request Code
+  # filters. Each dropdown disables the options that would contradict the
+  # other's current selection (a code that no ticket in the selected
+  # project/tracker has, and vice versa), within the current date window.
+  # A selected option is never disabled, so it still submits.
+  def build_triennial_filter_options(rows)
+    service_class = NysenateAuditUtils::Reporting::TriennialAuditReportService
+
+    @source_options = NysenateAuditUtils::TriennialAuditConfiguration.source_pairs.map do |project_id, tracker_id|
+      [NysenateAuditUtils::TriennialAuditConfiguration.source_label(project_id, tracker_id), "#{project_id}-#{tracker_id}"]
+    end
+    @source_count = @source_options.size
+
+    codes = rows.filter_map { |r| r[:request_code] }.uniq.sort
+    codes << @code_filter if @code_filter && @code_filter != service_class::NO_CODE && codes.exclude?(@code_filter)
+    @code_options = codes.map { |c| [c, c] }
+    @code_options << ['No request code', service_class::NO_CODE] if rows.any? { |r| r[:request_code].nil? } ||
+                                                                   @code_filter == service_class::NO_CODE
+
+    codes_in_source = service_class.filter_rows(rows, source: @source_filter).map { |r| service_class.code_key(r) }
+    sources_with_code = service_class.filter_rows(rows, code: @code_filter).map { |r| service_class.source_key(r) }
+    @disabled_codes = @code_options.map(&:last) - codes_in_source.uniq - [@code_filter]
+    @disabled_sources = @source_options.map(&:last) - sources_with_code.uniq - [@source_filter]
+  end
 
   # Disable Bullet for the duration of a report action, but only in development
   # (the gem is only present/enabled there). Bullet is restored afterwards even
