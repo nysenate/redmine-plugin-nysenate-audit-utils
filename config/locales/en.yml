@@ -6,6 +6,7 @@ en:
   label_audit_monthly_report: "Monthly Report"
   label_audit_account_holder_access_report: "Account Holder Access Report"
   label_audit_triennial_report: "Triennial Audit Report"
+  error_triennial_no_tickets_selected: "Select at least one ticket to flag."
 
   # Daily report -> new ticket launcher (#18134)
   warning_account_request_employee_not_found: "Could not load account holder %{id} from ESS; please fill in the ticket manually."

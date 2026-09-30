@@ -1,14 +1,17 @@
 <% html_title(l(:label_audit_triennial_report)) -%>
 
 <div class="contextual">
+  <% if @permission_errors.empty? %>
   <%= link_to sprite_icon('download', "Export Excel"), triennial_project_audit_reports_path(@project,
         format: :xlsx,
         start_date: @from_date.to_date.iso8601,
         end_date: @to_date.to_date.iso8601,
         source: @source_filter,
         code: @code_filter,
+        selected: @selected_filter,
         search: @search.presence),
       class: "icon icon-download" %>
+  <% end %>
   <%= link_to sprite_icon('cancel', "Back to Reports"), project_audit_reports_path(@project), class: "icon icon-cancel" %>
 </div>
 
@@ -44,6 +47,13 @@
             class: "filter-input", onchange: "this.form.requestSubmit();" %>
     </p>
     <p>
+      <%= label_tag :selected, "Selected for Audit" %>
+      <%= select_tag :selected,
+            options_for_select([['Any', '']] + @selected_options, selected: @selected_filter,
+                               disabled: @disabled_selected),
+            class: "filter-input", onchange: "this.form.requestSubmit();" %>
+    </p>
+    <p>
       <%= label_tag :search, "Search" %>
       <%= text_field_tag :search, @search, placeholder: "Code, subject, or ticket #", class: "filter-input", size: 30 %>
       <%= submit_tag "Apply", name: nil, class: "button-small" %>
@@ -51,13 +61,26 @@
 
     <p>
       <label></label>
-      <% if params[:start_date].blank? && params[:end_date].blank? && @source_filter.nil? && @code_filter.nil? && @search.blank? %>
+      <% if params[:start_date].blank? && params[:end_date].blank? && @source_filter.nil? && @code_filter.nil? && @selected_filter.nil? &&
+            @search.blank? %>
         <span class="button-small disabled-link">Reset to Default</span>
       <% else %>
         <%= link_to "Reset to Default", triennial_project_audit_reports_path(@project), class: "button-small" %>
       <% end %>
     </p>
   </fieldset>
+<% end %>
+
+<% if @selected_year_warning && @permission_errors.empty? %>
+  <div class="flash warning triennial-year-warning">
+    <%= @selected_year_warning[:message] %>
+    <% if User.current.admin? %>
+      Add additional years to the field's possible values in
+      <%= link_to "#{@selected_year_warning[:field].name} custom field settings", edit_custom_field_path(@selected_year_warning[:field]) %>.
+    <% else %>
+      Contact a Redmine administrator to add additional years to the <%= @selected_year_warning[:field].name %> field.
+    <% end %>
+  </div>
 <% end %>
 
 <% if @source_errors.any? %>
@@ -83,7 +106,7 @@
   })();
 </script>
 
-<% filtered = @source_filter || @code_filter || @search.present? %>
+<% filtered = @source_filter || @code_filter || @selected_filter || @search.present? %>
 <% highlight = @search.present? ? [@search] : [] %>
 <% if @source_count.zero? %>
   <p class="nodata">
@@ -95,6 +118,16 @@
       Ask an administrator to configure them.
     <% end %>
   </p>
+<% elsif @permission_errors.any? %>
+  <div class="flash error triennial-permission-errors">
+    You don't have permission to view every ticket in this report, so it can't be shown.
+    Ask an administrator to grant:
+    <ul>
+      <% @permission_errors.each do |error| %>
+        <li><%= error %></li>
+      <% end %>
+    </ul>
+  </div>
 <% elsif @report_count.zero? %>
   <p class="nodata">
     <%= filtered ? 'No tickets match the selected filters.' : 'No tickets were opened in the selected date range.' %>
@@ -106,44 +139,120 @@
     <% if @source_filter %>
       in <%= @source_options.rassoc(@source_filter)&.first || @source_filter %><% if filtered %> <em>(filtered)</em><% end %>.
     <% else %>
-      across <%= pluralize(@source_count, 'project/tracker pair') %><% if filtered %> <em>(filtered)</em><% end %>.
+      across <%= pluralize(filtered ? @report_source_count : @source_count, 'project/tracker pair') %><% if filtered %> <em>(filtered)</em><% end %>.
     <% end %>
   </p>
 
-  <table class="list issues triennial-report-table">
-    <thead>
-      <tr>
-        <th>Request Code</th>
-        <th>Subject</th>
-        <th class="ticket-col">Ticket #</th>
-        <th class="date-col">Open Date</th>
-        <th class="date-col">Closed Date</th>
-        <th>Ticket Status</th>
-        <th>Selected for Audit</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @report_groups.each do |code, rows| %>
-        <tr class="group open">
-          <td colspan="7">
-            <span class="name"><%= code || 'No request code' %></span>
-            <span class="badge badge-count count"><%= @group_totals[code || NysenateAuditUtils::Reporting::TriennialAuditReportService::NO_CODE] %></span>
-          </td>
-        </tr>
-        <% rows.each do |row| %>
-          <tr>
-            <td class="code-col"><%= row[:request_code] ? highlight_tokens(row[:request_code], highlight) : '—' %></td>
-            <td class="subject"><%= highlight_tokens(row[:subject], highlight) %></td>
-            <td class="ticket-col"><%= link_to "##{row[:issue_id]}", issue_path(row[:issue_id]), target: '_blank' %></td>
-            <td class="date-col"><%= row[:open_date]&.strftime('%Y-%m-%d') || '—' %></td>
-            <td class="date-col"><%= row[:closed_date]&.strftime('%Y-%m-%d') || '—' %></td>
-            <td><%= row[:status] %></td>
-            <td><%= row[:selected_for_audit] || '—' %></td>
-          </tr>
-        <% end %>
+  <%= form_tag(flag_triennial_selections_project_audit_reports_path(@project), id: "triennial-flag-form") do %>
+    <% AuditReportsController::TRIENNIAL_REPORT_PARAMS.each do |key| %>
+      <%= hidden_field_tag key, params[key], id: nil if params[key].present? %>
+    <% end %>
+
+    <% flaggable = @flag_values.any? %>
+    <div class="triennial-flag-bar">
+      <% if flaggable %>
+        <%= label_tag :year, "Selected for Audit" %>
+        <%= select_tag :year, options_for_select(@flag_values, @flag_default), class: "filter-input" %>
+        <%= submit_tag "Flag Selected", id: "triennial-flag-submit", disabled: true %>
+        <span id="triennial-selected-count">0 selected</span>
+        <em class="info">Selections apply to this page only.</em>
+      <% else %>
+        <em>
+          Configure the Selected for Audit custom field
+          <%= User.current.admin? ? link_to('in the plugin settings', plugin_settings_path('nysenate_audit_utils')) : '(ask an administrator)' %>
+          to flag tickets from this report.
+        </em>
       <% end %>
-    </tbody>
-  </table>
+    </div>
+
+    <table class="list issues triennial-report-table">
+      <thead>
+        <tr>
+          <% if flaggable %>
+            <th class="checkbox">
+              <%= check_box_tag "triennial-select-all", '1', false, title: 'Select all on this page', id: 'triennial-select-all' %>
+            </th>
+          <% end %>
+          <th>Request Code</th>
+          <th>Subject</th>
+          <th class="ticket-col">Ticket #</th>
+          <th class="date-col">Open Date</th>
+          <th class="date-col">Closed Date</th>
+          <th>Ticket Status</th>
+          <th>Selected for Audit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @report_groups.each do |code, rows| %>
+          <tr class="group open">
+            <td colspan="<%= flaggable ? 8 : 7 %>">
+              <span class="name"><%= code || 'No request code' %></span>
+              <span class="badge badge-count count"><%= @group_totals[code || NysenateAuditUtils::Reporting::TriennialAuditReportService::NO_CODE] %></span>
+            </td>
+          </tr>
+          <% rows.each do |row| %>
+            <tr>
+              <% if flaggable %>
+                <td class="checkbox">
+                  <%= check_box_tag 'issue_ids[]', row[:issue_id], false, id: "issue-#{row[:issue_id]}",
+                        class: 'triennial-issue-checkbox', disabled: !row[:editable],
+                        title: row[:editable] ? nil : "You don't have permission to edit this ticket" %>
+                </td>
+              <% end %>
+              <td class="code-col"><%= row[:request_code] ? highlight_tokens(row[:request_code], highlight) : '—' %></td>
+              <td class="subject"><%= highlight_tokens(row[:subject], highlight) %></td>
+              <td class="ticket-col"><%= link_to "##{row[:issue_id]}", issue_path(row[:issue_id]), target: '_blank' %></td>
+              <td class="date-col"><%= row[:open_date]&.strftime('%Y-%m-%d') || '—' %></td>
+              <td class="date-col"><%= row[:closed_date]&.strftime('%Y-%m-%d') || '—' %></td>
+              <td><%= row[:status] %></td>
+              <td class="selected-col"><%= row[:selected_for_audit] || '—' %></td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <script>
+    // Flag Selected: select-all, live count, and a confirm before submitting.
+    (function () {
+      var form = document.getElementById('triennial-flag-form');
+      var selectAll = document.getElementById('triennial-select-all');
+      var submit = document.getElementById('triennial-flag-submit');
+      if (!form || !selectAll) return;
+      // Rows the user can't edit have disabled checkboxes; select-all skips them.
+      var boxes = form.querySelectorAll('.triennial-issue-checkbox:not(:disabled)');
+      selectAll.disabled = boxes.length === 0;
+
+      function refresh() {
+        var checked = form.querySelectorAll('.triennial-issue-checkbox:checked').length;
+        document.getElementById('triennial-selected-count').textContent = checked + ' selected';
+        submit.disabled = checked === 0;
+        selectAll.checked = checked > 0 && checked === boxes.length;
+        selectAll.indeterminate = checked > 0 && checked < boxes.length;
+        boxes.forEach(function (box) { box.closest('tr').classList.toggle('context-menu-selection', box.checked); });
+      }
+
+      selectAll.addEventListener('change', function () {
+        boxes.forEach(function (box) { box.checked = selectAll.checked; });
+        refresh();
+      });
+      boxes.forEach(function (box) { box.addEventListener('change', refresh); });
+
+      // The confirm goes on the button (Rails UJS data-confirm) rather than a
+      // submit listener: UJS asks before the form submits, so cancelling
+      // doesn't trip core's double-submit guard and lock the form.
+      function updateConfirm() {
+        var checked = form.querySelectorAll('.triennial-issue-checkbox:checked').length;
+        var year = document.getElementById('year').value;
+        submit.dataset.confirm = 'Set Selected for Audit to ' + year + ' on ' + checked + ' ' +
+          (checked === 1 ? 'ticket' : 'tickets') + '?';
+      }
+      form.addEventListener('change', updateConfirm);
+      refresh();
+      updateConfirm();
+    })();
+  </script>
 
   <span class="pagination"><%= pagination_links_full @report_pages, @report_count %></span>
 <% end %>
@@ -172,6 +281,12 @@
     border: 1px solid #ccc;
     border-radius: 3px;
     font-size: 0.95em;
+  }
+
+  /* Room for the theme's dropdown chevron; the padding above would cover it. */
+  #triennial-filter-form select.filter-input {
+    padding-right: 1.8em;
+    min-width: 8em;
   }
 
   .disabled-link {
@@ -216,6 +331,30 @@
   .triennial-report-table .ticket-col,
   .triennial-report-table .code-col {
     white-space: nowrap;
+  }
+
+  .triennial-flag-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    margin-bottom: 0.6em;
+  }
+
+  .triennial-flag-bar label {
+    font-weight: bold;
+  }
+
+  .triennial-flag-bar select {
+    min-width: 7em;
+  }
+
+  .triennial-report-table td.checkbox input {
+    vertical-align: middle;
+    margin: 0;
+  }
+
+  .triennial-flag-bar .info {
+    color: #888;
   }
 
   .triennial-report-table .ticket-col {

@@ -34,8 +34,8 @@ module NysenateAuditUtils
         issue.reload
       end
 
-      def generate(from: @from, to: @to)
-        service = TriennialAuditReportService.new(from_date: from, to_date: to)
+      def generate(from: @from, to: @to, user: User.find(1))
+        service = TriennialAuditReportService.new(from_date: from, to_date: to, user: user)
         [service, service.generate]
       end
 
@@ -47,6 +47,71 @@ module NysenateAuditUtils
 
         _service, rows = generate
         assert_equal [bug.id, feature.id].sort, rows.pluck(:issue_id).sort
+      end
+
+      # dlopper (user 3) is a Developer on project 1 only; Developer's issue
+      # visibility is "All non private issues".
+      def developer
+        User.find(3)
+      end
+
+      test 'an admin sees everything with no permission errors' do
+        make_issue(is_private: true)
+        make_issue(project_id: 2)
+        Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(
+          'triennial_audit_sources' => [
+            { 'project_id' => '1', 'tracker_id' => '1', 'mapping_mode' => 'tracker' },
+            { 'project_id' => '2', 'tracker_id' => '1', 'mapping_mode' => 'tracker' }
+          ]
+        )
+
+        service, rows = generate
+        assert_equal 2, rows.size
+        assert_empty service.permission_errors
+      end
+
+      test 'lists a project the user cannot view issues in, once per project' do
+        Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(
+          'triennial_audit_sources' => [
+            { 'project_id' => '1', 'tracker_id' => '1', 'mapping_mode' => 'tracker' },
+            { 'project_id' => '2', 'tracker_id' => '1', 'mapping_mode' => 'tracker' },
+            { 'project_id' => '2', 'tracker_id' => '2', 'mapping_mode' => 'tracker' }
+          ]
+        )
+
+        service, = generate(user: developer)
+        assert_equal ["View issues in #{Project.find(2).name}"], service.permission_errors
+      end
+
+      test 'lists a tracker the user cannot view issues for' do
+        role = Role.find(2)
+        role.set_permission_trackers(:view_issues, [1])
+        role.save!
+
+        service, = generate(user: developer)
+        assert_equal ["View issues for the Feature request tracker in #{Project.find(1).name}"],
+                     service.permission_errors
+      end
+
+      test 'lists issues visibility when some tickets in the window are hidden' do
+        make_issue
+        make_issue(is_private: true)
+        make_issue(is_private: true, created_on: Time.zone.parse('2025-06-01')) # outside the window
+
+        service, rows = generate(user: developer)
+        assert_equal 1, rows.size
+        assert_equal ["Issues visibility \"All issues\" in #{Project.find(1).name} " \
+                      '(your current visibility hides 1 Bug ticket in this date range)'], service.permission_errors
+      end
+
+      test 'rows say whether the user can edit the ticket' do
+        make_issue
+        _service, rows = generate(user: developer)
+        assert rows.first[:editable]
+
+        Role.find(2).remove_permission!(:edit_issues)
+        _service, rows = generate(user: developer)
+        assert_not rows.first[:editable]
       end
 
       test 'window includes the whole From and To days' do
@@ -133,8 +198,10 @@ module NysenateAuditUtils
       end
 
       FILTER_ROWS = [
-        { request_code: 'AIXA', subject: 'Add AIX account', issue_id: 101, project_id: 1, tracker_id: 1 },
-        { request_code: 'AIXI', subject: 'Remove AIX account', issue_id: 102, project_id: 1, tracker_id: 1 },
+        { request_code: 'AIXA', subject: 'Add AIX account', issue_id: 101, project_id: 1, tracker_id: 1,
+          selected_for_audit: '2025' },
+        { request_code: 'AIXI', subject: 'Remove AIX account', issue_id: 102, project_id: 1, tracker_id: 1,
+          selected_for_audit: 'No' },
         { request_code: 'NEW', subject: 'New payroll process', issue_id: 203, project_id: 2, tracker_id: 3 },
         { request_code: nil, subject: 'Uncoded request', issue_id: 204, project_id: 2, tracker_id: 3 }
       ].freeze
@@ -149,6 +216,12 @@ module NysenateAuditUtils
         assert_equal [102], filtered_ids(code: 'AIXI')
         assert_equal [204], filtered_ids(code: TriennialAuditReportService::NO_CODE)
         assert_empty filtered_ids(source: '2-3', code: 'AIXA')
+      end
+
+      test 'filter_rows filters by Selected for Audit value, with No matching unset tickets' do
+        assert_equal [101], filtered_ids(selected: '2025')
+        assert_equal [102, 203, 204], filtered_ids(selected: 'No')
+        assert_empty filtered_ids(selected: '2025', code: 'AIXI')
       end
 
       test 'search matches code or subject substrings, case-insensitively' do

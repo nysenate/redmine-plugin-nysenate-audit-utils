@@ -12,6 +12,7 @@ Rails.application.routes.draw do
         get :monthly_zip
         get :account_holder_access
         get :triennial
+        post :flag_triennial_selections
       end
     end
   end

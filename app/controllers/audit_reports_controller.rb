@@ -243,6 +243,7 @@ class AuditReportsController < ApplicationController
 
     @source_filter = params[:source].presence
     @code_filter = params[:code].presence
+    @selected_filter = params[:selected].presence
     @search = params[:search].to_s.strip
 
     service = service_class.new(from_date: from_date, to_date: to_date)
@@ -250,19 +251,33 @@ class AuditReportsController < ApplicationController
     @from_date = service.from_date
     @to_date = service.to_date
     @source_errors = service.errors
+    # The report is all-or-nothing: a viewer who can't see every ticket gets
+    # the list of missing permissions instead of a partial report.
+    @permission_errors = service.permission_errors
     build_triennial_filter_options(window_rows)
+    @flag_values = NysenateAuditUtils::Reporting::TriennialAuditFlagService.flag_values
+    @flag_default = @flag_values.include?(params[:year]) ? params[:year] : NysenateAuditUtils::Reporting::TriennialAuditFlagService.default_value
+    @selected_year_warning = triennial_selected_year_warning
 
     @report_data = service_class.filter_rows(window_rows, source: @source_filter, code: @code_filter,
-                                                          search: @search)
+                                                          selected: @selected_filter, search: @search)
 
     respond_to do |format|
       format.html do
         # Group headers show each code's total across all pages, not just this one.
         @group_totals = @report_data.map { |r| service_class.code_key(r) }.tally
+        # A filtered banner counts only the pairs that still have tickets.
+        @report_source_count = @report_data.map { |r| service_class.source_key(r) }.uniq.size
         paginate_report_data
         @report_groups = service_class.group_by_code(@report_data)
       end
       format.xlsx do
+        if @permission_errors.any?
+          render plain: "You don't have permission to view every ticket in this report. Missing: " \
+                        "#{@permission_errors.join('; ')}", status: :forbidden, content_type: 'text/plain'
+          next
+        end
+
         xlsx_data = NysenateAuditUtils::Reporting::XlsxGenerator.generate_triennial_xlsx(
           service_class.group_by_code(@report_data),
           from_date: @from_date, to_date: @to_date, filters: triennial_filter_description
@@ -278,6 +293,23 @@ class AuditReportsController < ApplicationController
     Rails.logger.error e.backtrace.join("\n")
     @error_message = "Unable to generate report: #{e.message}"
     render :error
+  end
+
+  # Report params carried through a Flag Selected round trip.
+  TRIENNIAL_REPORT_PARAMS = [:start_date, :end_date, :source, :code, :selected, :search, :page, :per_page].freeze
+
+  # "Flag Selected" on the Triennial Audit Report: set Selected for Audit on
+  # the checked tickets, then return to the report with its filters intact.
+  def flag_triennial_selections
+    issue_ids = Array(params[:issue_ids]).compact_blank
+    if issue_ids.empty?
+      flash[:error] = l(:error_triennial_no_tickets_selected)
+    else
+      flag_triennial_issues(issue_ids, params[:year].to_s)
+    end
+    # Carry the chosen year back so a series of flags keeps the same selection.
+    redirect_to triennial_project_audit_reports_path(@project,
+                                                     params.permit(*TRIENNIAL_REPORT_PARAMS, :year).to_h)
   end
 
   # Sentinel value offered in the Target System dropdown that aggregates every
@@ -543,6 +575,30 @@ class AuditReportsController < ApplicationController
   # other's current selection (a code that no ticket in the selected
   # project/tracker has, and vice versa), within the current date window.
   # A selected option is never disabled, so it still submits.
+  def flag_triennial_issues(issue_ids, value)
+    result = NysenateAuditUtils::Reporting::TriennialAuditFlagService.new.flag(issue_ids, value)
+    flash[:notice] = triennial_flag_notice(result, value)
+    return if result.failed.empty?
+
+    if result.permission_denied?
+      flash[:error] = 'Nothing was flagged. You need permission to view and edit every selected ticket: ' +
+                      result.failed.map { |f| "##{f[:issue_id]} (#{f[:message]})" }.join(', ')
+      return
+    end
+
+    flash[:error] = "Could not flag #{view_context.pluralize(result.failed.size, 'ticket')}: " +
+                    result.failed.map { |f| "##{f[:issue_id]} (#{f[:message]})" }.join(', ')
+  rescue ArgumentError => e
+    flash[:error] = e.message
+  end
+
+  def triennial_flag_notice(result, value)
+    parts = []
+    parts << "Set Selected for Audit to #{value} on #{view_context.pluralize(result.flagged.size, 'ticket')}." if result.flagged.any?
+    parts << "#{view_context.pluralize(result.unchanged.size, 'ticket')} already #{value}." if result.unchanged.any?
+    parts.join(' ').presence
+  end
+
   # Human-readable summary of the triennial report's active filters for the
   # export's metadata, or nil when unfiltered.
   def triennial_filter_description
@@ -554,10 +610,16 @@ class AuditReportsController < ApplicationController
       no_code = @code_filter == NysenateAuditUtils::Reporting::TriennialAuditReportService::NO_CODE
       parts << "Request Code: #{no_code ? 'No request code' : @code_filter}"
     end
+    parts << "Selected for Audit: #{@selected_filter}" if @selected_filter
     parts << "Search: #{@search}" if @search.present?
     parts.join('; ').presence
   end
 
+  # Options for the triennial report's Project / Tracker, Request Code and
+  # Selected for Audit filters. An option is disabled when no ticket in the
+  # window matches it together with the other two filters (search is
+  # ignored); the currently selected option is never disabled, since a
+  # disabled option isn't submitted with the form.
   def build_triennial_filter_options(rows)
     service_class = NysenateAuditUtils::Reporting::TriennialAuditReportService
 
@@ -572,10 +634,32 @@ class AuditReportsController < ApplicationController
     @code_options << ['No request code', service_class::NO_CODE] if rows.any? { |r| r[:request_code].nil? } ||
                                                                    @code_filter == service_class::NO_CODE
 
-    codes_in_source = service_class.filter_rows(rows, source: @source_filter).map { |r| service_class.code_key(r) }
-    sources_with_code = service_class.filter_rows(rows, code: @code_filter).map { |r| service_class.source_key(r) }
-    @disabled_codes = @code_options.map(&:last) - codes_in_source.uniq - [@code_filter]
-    @disabled_sources = @source_options.map(&:last) - sources_with_code.uniq - [@source_filter]
+    field_values = NysenateAuditUtils::CustomFieldConfiguration.selected_for_audit_field&.possible_values || []
+    # Unset tickets filter as "No" (see TriennialAuditReportService.selected_key).
+    selected_values = field_values | rows.map { |r| service_class.selected_key(r) }
+    selected_values |= [@selected_filter] if @selected_filter
+    @selected_options = selected_values.map { |v| [v, v] }
+
+    filters = { source: @source_filter, code: @code_filter, selected: @selected_filter }
+    available = lambda do |dimension, key_method|
+      service_class.filter_rows(rows, **filters.except(dimension)).map { |r| service_class.public_send(key_method, r) }.uniq
+    end
+    @disabled_sources = @source_options.map(&:last) - available.call(:source, :source_key) - [@source_filter]
+    @disabled_codes = @code_options.map(&:last) - available.call(:code, :code_key) - [@code_filter]
+    @disabled_selected = @selected_options.map(&:last) - available.call(:selected, :selected_key) - [@selected_filter]
+  end
+
+  # Warning shown when the Selected for Audit field has no year option for
+  # the report's To year, so auditors' picks for that year can't be flagged.
+  def triennial_selected_year_warning
+    field = NysenateAuditUtils::CustomFieldConfiguration.selected_for_audit_field
+    return unless field
+
+    latest = field.possible_values.grep(/\A\d{4}\z/).map(&:to_i).max
+    return if latest && latest >= @to_date.year
+
+    latest_note = latest ? " (its latest is #{latest})" : ''
+    { field: field, message: "The #{field.name} field has no year option that covers #{@to_date.year}#{latest_note}." }
   end
 
   # Disable Bullet for the duration of a report action, but only in development
