@@ -271,7 +271,7 @@ module NysenateAuditUtils
         assert_empty filtered_ids(source: '2-3', code: 'AIXA')
       end
 
-      test 'filter_rows filters by Selected for Audit value, with No matching unset tickets' do
+      test 'filter_rows filters by Selected by Auditors value, with No matching unset tickets' do
         assert_equal [101], filtered_ids(selected: '2025')
         assert_equal [102, 203, 204], filtered_ids(selected: 'No')
         assert_empty filtered_ids(selected: '2025', code: 'AIXI')

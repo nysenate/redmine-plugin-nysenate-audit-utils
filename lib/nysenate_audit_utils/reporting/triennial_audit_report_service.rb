@@ -17,7 +17,7 @@ module NysenateAuditUtils
     class TriennialAuditReportService
       # Code filter value for tickets whose request code didn't resolve.
       NO_CODE = '__none__'
-      # Selected for Audit value meaning "not selected". Tickets with no value
+      # Selected by Auditors value meaning "not selected". Tickets with no value
       # set filter as this too.
       NOT_SELECTED = 'No'
 
@@ -62,7 +62,7 @@ module NysenateAuditUtils
         row[:request_code] || NO_CODE
       end
 
-      # Selected for Audit filter value for a row (NOT_SELECTED when blank).
+      # Selected by Auditors filter value for a row (NOT_SELECTED when blank).
       # @return [String]
       def self.selected_key(row)
         row[:selected_for_audit] || NOT_SELECTED
@@ -71,7 +71,7 @@ module NysenateAuditUtils
       # Apply the report's filters. Blank filters are ignored.
       # @param source [String, nil] a .source_key value
       # @param code [String, nil] a request code, or NO_CODE
-      # @param selected [String, nil] a Selected for Audit value; NOT_SELECTED
+      # @param selected [String, nil] a Selected by Auditors value; NOT_SELECTED
       #   also matches tickets with no value
       # @param search [String, nil] case-insensitive substring of the code or
       #   subject, or an exact ticket number (a leading '#' is ignored)

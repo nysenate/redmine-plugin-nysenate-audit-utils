@@ -44,7 +44,7 @@ class TriennialReportTest < ActionController::TestCase
     assert_select 'table.triennial-report-table a[href=?]', "/issues/#{uncoded.id}"
     headers = css_select('table.triennial-report-table thead th').map { |th| th.text.strip }
     assert_equal ['Request Code', 'Subject', 'Ticket #', 'Open Date', 'Closed Date',
-                  'Ticket Status', 'Selected for Audit'], headers
+                  'Ticket Status', 'Selected by Auditors'], headers
   end
 
   test 'group counts are totals across pages' do
@@ -242,7 +242,7 @@ class TriennialReportTest < ActionController::TestCase
     field
   end
 
-  test 'shows checkboxes and the year selector when Selected for Audit is configured' do
+  test 'shows checkboxes and the year selector when Selected by Auditors is configured' do
     with_selected_field
     issue = make_issue(project_id: 1, tracker_id: 1)
 
@@ -257,13 +257,13 @@ class TriennialReportTest < ActionController::TestCase
     assert option('year', 'No')['selected'], 'keeps the year chosen before a flag'
   end
 
-  test 'hides flagging when Selected for Audit is not configured' do
+  test 'hides flagging when Selected by Auditors is not configured' do
     make_issue(project_id: 1, tracker_id: 1)
 
     get :triennial, params: { project_id: 1 }
 
     assert_select 'input[name=?]', 'issue_ids[]', count: 0
-    assert_select '.triennial-flag-bar', text: /Configure the Selected for Audit custom field/
+    assert_select '.triennial-flag-bar', text: /Configure the Selected by Auditors custom field/
   end
 
   test 'flag selected sets the field and returns to the filtered report' do
@@ -275,7 +275,7 @@ class TriennialReportTest < ActionController::TestCase
 
     assert_redirected_to '/projects/ecookbook/audit_reports/triennial?code=BUGA&page=2&year=2025'
     assert_equal '2025', issue.reload.custom_field_value(field)
-    assert_equal 'Set Selected for Audit to 2025 on 1 ticket.', flash[:notice]
+    assert_equal 'Set Selected by Auditors to 2025 on 1 ticket.', flash[:notice]
   end
 
   test 'flag selected reports tickets it could not flag' do
@@ -309,7 +309,7 @@ class TriennialReportTest < ActionController::TestCase
 
     assert_response :forbidden
   end
-  test 'filters by Selected for Audit and disables contradictory options' do
+  test 'filters by Selected by Auditors and disables contradictory options' do
     field = with_selected_field
     # A 2020 window keeps the fixture issues (no value, so "No") out.
     window = { project_id: 1, start_date: '2020-05-01', end_date: '2020-05-31' }
@@ -330,7 +330,7 @@ class TriennialReportTest < ActionController::TestCase
     assert option('selected', 'No')['disabled'], 'every project 1 / tracker 1 ticket is 2025'
   end
 
-  test 'Selected for Audit No includes tickets with no value set' do
+  test 'Selected by Auditors No includes tickets with no value set' do
     field = with_selected_field
     no = make_issue(project_id: 1, tracker_id: 1) # defaults to No
     unset = make_issue(project_id: 2, tracker_id: 2)
@@ -343,7 +343,7 @@ class TriennialReportTest < ActionController::TestCase
     assert_equal ['Any', 'No', '2025'], css_select('select#selected option').map(&:text)
   end
 
-  test 'flag selected keeps the Selected for Audit filter' do
+  test 'flag selected keeps the Selected by Auditors filter' do
     with_selected_field
     issue = make_issue(project_id: 1, tracker_id: 1)
 
@@ -352,7 +352,7 @@ class TriennialReportTest < ActionController::TestCase
     assert_redirected_to '/projects/ecookbook/audit_reports/triennial?selected=No&year=2025'
   end
 
-  test 'warns when Selected for Audit has no option for the To year' do
+  test 'warns when Selected by Auditors has no option for the To year' do
     field = with_selected_field # No, 2025
 
     get :triennial, params: { project_id: 1, start_date: '2024-01-01', end_date: '2026-06-30' }
@@ -374,7 +374,7 @@ class TriennialReportTest < ActionController::TestCase
     assert_select '.triennial-year-warning a', count: 0
   end
 
-  test 'no year warning when Selected for Audit is not configured' do
+  test 'no year warning when Selected by Auditors is not configured' do
     get :triennial, params: { project_id: 1 }
 
     assert_select '.triennial-year-warning', count: 0

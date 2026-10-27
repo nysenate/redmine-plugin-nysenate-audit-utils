@@ -298,7 +298,7 @@ class AuditReportsController < ApplicationController
   # Report params carried through a Flag Selected round trip.
   TRIENNIAL_REPORT_PARAMS = [:start_date, :end_date, :source, :code, :selected, :search, :page, :per_page].freeze
 
-  # "Flag Selected" on the Triennial Audit Report: set Selected for Audit on
+  # "Flag Selected" on the Triennial Audit Report: set Selected by Auditors on
   # the checked tickets, then return to the report with its filters intact.
   def flag_triennial_selections
     issue_ids = Array(params[:issue_ids]).compact_blank
@@ -594,7 +594,7 @@ class AuditReportsController < ApplicationController
 
   def triennial_flag_notice(result, value)
     parts = []
-    parts << "Set Selected for Audit to #{value} on #{view_context.pluralize(result.flagged.size, 'ticket')}." if result.flagged.any?
+    parts << "Set Selected by Auditors to #{value} on #{view_context.pluralize(result.flagged.size, 'ticket')}." if result.flagged.any?
     parts << "#{view_context.pluralize(result.unchanged.size, 'ticket')} already #{value}." if result.unchanged.any?
     parts.join(' ').presence
   end
@@ -610,13 +610,13 @@ class AuditReportsController < ApplicationController
       no_code = @code_filter == NysenateAuditUtils::Reporting::TriennialAuditReportService::NO_CODE
       parts << "Request Code: #{no_code ? 'No request code' : @code_filter}"
     end
-    parts << "Selected for Audit: #{@selected_filter}" if @selected_filter
+    parts << "Selected by Auditors: #{@selected_filter}" if @selected_filter
     parts << "Search: #{@search}" if @search.present?
     parts.join('; ').presence
   end
 
   # Options for the triennial report's Project / Tracker, Request Code and
-  # Selected for Audit filters. An option is disabled when no ticket in the
+  # Selected by Auditors filters. An option is disabled when no ticket in the
   # window matches it together with the other two filters (search is
   # ignored); the currently selected option is never disabled, since a
   # disabled option isn't submitted with the form.
@@ -649,7 +649,7 @@ class AuditReportsController < ApplicationController
     @disabled_selected = @selected_options.map(&:last) - available.call(:selected, :selected_key) - [@selected_filter]
   end
 
-  # Warning shown when the Selected for Audit field has no year option for
+  # Warning shown when the Selected by Auditors field has no year option for
   # the report's To year, so auditors' picks for that year can't be flagged.
   def triennial_selected_year_warning
     field = NysenateAuditUtils::CustomFieldConfiguration.selected_for_audit_field

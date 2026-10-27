@@ -252,7 +252,7 @@ module NysenateAuditUtils
       end
 
       # Get Triennial Audit Report configuration status.
-      # The 'Selected for Audit' field is already covered by the generic
+      # The 'Selected by Auditors' field is already covered by the generic
       # Custom Fields section. An empty source list is only a warning; an
       # Account Request Code row whose project/tracker lacks the Account
       # Action / Target System fields is an error, since every ticket from

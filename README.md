@@ -120,7 +120,7 @@ under **Administration → Plugins → Configure**:
 
 **Reporting Fields:**
 - `BAC #` - Text — legacy BAC ticket number. No report displays it any longer, but the field mapping is still required.
-- `Selected for Audit` - List (`No` plus audit years, e.g. `2022`, `2025`) — optional; set by the Triennial Audit Report's **Flag Selected** action (see [Triennial Audit Report Configuration](#6-triennial-audit-report-configuration-optional)).
+- `Selected by Auditors` - List (`No` plus audit years, e.g. `2022`, `2025`) — optional; set by the Triennial Audit Report's **Flag Selected** action (see [Triennial Audit Report Configuration](#6-triennial-audit-report-configuration-optional)).
 
 Use **"Auto-Configure All Fields"** to detect fields by name; if auto-detection
 fails, select field IDs manually. Status indicators (✓ / ✗) confirm which
@@ -203,7 +203,7 @@ checked Target System values (none checked = all systems). Running the plugin
 migrations seeds it with the systems mapped to the USR, AIX, SYS, OPR, CTR,
 AGB and REM request-code prefixes.
 
-To flag tickets from the report, map the `Selected for Audit` field (see
+To flag tickets from the report, map the `Selected by Auditors` field (see
 [Custom Field Configuration](#2-custom-field-configuration)) and enable it on
 **every** source project/tracker. The accordion warns about any source that
 lacks it. Add a new audit year to the field's possible values before each
@@ -245,7 +245,7 @@ Access via the project menu: **Reports → Audit Utils**. Report types:
   configured project/tracker sources, grouped by request code, with an Excel
   export for the auditors. Tickets the auditors pick
   are then checked in the web view and marked with **Flag Selected**, which sets
-  `Selected for Audit` to the audit year. See [Triennial Audit Report
+  `Selected by Auditors` to the audit year. See [Triennial Audit Report
   Configuration](#6-triennial-audit-report-configuration-optional).
 - **Account Holder Access Report**: One row per account (account holder ×
   system) showing derived active/inactive status, filterable by search, account

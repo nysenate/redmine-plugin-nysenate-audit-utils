@@ -335,7 +335,7 @@ class ConfigurationStatusServiceTest < ActiveSupport::TestCase
     assert_equal :error, status[:status]
     assert_includes status[:errors].first, 'uses Account Request Code'
   end
-  test 'triennial audit status warns about sources without Selected for Audit enabled' do
+  test 'triennial audit status warns about sources without Selected by Auditors enabled' do
     field = IssueCustomField.create!(name: 'Triennial Selected', field_format: 'list', possible_values: %w[No 2025],
                                      is_for_all: true, trackers: [Tracker.find(1)])
     Setting.plugin_nysenate_audit_utils = {

@@ -95,7 +95,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:find_by).with(id: 11, type: 'IssueCustomField').returns(CustomField.new(id: 11, name: 'BAC #'))
     CustomField.stubs(:find_by).with(id: 12, type: 'IssueCustomField').returns(CustomField.new(id: 12, name: 'Requested By'))
     CustomField.stubs(:find_by).with(id: 13, type: 'IssueCustomField').returns(CustomField.new(id: 13, name: 'Authorizing User(s)'))
-    CustomField.stubs(:find_by).with(id: 14, type: 'IssueCustomField').returns(CustomField.new(id: 14, name: 'Selected for Audit'))
+    CustomField.stubs(:find_by).with(id: 14, type: 'IssueCustomField').returns(CustomField.new(id: 14, name: 'Selected by Auditors'))
 
     errors = NysenateAuditUtils::CustomFieldConfiguration.validate
     assert_empty errors
@@ -145,7 +145,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:find_by).with(id: 11, type: 'IssueCustomField').returns(CustomField.new(id: 11, name: 'BAC #'))
     CustomField.stubs(:find_by).with(id: 12, type: 'IssueCustomField').returns(CustomField.new(id: 12, name: 'Requested By'))
     CustomField.stubs(:find_by).with(id: 13, type: 'IssueCustomField').returns(CustomField.new(id: 13, name: 'Authorizing User(s)'))
-    CustomField.stubs(:find_by).with(id: 14, type: 'IssueCustomField').returns(CustomField.new(id: 14, name: 'Selected for Audit'))
+    CustomField.stubs(:find_by).with(id: 14, type: 'IssueCustomField').returns(CustomField.new(id: 14, name: 'Selected by Auditors'))
 
     assert NysenateAuditUtils::CustomFieldConfiguration.valid?
   end
@@ -203,7 +203,7 @@ class CustomFieldConfigurationTest < ActiveSupport::TestCase
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Target System').returns([])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Requested By').returns([])
     CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Authorizing User(s)').returns([])
-    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Selected for Audit').returns([])
+    CustomField.stubs(:where).with(type: 'IssueCustomField', name: 'Selected by Auditors').returns([])
 
     Setting.stubs(:plugin_nysenate_audit_utils=)
 

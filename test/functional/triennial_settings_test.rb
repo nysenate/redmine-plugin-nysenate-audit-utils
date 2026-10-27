@@ -180,7 +180,7 @@ class TriennialSettingsTest < Redmine::ControllerTest
     header = css_select('.accordion-header[data-section="request-codes"] h3').first.text
     assert_includes header, 'Account Request Code Configuration'
   end
-  test 'warns on source rows whose project/tracker lacks Selected for Audit' do
+  test 'warns on source rows whose project/tracker lacks Selected by Auditors' do
     field = IssueCustomField.create!(name: 'Triennial Selected', field_format: 'list', possible_values: %w[No 2025],
                                      is_for_all: true, trackers: [@tracker])
     Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(

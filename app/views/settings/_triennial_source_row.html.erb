@@ -15,7 +15,7 @@
   field_pairs = pair['fields']
   arc_available = pair['arc']
   sfa_missing = pair['sfa_missing']
-  sfa_name = NysenateAuditUtils::CustomFieldConfiguration.selected_for_audit_field&.name || 'Selected for Audit'
+  sfa_name = NysenateAuditUtils::CustomFieldConfiguration.selected_for_audit_field&.name || 'Selected by Auditors'
   values = field_id ? (field_values[field_id.to_i] || []) : []
 
   mode_options = [

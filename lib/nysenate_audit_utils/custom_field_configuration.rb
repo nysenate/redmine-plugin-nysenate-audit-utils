@@ -87,7 +87,7 @@ module NysenateAuditUtils
         category: :request_codes
       },
       'selected_for_audit_field_id' => {
-        name: 'Selected for Audit',
+        name: 'Selected by Auditors',
         description: 'Dropdown (No / audit year) set by the Triennial Audit Report\'s ' \
                      '"Flag Selected" action. Must be enabled on every tracker configured ' \
                      'as a Triennial Audit source.',
@@ -311,12 +311,12 @@ module NysenateAuditUtils
         get_field('authorizing_users_field_id')
       end
 
-      # Get Selected for Audit field ID
+      # Get Selected by Auditors field ID
       def selected_for_audit_field_id
         get_field_id('selected_for_audit_field_id')
       end
 
-      # Get Selected for Audit field
+      # Get Selected by Auditors field
       def selected_for_audit_field
         get_field('selected_for_audit_field_id')
       end

@@ -47,7 +47,7 @@
             class: "filter-input", onchange: "this.form.requestSubmit();" %>
     </p>
     <p>
-      <%= label_tag :selected, "Selected for Audit" %>
+      <%= label_tag :selected, "Selected by Auditors" %>
       <%= select_tag :selected,
             options_for_select([['Any', '']] + @selected_options, selected: @selected_filter,
                                disabled: @disabled_selected),
@@ -163,14 +163,14 @@
     <% flaggable = @flag_values.any? %>
     <div class="triennial-flag-bar">
       <% if flaggable %>
-        <%= label_tag :year, "Selected for Audit" %>
+        <%= label_tag :year, "Selected by Auditors" %>
         <%= select_tag :year, options_for_select(@flag_values, @flag_default), class: "filter-input" %>
         <%= submit_tag "Flag Selected", id: "triennial-flag-submit", disabled: true %>
         <span id="triennial-selected-count">0 selected</span>
         <em class="info">Selections apply to this page only.</em>
       <% else %>
         <em>
-          Configure the Selected for Audit custom field
+          Configure the Selected by Auditors custom field
           <%= User.current.admin? ? link_to('in the plugin settings', plugin_settings_path('nysenate_audit_utils')) : '(ask an administrator)' %>
           to flag tickets from this report.
         </em>
@@ -191,7 +191,7 @@
           <th class="date-col">Open Date</th>
           <th class="date-col">Closed Date</th>
           <th>Ticket Status</th>
-          <th>Selected for Audit</th>
+          <th>Selected by Auditors</th>
         </tr>
       </thead>
       <tbody>
@@ -257,7 +257,7 @@
       function updateConfirm() {
         var checked = form.querySelectorAll('.triennial-issue-checkbox:checked').length;
         var year = document.getElementById('year').value;
-        submit.dataset.confirm = 'Set Selected for Audit to ' + year + ' on ' + checked + ' ' +
+        submit.dataset.confirm = 'Set Selected by Auditors to ' + year + ' on ' + checked + ' ' +
           (checked === 1 ? 'ticket' : 'tickets') + '?';
       }
       form.addEventListener('change', updateConfirm);

@@ -176,7 +176,7 @@ module NysenateAuditUtils
         end
       end
 
-      # Whether the Selected for Audit field is configured but not enabled on
+      # Whether the Selected by Auditors field is configured but not enabled on
       # this project/tracker, so the report's Flag Selected can't set it.
       # False when the field isn't configured — the Custom Field
       # Configuration section covers that.
@@ -188,7 +188,7 @@ module NysenateAuditUtils
         available_fields(project, tracker).map(&:id).exclude?(field_id)
       end
 
-      # Rows whose project/tracker doesn't have Selected for Audit enabled
+      # Rows whose project/tracker doesn't have Selected by Auditors enabled
       # (rows for a deleted project/tracker are skipped).
       # @return [Array<Hash>]
       def sources_missing_selected_for_audit

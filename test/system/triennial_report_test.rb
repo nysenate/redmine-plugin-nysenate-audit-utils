@@ -15,7 +15,7 @@ class TriennialReportSystemTest < AuditUtilsSystemTestCase
     @project = Project.find(1)
     @project.enable_module!(:audit_utils)
     @field = IssueCustomField.create!(
-      name: 'Selected for Audit', field_format: 'list', possible_values: %w[No 2022 2025],
+      name: 'Selected by Auditors', field_format: 'list', possible_values: %w[No 2022 2025],
       default_value: 'No', is_for_all: true, trackers: [Tracker.find(1)]
     )
     Setting.plugin_nysenate_audit_utils = {
@@ -36,13 +36,13 @@ class TriennialReportSystemTest < AuditUtilsSystemTestCase
     check "issue-#{picked.id}"
     assert_text '1 selected'
     select '2022', from: 'year'
-    accept_confirm('Set Selected for Audit to 2022 on 1 ticket?') { click_button 'Flag Selected' }
+    accept_confirm('Set Selected by Auditors to 2022 on 1 ticket?') { click_button 'Flag Selected' }
 
-    assert_text 'Set Selected for Audit to 2022 on 1 ticket.'
+    assert_text 'Set Selected by Auditors to 2022 on 1 ticket.'
     assert_equal '2022', picked.reload.custom_field_value(@field)
     assert_equal 'No', skipped.reload.custom_field_value(@field)
 
-    # The flagged ticket now matches the Selected for Audit filter.
+    # The flagged ticket now matches the Selected by Auditors filter.
     select '2022', from: 'selected'
     click_button 'Apply'
     within 'table.triennial-report-table' do
@@ -61,7 +61,7 @@ class TriennialReportSystemTest < AuditUtilsSystemTestCase
     assert_equal 'No', issue.reload.custom_field_value(@field)
     # Core's double-submit guard must not have locked the form.
     accept_confirm { click_button 'Flag Selected' }
-    assert_text 'Set Selected for Audit to 2025 on 1 ticket.'
+    assert_text 'Set Selected by Auditors to 2025 on 1 ticket.'
   end
 
   def test_excel_export_lists_the_report_tickets

@@ -2,7 +2,7 @@
 
 module NysenateAuditUtils
   module Reporting
-    # Sets "Selected for Audit" on the tickets picked in the Triennial Audit
+    # Sets "Selected by Auditors" on the tickets picked in the Triennial Audit
     # Report ("Flag Selected").
     #
     # The user needs to both view and edit every ticket submitted; if any
@@ -57,8 +57,8 @@ module NysenateAuditUtils
       # @raise [ArgumentError] when the field isn't configured or value isn't allowed
       def flag(issue_ids, value)
         field = CustomFieldConfiguration.selected_for_audit_field
-        raise ArgumentError, 'The Selected for Audit field is not configured.' unless field
-        raise ArgumentError, "\"#{value}\" is not a Selected for Audit value." unless self.class.flag_values.include?(value)
+        raise ArgumentError, 'The Selected by Auditors field is not configured.' unless field
+        raise ArgumentError, "\"#{value}\" is not a Selected by Auditors value." unless self.class.flag_values.include?(value)
 
         ids = Array(issue_ids).map(&:to_i).uniq
         issues = Issue.where(id: ids).includes(:project, :tracker, :custom_values).index_by(&:id)
