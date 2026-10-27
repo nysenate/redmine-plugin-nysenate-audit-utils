@@ -8,7 +8,8 @@ module NysenateAuditUtils
     #
     # Output mirrors Kim's spreadsheet columns rather than the Weekly report:
     #   RequestType, FullName, Userid, Office, EntryDate, CompletedDate,
-    #   SenDevNumber (ticket #), Description (subject).
+    #   SenDevNumber (ticket #), GeneralFormInfoID (from the office; see
+    #   GeneralFormInfoIdConfiguration), Description (subject).
     class PeriodicAuditReportService
       # System selector => request-code prefix used to resolve the configured
       # target-system value(s) to filter on.
@@ -146,6 +147,8 @@ module NysenateAuditUtils
         end
 
         request_code_mapper = NysenateAuditUtils::RequestCodes::RequestCodeMapper.new
+        gfi_id_config = NysenateAuditUtils::GeneralFormInfoIdConfiguration
+        gfi_id_map = gfi_id_config.office_map
 
         # Closed issues in the window whose Target System custom value is one of
         # the systems for the selected prefix (USR* for SFMS, SFS* for SFS).
@@ -169,12 +172,14 @@ module NysenateAuditUtils
 
           target_system  = get_custom_field_value(issue, target_system_field_id)
           request_code   = request_code_mapper.get_request_code(account_action, target_system)
+          office         = user_location_field_id ? get_custom_field_value(issue, user_location_field_id) : nil
 
           {
             request_code: request_code,
             user_name: user_name_field_id ? get_custom_field_value(issue, user_name_field_id) : nil,
             user_uid: user_uid_field_id ? get_custom_field_value(issue, user_uid_field_id) : nil,
-            office: user_location_field_id ? get_custom_field_value(issue, user_location_field_id) : nil,
+            office: office,
+            general_form_info_id: gfi_id_config.lookup(office, gfi_id_map),
             created_on: issue.created_on,
             closed_on: issue.closed_on,
             issue_id: issue.id,

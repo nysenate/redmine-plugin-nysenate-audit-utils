@@ -177,6 +177,7 @@ module NysenateAuditUtils
               'Description'
             ]
 
+            program = CsvGenerator.periodic_program(system)
             rows = data.map do |row|
               [
                 row[:request_code],
@@ -186,8 +187,8 @@ module NysenateAuditUtils
                 row[:created_on]&.strftime('%Y-%m-%d'),
                 row[:closed_on]&.strftime('%Y-%m-%d'),
                 row[:issue_id],
-                nil,
-                'SFMS',
+                row[:general_form_info_id],
+                program,
                 row[:subject],
                 row[:description]
               ]

@@ -193,6 +193,16 @@ class CsvGeneratorTest < ActiveSupport::TestCase
     assert_match(/,SFMS,SFMS access,Please grant SFMS access for the new hire\.$/, lines[1].chomp)
   end
 
+  def test_periodic_csv_fills_general_form_info_id_and_sfs_program
+    row = {
+      request_code: 'SFSA', user_name: 'Alice Jones', user_uid: 'ajones', office: 'FISCAL',
+      created_on: Date.parse('2026-02-01'), closed_on: Date.parse('2026-02-10'),
+      issue_id: 200, general_form_info_id: 12, subject: 'SFS access', description: 'desc'
+    }
+    csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_periodic_csv([row], system: 'sfs')
+    assert_match(/,200,12,SFS,SFS access,desc$/, csv.lines[1].chomp)
+  end
+
   def test_periodic_csv_empty_writes_interpolated_no_entries_message
     csv = NysenateAuditUtils::Reporting::CsvGenerator.generate_periodic_csv(
       [], system: 'sfms', from_date: Date.parse('2026-02-01'), to_date: Date.parse('2026-04-30')

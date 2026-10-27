@@ -42,9 +42,10 @@ A comprehensive Redmine plugin providing audit utilities, user data integration,
 ## Configuration
 
 Plugin settings at **Administration → Plugins → NY Senate Audit Utils →
-Configure** are grouped into four accordions: **General Configuration**,
-**Custom Field Configuration**, **Account Request Code Configuration**, and
-**Triennial Audit Report Configuration**. Each shows a
+Configure** are grouped into five accordions: **General Configuration**,
+**Custom Field Configuration**, **Account Request Code Configuration**,
+**Triennial Audit Report Configuration**, and **Quarterly / Annual Audit Report
+Configuration**. Each of the first four shows a
 ✓ / ✗ status badge summarizing whether its settings are complete.
 
 ### 1. General Configuration
@@ -203,6 +204,15 @@ To flag tickets from the report, map the `Selected for Audit` field (see
 lacks it. Add a new audit year to the field's possible values before each
 audit; the report warns when the field has no year covering the selected date
 range.
+
+### 7. Quarterly / Annual Audit Report Configuration (Optional)
+
+Map Account Holder offices to the **GeneralFormInfoID** filled into the SFMS
+Quarterly / SFS Annual Excel export. Each row is an ID plus a comma-separated
+list of office values (matched against `Account Holder Location`,
+case-insensitive). Use **Add Row** / **Remove** to edit the list. Tickets whose
+office isn't listed get a blank GeneralFormInfoID. Running the plugin migrations
+seeds the default mapping.
 
 ## Features
 

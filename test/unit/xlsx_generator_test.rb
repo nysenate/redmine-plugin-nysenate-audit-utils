@@ -189,6 +189,18 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
     assert_equal 2, row_count(xlsx)
   end
 
+  def test_periodic_xlsx_writes_general_form_info_id_as_number_and_program_per_system
+    row = PERIODIC_ROW.merge(general_form_info_id: 12)
+    sfms = sheet_xml(GEN.generate_periodic_xlsx([row], system: :sfms))
+    # GeneralFormInfoID is column H; Program is column I.
+    assert_match %r{<c r="H2"[^>]*><v>12</v></c>}, sfms
+    assert_match %r{<c r="I2"[^>]*><is><t>SFMS</t></is></c>}, sfms
+
+    sfs = sheet_xml(GEN.generate_periodic_xlsx([PERIODIC_ROW], system: :sfs))
+    assert_match %r{<c r="I2"[^>]*><is><t>SFS</t></is></c>}, sfs
+    assert_no_match %r{<c r="H2"[^>]*><v>}, sfs
+  end
+
   def test_periodic_xlsx_nil_data_returns_blank
     assert_equal '', GEN.generate_periodic_xlsx(nil)
   end

@@ -22,11 +22,16 @@ module NysenateAuditUtils
         @bac_field = IssueCustomField.create!(
           name: 'BAC #', field_format: 'string', is_for_all: true, trackers: Tracker.all
         )
+        @location_field = IssueCustomField.create!(
+          name: 'Account Holder Location', field_format: 'string', is_for_all: true, trackers: Tracker.all
+        )
 
         Setting.plugin_nysenate_audit_utils = {
           'target_system_field_id'  => @target_system_field.id.to_s,
           'account_action_field_id' => @account_action_field.id.to_s,
           'bac_number_field_id'     => @bac_field.id.to_s,
+          'user_location_field_id'  => @location_field.id.to_s,
+          'general_form_info_id_mappings' => [{ 'id' => '12', 'offices' => 'FISCAL, FOPAYROLL' }],
           'request_code_system_prefixes' => { 'Oracle / SFMS' => 'USR', 'SFS' => 'SFS', 'AIX' => 'AIX' },
           'request_code_action_suffixes' => { 'Add' => 'A', 'Delete' => 'I' }
         }
@@ -34,10 +39,10 @@ module NysenateAuditUtils
 
       def teardown
         Setting.plugin_nysenate_audit_utils = {}
-        [@target_system_field, @account_action_field, @bac_field].each { |f| f&.destroy }
+        [@target_system_field, @account_action_field, @bac_field, @location_field].each { |f| f&.destroy }
       end
 
-      def make_closed_issue(target_system:, closed_on:, action: 'Add', bac: nil)
+      def make_closed_issue(target_system:, closed_on:, action: 'Add', bac: nil, office: nil)
         issue = Issue.create!(project: @project, tracker_id: 1, author_id: 1,
                               status_id: 5, subject: "#{target_system} ticket")
         Issue.where(id: issue.id).update_all(created_on: closed_on - 1.day,
@@ -45,6 +50,7 @@ module NysenateAuditUtils
         issue.reload
         values = { @target_system_field.id => target_system, @account_action_field.id => action }
         values[@bac_field.id] = bac if bac
+        values[@location_field.id] = office if office
         issue.custom_field_values = values
         issue.save!
         issue
@@ -142,6 +148,20 @@ module NysenateAuditUtils
         assert_equal issue.id, row[:issue_id]
       end
 
+      test "row maps the office to its GeneralFormInfoID, nil when unmapped" do
+        mapped   = make_closed_issue(target_system: 'Oracle / SFMS', office: 'fopayroll', closed_on: 2.days.ago)
+        unmapped = make_closed_issue(target_system: 'Oracle / SFMS', office: 'RIVERA', closed_on: 2.days.ago)
+        blank    = make_closed_issue(target_system: 'Oracle / SFMS', closed_on: 2.days.ago)
+
+        service = PeriodicAuditReportService.new(project: @project, system: :sfms,
+                                                 from_date: 1.week.ago, to_date: Time.zone.now)
+        rows = service.generate.index_by { |r| r[:issue_id] }
+
+        assert_equal 12, rows[mapped.id][:general_form_info_id]
+        assert_nil rows[unmapped.id][:general_form_info_id]
+        assert_nil rows[blank.id][:general_form_info_id]
+      end
+
       test "report excludes Reset Password and Lock / Unlock tickets" do
         add    = make_closed_issue(target_system: 'Oracle / SFMS', action: 'Add', closed_on: 2.days.ago)
         reset  = make_closed_issue(target_system: 'Oracle / SFMS', action: 'Reset Password', closed_on: 2.days.ago)
@@ -157,18 +177,18 @@ module NysenateAuditUtils
       end
 
       test "csv uses the legacy spreadsheet headers" do
-        issue = make_closed_issue(target_system: 'Oracle / SFMS', closed_on: 2.days.ago)
+        issue = make_closed_issue(target_system: 'Oracle / SFMS', office: 'FISCAL', closed_on: 2.days.ago)
         service = PeriodicAuditReportService.new(project: @project, system: :sfms,
                                                  from_date: 1.week.ago, to_date: Time.zone.now)
         data = service.generate
-        csv = CsvGenerator.generate_periodic_csv(data)
+        csv = CsvGenerator.generate_periodic_csv(data, system: :sfms)
         rows = CSV.parse(csv)
 
         # No metadata preamble: the header is the very first row.
         assert_equal %w[RequestType FullName Userid Office EntryDate CompletedDate
                         SenDevNumber GeneralFormInfoID Program Subject Description], rows.first
         ticket_row = rows.find { |r| r[6].to_s == issue.id.to_s }
-        assert_nil ticket_row[7]
+        assert_equal '12', ticket_row[7]
         assert_equal 'SFMS', ticket_row[8]
       end
     end

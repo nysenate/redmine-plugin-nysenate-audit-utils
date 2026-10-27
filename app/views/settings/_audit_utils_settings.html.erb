@@ -700,6 +700,87 @@
     </div>
   </div>
 
+  <!-- Quarterly / Annual Audit Report Configuration Section -->
+  <div class="config-accordion">
+    <div class="accordion-header" data-section="periodic-audit">
+      <h3>
+        <span class="accordion-toggle">▶</span>
+        Quarterly / Annual Audit Report Configuration
+      </h3>
+    </div>
+
+    <div class="accordion-body" id="periodic-audit-section">
+      <div class="box tabular settings">
+        <% gfi_id_config = NysenateAuditUtils::GeneralFormInfoIdConfiguration %>
+
+        <p style="margin: 1em 0 0.5em 0; padding: 0;">
+          Map Account Holder offices to the <strong>GeneralFormInfoID</strong> filled into the
+          SFMS Quarterly / SFS Annual audit Excel export. Enter each ID once with its office
+          values comma-separated. Offices match the Account Holder Location value
+          (case-insensitive); tickets whose office isn't listed get a blank GeneralFormInfoID.
+        </p>
+
+        <% if (duplicates = gfi_id_config.duplicate_offices).any? %>
+          <div class="flash warning" style="margin: 0.5em 0;">
+            ⚠ Listed under more than one ID (the first row's ID is used):
+            <%= duplicates.join(', ') %>
+          </div>
+        <% end %>
+
+        <table class="list gfi-id-config" id="gfi-id-table">
+          <thead>
+            <tr>
+              <th class="gfi-id-col">GeneralFormInfoID</th>
+              <th class="gfi-offices-col">Offices</th>
+              <th class="gfi-remove-col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% gfi_id_config.rows.each_with_index do |row, i| %>
+              <%= render partial: 'settings/general_form_info_id_row', locals: { index: "existing_#{i}", row: row } %>
+            <% end %>
+          </tbody>
+        </table>
+
+        <button type="button" id="gfi-id-add-row" class="button">Add Row</button>
+
+        <template id="gfi-id-row-template">
+          <%= render partial: 'settings/general_form_info_id_row', locals: { index: '__INDEX__', row: {} } %>
+        </template>
+
+        <script>
+        (function() {
+          'use strict';
+
+          function wireRow(row) {
+            row.querySelector('.gfi-remove-row').addEventListener('click', function() {
+              row.parentNode.removeChild(row);
+            });
+          }
+
+          document.addEventListener('DOMContentLoaded', function() {
+            var table = document.getElementById('gfi-id-table');
+            if (!table) { return; }
+            var tbody = table.querySelector('tbody');
+
+            tbody.querySelectorAll('.gfi-id-row').forEach(wireRow);
+
+            var template = document.getElementById('gfi-id-row-template');
+            var counter = 0;
+            document.getElementById('gfi-id-add-row').addEventListener('click', function() {
+              var holder = document.createElement('tbody');
+              holder.innerHTML = template.innerHTML.split('__INDEX__').join('new_' + (counter++));
+              var row = holder.querySelector('.gfi-id-row');
+              tbody.appendChild(row);
+              wireRow(row);
+            });
+          });
+        })();
+        </script>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- JavaScript for Accordion Functionality -->
@@ -1283,6 +1364,29 @@
 
 .triennial-sources-config .ts-hidden {
   display: none !important;
+}
+
+.gfi-id-config {
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 0.75em;
+}
+
+.gfi-id-config .gfi-id-col { width: 160px; }
+.gfi-id-config .gfi-offices-col { width: auto; }
+.gfi-id-config .gfi-remove-col { width: 80px; text-align: center; }
+
+.gfi-id-config td {
+  padding: 4px 8px;
+}
+
+.gfi-id-config .gfi-id-col input {
+  width: 100px;
+}
+
+.gfi-id-config .gfi-offices-col input {
+  width: 100%;
+  box-sizing: border-box;
 }
 </style>
 

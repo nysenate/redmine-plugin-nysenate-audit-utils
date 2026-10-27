@@ -56,6 +56,12 @@ module NysenateAuditUtils
           "#{from_date.to_date.strftime('%Y-%m-%d')} and #{to_date.to_date.strftime('%Y-%m-%d')}."
       end
 
+      # Program column value for the periodic export: the audited system.
+      # Defaults to SFMS when no system is given.
+      def self.periodic_program(system)
+        system.to_s == 'sfs' ? 'SFS' : 'SFMS'
+      end
+
       # Generate CSV for daily report data
       # @param data [Array<Hash>] Report data with user and account status info
       # @param from_date [Time, Date, nil] Start of report range
@@ -190,6 +196,8 @@ module NysenateAuditUtils
             next
           end
 
+          program = periodic_program(system)
+
           # Header row (matches the legacy audit spreadsheet). The ticket
           # description is appended as a final export-only column.
           csv << [
@@ -215,8 +223,8 @@ module NysenateAuditUtils
               row[:created_on]&.strftime('%Y-%m-%d'),
               row[:closed_on]&.strftime('%Y-%m-%d'),
               row[:issue_id],
-              nil,
-              'SFMS',
+              row[:general_form_info_id],
+              program,
               row[:subject],
               row[:description]
             ]

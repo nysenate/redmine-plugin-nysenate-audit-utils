@@ -1,0 +1,15 @@
+<%
+  # Locals: index, row
+  field_name = ->(key) { "settings[general_form_info_id_mappings][#{index}][#{key}]" }
+%>
+<tr class="gfi-id-row">
+  <td class="gfi-id-col">
+    <%= number_field_tag field_name.('id'), row['id'], min: 0, step: 1, placeholder: 'ID', id: nil %>
+  </td>
+  <td class="gfi-offices-col">
+    <%= text_field_tag field_name.('offices'), row['offices'], placeholder: 'e.g. FISCAL, FOPAYROLL', id: nil %>
+  </td>
+  <td class="gfi-remove-col">
+    <button type="button" class="button-small gfi-remove-row">Remove</button>
+  </td>
+</tr>
