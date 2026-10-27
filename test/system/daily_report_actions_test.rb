@@ -237,17 +237,19 @@ class DailyReportActionsTest < AuditUtilsSystemTestCase
     visit daily_project_audit_reports_path(@project)
     row = find('tr', text: 'Doodlewick, Ulric F.')
     trigger = row.find('.drdn-trigger')
-    scroll_top = "document.querySelector('.drdn.account-request-templates.expanded .drdn-items').scrollTop"
+    items = "document.querySelector('.drdn.account-request-templates.expanded .drdn-items')"
 
     trigger.click
-    execute_script("#{scroll_top} = 10000")
-    assert_operator evaluate_script(scroll_top), :>, 0
+    assert_selector '.drdn.account-request-templates.expanded'
+    # The open-click handler resets scrollTop in a requestAnimationFrame
+    # callback, so scroll (and later read) a frame after it to avoid racing it.
+    assert_operator after_next_frame("var el = #{items}; el.scrollTop = 10000; return el.scrollTop;"), :>, 0
 
     trigger.click # close
     assert_no_selector '.drdn.account-request-templates.expanded'
     trigger.click # reopen
     assert_selector '.drdn.account-request-templates.expanded'
-    assert_equal 0, evaluate_script(scroll_top)
+    assert_equal 0, after_next_frame("return #{items}.scrollTop;")
   end
 
   # 11. Hovering an option clipped at the list's edge highlights it without
@@ -288,6 +290,15 @@ class DailyReportActionsTest < AuditUtilsSystemTestCase
   end
 
   private
+
+  # Run a JS function body on the next animation frame (after any rAF callback
+  # the page already queued) and return its result.
+  def after_next_frame(body)
+    evaluate_async_script(<<~JS)
+      var callback = arguments[arguments.length - 1];
+      requestAnimationFrame(function () { callback((function () { #{body} })()); });
+    JS
+  end
 
   # Create a dedicated templates project holding one issue per passed spec, and
   # point the plugin's templates_project setting at it. Each spec is a Hash:
