@@ -211,4 +211,85 @@ class TriennialAuditConfigurationTest < ActiveSupport::TestCase
     assert_not Config.selected_for_audit_missing?(@project, Tracker.find(2))
     assert_empty Config.sources_missing_selected_for_audit
   end
+  def target_system_field(values = ['Oracle / SFMS', 'AIX', 'VPN'])
+    IssueCustomField.create!(name: 'Triennial Target System', field_format: 'list',
+                             possible_values: values, is_for_all: true, trackers: [@tracker])
+  end
+
+  test 'target_systems drops the blank entry the settings form posts' do
+    Setting.plugin_nysenate_audit_utils = { 'triennial_audit_target_systems' => ['', 'AIX', 'VPN'] }
+    assert_equal %w[AIX VPN], Config.target_systems
+  end
+
+  test 'target_systems is empty when unset' do
+    assert_equal [], Config.target_systems
+  end
+
+  test 'whitelist applies only to account request code sources' do
+    field = target_system_field
+    Setting.plugin_nysenate_audit_utils = {
+      'target_system_field_id' => field.id.to_s,
+      'triennial_audit_target_systems' => ['AIX'],
+      'triennial_audit_sources' => [
+        { 'project_id' => '1', 'tracker_id' => '1', 'mapping_mode' => 'account_request_code' },
+        { 'project_id' => '1', 'tracker_id' => '2', 'mapping_mode' => 'tracker', 'code' => 'X' }
+      ]
+    }
+
+    assert_equal ['AIX'], Config.target_system_whitelist_for(1, 1)
+    assert_nil Config.target_system_whitelist_for(1, 2)
+    assert_nil Config.target_system_whitelist_for(2, 1)
+  end
+
+  test 'an empty whitelist or unconfigured Target System field means no restriction' do
+    field = target_system_field
+    rows = [{ 'project_id' => '1', 'tracker_id' => '1', 'mapping_mode' => 'account_request_code' }]
+    Setting.plugin_nysenate_audit_utils = { 'target_system_field_id' => field.id.to_s,
+                                            'triennial_audit_target_systems' => [''],
+                                            'triennial_audit_sources' => rows }
+    assert_nil Config.target_system_whitelist_for(1, 1)
+
+    Setting.plugin_nysenate_audit_utils = { 'triennial_audit_target_systems' => ['AIX'],
+                                            'triennial_audit_sources' => rows }
+    assert_nil Config.target_system_whitelist_for(1, 1)
+  end
+
+  test 'unknown_target_systems lists whitelisted values the field no longer offers' do
+    field = target_system_field
+    Setting.plugin_nysenate_audit_utils = { 'target_system_field_id' => field.id.to_s,
+                                            'triennial_audit_target_systems' => %w[AIX Retired] }
+    assert_equal ['Retired'], Config.unknown_target_systems
+  end
+
+  test 'migration seeds target systems from the prefix mapping, skipping unmapped codes' do
+    require File.expand_path('../../db/migrate/011_set_default_triennial_target_systems', __dir__)
+    migration = SetDefaultTriennialTargetSystems.new
+    migration.verbose = false
+
+    Setting.plugin_nysenate_audit_utils = {
+      'ess_base_url' => 'http://ess',
+      'request_code_system_prefixes' => { 'Oracle / SFMS' => 'USR', 'AIX' => 'AIX', 'VPN' => 'REM',
+                                          'SFS' => 'SFS' }
+    }
+    migration.up
+    Setting.clear_cache
+    assert_equal ['Oracle / SFMS', 'AIX', 'VPN'], Config.target_systems
+    assert_equal 'http://ess', Setting.plugin_nysenate_audit_utils['ess_base_url']
+
+    Config.target_systems = ['SFS']
+    migration.up
+    Setting.clear_cache
+    assert_equal ['SFS'], Config.target_systems
+  end
+
+  test 'migration copes with no prefix mapping' do
+    require File.expand_path('../../db/migrate/011_set_default_triennial_target_systems', __dir__)
+    migration = SetDefaultTriennialTargetSystems.new
+    migration.verbose = false
+
+    Setting.plugin_nysenate_audit_utils = { 'ess_base_url' => 'http://ess' }
+    migration.up
+    Setting.clear_cache
+    assert_equal [], Config.target_systems
+  end
 end

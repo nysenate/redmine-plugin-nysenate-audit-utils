@@ -117,6 +117,7 @@ module NysenateAuditUtils
 
         scope = Issue.where(project_id: project.id, tracker_id: tracker.id)
         scope = scope.where(created_on: from_date..to_date) if from_date || to_date
+        scope = restrict_target_systems(scope, project, tracker)
         rows = scope.visible(@user).includes(:status, :custom_values).map { |issue| build_row(issue) }
         check_permissions(project, tracker, scope.count - rows.size)
         rows
@@ -125,6 +126,19 @@ module NysenateAuditUtils
                            "#{e.message}\n#{e.backtrace.join("\n")}")
         @errors << "Source #{TriennialAuditConfiguration.source_label(project_id, tracker_id)}: #{e.message}"
         []
+      end
+
+      # Limit an Account Request Code source to the whitelisted Target Systems
+      # (see TriennialAuditConfiguration#target_system_whitelist_for). Done in
+      # SQL so the permission check's hidden-ticket count only covers tickets
+      # the report would show.
+      def restrict_target_systems(scope, project, tracker)
+        whitelist = TriennialAuditConfiguration.target_system_whitelist_for(project.id, tracker.id)
+        return scope unless whitelist
+
+        scope.where(id: CustomValue.where(customized_type: 'Issue',
+                                          custom_field_id: CustomFieldConfiguration.target_system_field_id,
+                                          value: whitelist).select(:customized_id))
       end
 
       # Record which permission keeps the user from seeing the whole source:

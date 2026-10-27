@@ -196,6 +196,49 @@ module NysenateAuditUtils
         assert_equal [mid.id, recent.id].sort, found.call(to: nil).sort
       end
 
+      test 'account request code sources are limited to whitelisted target systems' do
+        system = IssueCustomField.create!(name: 'Triennial System', field_format: 'list',
+                                          possible_values: %w[AIX VPN SFS], is_for_all: true,
+                                          trackers: Tracker.all)
+        Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(
+          'target_system_field_id' => system.id.to_s,
+          'triennial_audit_target_systems' => %w[AIX VPN],
+          'triennial_audit_sources' => [
+            { 'project_id' => '1', 'tracker_id' => '1', 'mapping_mode' => 'account_request_code' },
+            { 'project_id' => '1', 'tracker_id' => '2', 'mapping_mode' => 'tracker', 'code' => 'FEAT' }
+          ]
+        )
+        aix = make_issue(custom_field_values: { system.id => 'AIX' })
+        vpn = make_issue(custom_field_values: { system.id => 'VPN' })
+        sfs = make_issue(custom_field_values: { system.id => 'SFS' })
+        blank = make_issue
+        other_mode = make_issue(tracker_id: 2, custom_field_values: { system.id => 'SFS' })
+
+        service, rows = generate
+        ids = rows.pluck(:issue_id)
+        assert_includes ids, aix.id
+        assert_includes ids, vpn.id
+        assert_includes ids, other_mode.id
+        assert_not_includes ids, sfs.id
+        assert_not_includes ids, blank.id
+        assert_empty service.permission_errors
+      end
+
+      test 'an empty whitelist leaves account request code sources unrestricted' do
+        system = IssueCustomField.create!(name: 'Triennial System', field_format: 'list',
+                                          possible_values: %w[AIX SFS], is_for_all: true, trackers: Tracker.all)
+        Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(
+          'target_system_field_id' => system.id.to_s,
+          'triennial_audit_target_systems' => [''],
+          'triennial_audit_sources' => [
+            { 'project_id' => '1', 'tracker_id' => '1', 'mapping_mode' => 'account_request_code' }
+          ]
+        )
+        sfs = make_issue(custom_field_values: { system.id => 'SFS' })
+
+        assert_includes generate.last.pluck(:issue_id), sfs.id
+      end
+
       test 'group_by_code sorts by code then ticket, with unresolved codes last' do
         rows = [
           { request_code: 'B', issue_id: 5 }, { request_code: nil, issue_id: 1 },

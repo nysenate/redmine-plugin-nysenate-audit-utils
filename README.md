@@ -198,6 +198,11 @@ project and tracker plus how its tickets get a request code:
 **Autoconfigure Account Request Source** adds the Account Request tracker's row.
 Tickets whose code can't be resolved still appear, with a blank code.
 
+**Account Request Target Systems** limits Account Request Code sources to the
+checked Target System values (none checked = all systems). Running the plugin
+migrations seeds it with the systems mapped to the USR, AIX, SYS, OPR, CTR,
+AGB and REM request-code prefixes.
+
 To flag tickets from the report, map the `Selected for Audit` field (see
 [Custom Field Configuration](#2-custom-field-configuration)) and enable it on
 **every** source project/tracker. The accordion warns about any source that

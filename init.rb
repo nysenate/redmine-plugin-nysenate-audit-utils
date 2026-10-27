@@ -104,6 +104,9 @@ Redmine::Plugin.register :nysenate_audit_utils do
     # Triennial Audit Report source rows (project/tracker + code mapping).
     # See NysenateAuditUtils::TriennialAuditConfiguration.
     'triennial_audit_sources' => [],
+    # Target System values Account Request Code sources are limited to
+    # (empty = all). Seeded by migration 011.
+    'triennial_audit_target_systems' => [],
     # Quarterly / Annual audit export: office => GeneralFormInfoID rows.
     # See NysenateAuditUtils::GeneralFormInfoIdConfiguration.
     'general_form_info_id_mappings' => NysenateAuditUtils::GeneralFormInfoIdConfiguration::DEFAULT_ROWS,

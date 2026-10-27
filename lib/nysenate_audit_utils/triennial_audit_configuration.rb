@@ -16,6 +16,10 @@ module NysenateAuditUtils
   #
   # 'account_request_code' resolves via RequestCodeMapper (Account Action +
   # Target System). A ticket whose value has no mapped code resolves to nil.
+  #
+  # 'triennial_audit_target_systems' whitelists the Target System values
+  # (not request codes) whose tickets 'account_request_code' sources
+  # include. Empty means no restriction.
   class TriennialAuditConfiguration
     MAPPING_MODES = %w[tracker field account_request_code].freeze
 
@@ -42,6 +46,43 @@ module NysenateAuditUtils
         )
       end
 
+      # Whitelisted Target System values, as stored. The settings form posts
+      # a blank entry so an all-unchecked list still saves; drop it here.
+      # @return [Array<String>]
+      def target_systems
+        Array(Setting.plugin_nysenate_audit_utils['triennial_audit_target_systems']).compact_blank
+      end
+
+      # Replace the Target System whitelist.
+      # @param values [Array<String>]
+      def target_systems=(values)
+        Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(
+          'triennial_audit_target_systems' => values
+        )
+      end
+
+      # Target System values a source's tickets are limited to, or nil when
+      # the source isn't limited: it doesn't use Account Request Code, the
+      # whitelist is empty, or the Target System field isn't configured.
+      # @return [Array<String>, nil]
+      def target_system_whitelist_for(project_id, tracker_id)
+        row = source_row(project_id, tracker_id)
+        return nil unless row && row['mapping_mode'] == 'account_request_code'
+        return nil if target_systems.empty? || CustomFieldConfiguration.target_system_field_id.nil?
+
+        target_systems
+      end
+
+      # Whitelisted values that aren't (or are no longer) Target System
+      # options, so no ticket can match them.
+      # @return [Array<String>]
+      def unknown_target_systems
+        field = CustomFieldConfiguration.target_system_field
+        return [] unless field
+
+        target_systems - field.possible_values
+      end
+
       # Distinct (project_id, tracker_id) pairs across all source rows, used
       # to drive the report's per-source issue queries.
       # @return [Array<Array(Integer, Integer)>]
@@ -65,8 +106,14 @@ module NysenateAuditUtils
       # @param issue [Issue]
       # @return [Hash, nil]
       def source_for(issue)
+        source_row(issue.project_id, issue.tracker_id)
+      end
+
+      # Source row for a (project, tracker) pair, or nil.
+      # @return [Hash, nil]
+      def source_row(project_id, tracker_id)
         sources.find do |row|
-          row['project_id'].to_i == issue.project_id && row['tracker_id'].to_i == issue.tracker_id
+          row['project_id'].to_i == project_id.to_i && row['tracker_id'].to_i == tracker_id.to_i
         end
       end
 

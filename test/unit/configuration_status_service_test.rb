@@ -307,6 +307,22 @@ class ConfigurationStatusServiceTest < ActiveSupport::TestCase
     assert_equal :ok, NysenateAuditUtils::ConfigurationStatusService.triennial_audit_status[:status]
   end
 
+  test 'triennial audit status warns about whitelisted target systems the field no longer offers' do
+    field = IssueCustomField.create!(name: 'Triennial System', field_format: 'list', possible_values: %w[AIX],
+                                     is_for_all: true, trackers: [Tracker.find(1)])
+    Setting.plugin_nysenate_audit_utils = {
+      'target_system_field_id' => field.id.to_s,
+      'triennial_audit_target_systems' => %w[AIX Retired],
+      'triennial_audit_sources' => [{ 'project_id' => '1', 'tracker_id' => '1', 'mapping_mode' => 'tracker' }]
+    }
+
+    status = NysenateAuditUtils::ConfigurationStatusService.triennial_audit_status
+
+    assert_equal :warning, status[:status]
+    assert_equal 1, status[:warnings].size
+    assert_includes status[:warnings].first, '"Retired"'
+  end
+
   test 'triennial audit status errors on account request code rows missing the fields' do
     Setting.plugin_nysenate_audit_utils = {
       'triennial_audit_sources' => [

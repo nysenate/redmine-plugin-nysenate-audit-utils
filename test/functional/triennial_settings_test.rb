@@ -196,4 +196,32 @@ class TriennialSettingsTest < Redmine::ControllerTest
     assert_select '#triennial-source-row-template'
     assert_match(/does not have the Triennial Selected field enabled/, response.body)
   end
+  test 'target system whitelist lists field values with saved ones checked' do
+    system = IssueCustomField.create!(name: 'Triennial System', field_format: 'list',
+                                      possible_values: ['Oracle / SFMS', 'AIX', 'SFS'], is_for_all: true,
+                                      trackers: [@tracker])
+    Setting.plugin_nysenate_audit_utils = Setting.plugin_nysenate_audit_utils.merge(
+      'target_system_field_id' => system.id.to_s,
+      'request_code_system_prefixes' => { 'Oracle / SFMS' => 'USR' },
+      'triennial_audit_target_systems' => ['Oracle / SFMS', 'Retired']
+    )
+
+    get :plugin, params: { id: 'nysenate_audit_utils' }
+    assert_response :success
+
+    name = 'settings[triennial_audit_target_systems][]'
+    assert_select 'input[type=hidden][name=?][value=""]', name
+    boxes = css_select("#triennial-target-systems input[type=checkbox][name=\"#{name}\"]")
+    assert_equal ['Oracle / SFMS', 'AIX', 'SFS', 'Retired'], boxes.pluck('value')
+    assert_equal ['Oracle / SFMS', 'Retired'], boxes.select { |b| b['checked'] }.pluck('value')
+    assert_select '#triennial-target-systems .ts-system-prefix', text: '(USR)'
+    assert_select '#triennial-target-systems label', text: /Retired.*no longer a Target System value/m
+  end
+
+  test 'saving with no target systems checked stores an empty whitelist' do
+    post :plugin, params: { id: 'nysenate_audit_utils',
+                            settings: { 'triennial_audit_target_systems' => [''] } }
+    Setting.clear_cache
+    assert_equal [], NysenateAuditUtils::TriennialAuditConfiguration.target_systems
+  end
 end

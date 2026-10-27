@@ -584,6 +584,41 @@
                      locals: triennial_row_locals.merge(index: '__INDEX__', row: {}) %>
         </template>
 
+        <%
+          triennial_target_field = NysenateAuditUtils::CustomFieldConfiguration.target_system_field
+          triennial_whitelist = triennial_config.target_systems
+          triennial_prefixes = Setting.plugin_nysenate_audit_utils['request_code_system_prefixes'] || {}
+          # Saved values no longer offered by the field stay listed so they can be unchecked.
+          triennial_system_values = (triennial_target_field&.possible_values || []) | triennial_whitelist
+        %>
+        <h4 style="margin: 1.5em 0 0.3em 0;">Account Request Target Systems</h4>
+        <p style="margin: 0 0 0.5em 0; padding: 0;">
+          Account Request Code sources include only tickets for the checked Target Systems.
+          Leave all unchecked to include every Target System. Other mapping modes are not affected.
+        </p>
+        <%= hidden_field_tag 'settings[triennial_audit_target_systems][]', '', id: nil %>
+        <% if triennial_target_field.nil? %>
+          <div class="ts-note ts-warning">
+            ⚠ Map the Target System field in Custom Field Configuration to choose systems.
+          </div>
+        <% else %>
+          <div class="triennial-target-systems" id="triennial-target-systems">
+            <% triennial_system_values.each do |system| %>
+              <label class="triennial-target-system">
+                <%= check_box_tag 'settings[triennial_audit_target_systems][]', system,
+                      triennial_whitelist.include?(system), id: nil %>
+                <%= system %>
+                <% if triennial_prefixes[system].present? %>
+                  <span class="ts-system-prefix">(<%= triennial_prefixes[system] %>)</span>
+                <% end %>
+                <% unless triennial_target_field.possible_values.include?(system) %>
+                  <span class="ts-warning">⚠ no longer a Target System value</span>
+                <% end %>
+              </label>
+            <% end %>
+          </div>
+        <% end %>
+
         <script>
         (function() {
           'use strict';
@@ -1359,6 +1394,24 @@
 }
 
 .triennial-sources-config .ts-warning {
+  color: #856404;
+}
+
+/* Override .tabular's floated, right-aligned labels for the checkbox list. */
+.tabular .triennial-target-systems label.triennial-target-system {
+  float: none;
+  display: block;
+  width: auto;
+  margin: 0.2em 0;
+  text-align: left;
+  font-weight: normal;
+}
+
+.triennial-target-systems .ts-system-prefix {
+  color: #666;
+}
+
+#triennial-audit-section .ts-warning {
   color: #856404;
 }
 
