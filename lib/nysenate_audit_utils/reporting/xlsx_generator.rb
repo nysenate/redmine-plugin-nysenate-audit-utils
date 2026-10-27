@@ -351,8 +351,9 @@ module NysenateAuditUtils
             sheet.add_row headers, style: Array.new(headers.length, styles[:header])
 
             body_styles = Array.new(headers.length, styles[:body])
+            spacer_styles = Array.new(headers.length, styles[:spacer])
             groups.each_with_index do |(_code, rows), i|
-              sheet.add_row [] if i.positive?
+              sheet.add_row Array.new(headers.length), style: spacer_styles if i.positive?
               rows.each do |row|
                 sheet.add_row [
                   row[:request_code],
@@ -390,6 +391,8 @@ module NysenateAuditUtils
           metadata_label: wb.styles.add_style(b: true, alignment: { wrap_text: true, vertical: :top }),
           section_title: wb.styles.add_style(b: true, sz: 13),
           no_entries: wb.styles.add_style(i: true, fg_color: '808080'),
+          # Grey fill for the Triennial spacer rows between request codes.
+          spacer: wb.styles.add_style(bg_color: 'A6A6A6'),
           header: wb.styles.add_style(
             b: true,
             bg_color: 'D9E1F2',

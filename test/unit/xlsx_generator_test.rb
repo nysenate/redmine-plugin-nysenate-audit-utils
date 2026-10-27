@@ -353,6 +353,25 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
     assert_equal 13, row_count(xlsx)
   end
 
+  def test_triennial_xlsx_spacer_rows_are_filled_grey
+    groups = [['AAA', [triennial_row('AAA', 1)]], ['BBB', [triennial_row('BBB', 2)]]]
+    xlsx = GEN.generate_triennial_xlsx(groups)
+    styles = nil
+    Zip::File.open_buffer(xlsx) { |z| styles = z.read('xl/styles.xml') }
+    fills = styles.scan(%r{<fill>.*?</fill>}m)
+    fill_index = fills.index { |f| f.include?('A6A6A6') }
+    assert fill_index, 'expected a grey fill'
+    xfs = styles[%r{<cellXfs.*?</cellXfs>}m].scan(/<xf [^>]*>/)
+    spacer_xf = xfs.index { |xf| xf.include?(%(fillId="#{fill_index}")) }
+    assert spacer_xf, 'expected a cell style using the grey fill'
+
+    # 5 metadata + blank + header + AAA row, then the spacer is row 9.
+    spacer_row = sheet_xml(xlsx)[%r{<row r="9".*?</row>}m]
+    cells = spacer_row.scan(/<c [^>]*>/)
+    assert_equal 7, cells.size
+    assert(cells.all? { |c| c.include?(%(s="#{spacer_xf}")) })
+  end
+
   def test_triennial_xlsx_lists_filters_in_metadata
     xlsx = GEN.generate_triennial_xlsx([['AAA', [triennial_row('AAA', 1)]]],
                                        from_date: Date.parse('2023-10-01'), to_date: Date.parse('2026-09-30'),
