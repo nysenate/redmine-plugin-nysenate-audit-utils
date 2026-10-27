@@ -364,7 +364,15 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
 
   def test_triennial_xlsx_empty_writes_no_entries_message
     xlsx = GEN.generate_triennial_xlsx([])
-    assert_equal 1, row_count(xlsx)
+    # 5 metadata + blank + message
+    assert_equal 7, row_count(xlsx)
     assert_includes sheet_xml(xlsx), 'No tickets were opened in the selected date range.'
+  end
+
+  def test_triennial_xlsx_open_date_bounds_read_as_any
+    xlsx = GEN.generate_triennial_xlsx([['AAA', [triennial_row('AAA', 1)]]], to_date: Date.parse('2026-09-30'))
+    xml = sheet_xml(xlsx)
+    assert_includes xml, 'Any'
+    assert_includes xml, '2026-09-30'
   end
 end

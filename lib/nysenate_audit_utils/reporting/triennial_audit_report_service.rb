@@ -23,23 +23,15 @@ module NysenateAuditUtils
 
       attr_reader :from_date, :to_date, :errors, :permission_errors
 
-      # @param from_date [Time, Date] start of the Open Date window (inclusive)
-      # @param to_date [Time, Date] end of the Open Date window (inclusive)
+      # @param from_date [Time, Date, nil] start of the Open Date window (inclusive); nil leaves it open
+      # @param to_date [Time, Date, nil] end of the Open Date window (inclusive); nil leaves it open
       # @param user [User] whose issue visibility applies
       def initialize(from_date: nil, to_date: nil, user: User.current)
         @user = user
-        window = self.class.default_window
-        @from_date = (from_date || window[:from]).beginning_of_day
-        @to_date = (to_date || window[:to]).end_of_day
+        @from_date = from_date&.beginning_of_day
+        @to_date = to_date&.end_of_day
         @errors = []
         @permission_errors = []
-      end
-
-      # Trailing three years ending today, inclusive both ends.
-      # @return [Hash] { from:, to: }
-      def self.default_window
-        today = Date.current
-        { from: (today - 3.years + 1.day).in_time_zone, to: today.in_time_zone }
       end
 
       # Sort rows by request code (unresolved codes last), then ticket number,
@@ -123,7 +115,8 @@ module NysenateAuditUtils
           return []
         end
 
-        scope = Issue.where(project_id: project.id, tracker_id: tracker.id, created_on: from_date..to_date)
+        scope = Issue.where(project_id: project.id, tracker_id: tracker.id)
+        scope = scope.where(created_on: from_date..to_date) if from_date || to_date
         rows = scope.visible(@user).includes(:status, :custom_values).map { |issue| build_row(issue) }
         check_permissions(project, tracker, scope.count - rows.size)
         rows

@@ -235,9 +235,10 @@ Access via the project menu: **Reports → Audit Utils**. Report types:
   *Custom range*.
 - **Monthly Reports**: Account status snapshot for a single target system, or
   *All Systems* for a combined snapshot across every configured system.
-- **Triennial Audit Report**: Tickets opened in a date range (default: the
-  last three years) across the configured project/tracker sources, grouped by
-  request code, with an Excel export for the auditors. Tickets the auditors pick
+- **Triennial Audit Report**: Tickets opened in a date range (blank by
+  default, i.e. all tickets; either end may be left open) across the
+  configured project/tracker sources, grouped by request code, with an Excel
+  export for the auditors. Tickets the auditors pick
   are then checked in the web view and marked with **Flag Selected**, which sets
   `Selected for Audit` to the audit year. See [Triennial Audit Report
   Configuration](#6-triennial-audit-report-configuration-optional).

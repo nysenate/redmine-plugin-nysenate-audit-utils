@@ -4,8 +4,8 @@
   <% if @permission_errors.empty? %>
   <%= link_to sprite_icon('download', "Export Excel"), triennial_project_audit_reports_path(@project,
         format: :xlsx,
-        start_date: @from_date.to_date.iso8601,
-        end_date: @to_date.to_date.iso8601,
+        start_date: @from_date&.to_date&.iso8601,
+        end_date: @to_date&.to_date&.iso8601,
         source: @source_filter,
         code: @code_filter,
         selected: @selected_filter,
@@ -23,12 +23,12 @@
 
     <p>
       <%= label_tag :start_date, "Open Date From" %>
-      <%= date_field_tag :start_date, @from_date.to_date.iso8601, class: "date-picker",
+      <%= date_field_tag :start_date, @from_date&.to_date&.iso8601, class: "date-picker",
             onchange: "this.form.requestSubmit();" %>
     </p>
     <p>
       <%= label_tag :end_date, "Open Date To" %>
-      <%= date_field_tag :end_date, @to_date.to_date.iso8601, class: "date-picker",
+      <%= date_field_tag :end_date, @to_date&.to_date&.iso8601, class: "date-picker",
             onchange: "this.form.requestSubmit();" %>
     </p>
 
@@ -130,12 +130,24 @@
   </div>
 <% elsif @report_count.zero? %>
   <p class="nodata">
-    <%= filtered ? 'No tickets match the selected filters.' : 'No tickets were opened in the selected date range.' %>
+    <% if filtered %>
+      No tickets match the selected filters.
+    <% elsif @from_date || @to_date %>
+      No tickets were opened in the selected date range.
+    <% else %>
+      No tickets have been opened in the configured sources.
+    <% end %>
   </p>
 <% else %>
   <p class="report-info">
     Showing <%= pluralize(@report_count, 'ticket') %>
-    opened between <%= @from_date.to_date.strftime('%Y-%m-%d') %> and <%= @to_date.to_date.strftime('%Y-%m-%d') %>
+    <% if @from_date && @to_date %>
+      opened between <%= @from_date.to_date.strftime('%Y-%m-%d') %> and <%= @to_date.to_date.strftime('%Y-%m-%d') %>
+    <% elsif @from_date %>
+      opened on or after <%= @from_date.to_date.strftime('%Y-%m-%d') %>
+    <% elsif @to_date %>
+      opened on or before <%= @to_date.to_date.strftime('%Y-%m-%d') %>
+    <% end %>
     <% if @source_filter %>
       in <%= @source_options.rassoc(@source_filter)&.first || @source_filter %><% if filtered %> <em>(filtered)</em><% end %>.
     <% else %>

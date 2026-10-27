@@ -71,6 +71,38 @@ class TriennialReportTest < ActionController::TestCase
     assert_select 'input[name=start_date][value=?]', '2026-03-01'
   end
 
+  test 'date pickers are blank by default and the range is open' do
+    old = make_issue(project_id: 1, tracker_id: 1, created_on: Date.new(2010, 1, 5))
+
+    get :triennial, params: { project_id: 1 }
+
+    assert_select 'input[name=start_date]:not([value])'
+    assert_select 'input[name=end_date]:not([value])'
+    assert_select 'a[href=?]', "/issues/#{old.id}"
+  end
+
+  test 'a single open date bound filters only that side' do
+    before = make_issue(project_id: 1, tracker_id: 1, created_on: Date.new(2026, 2, 10))
+    after = make_issue(project_id: 1, tracker_id: 1, created_on: Date.new(2026, 4, 10))
+
+    get :triennial, params: { project_id: 1, start_date: '2026-03-01' }
+
+    assert_select 'a[href=?]', "/issues/#{after.id}"
+    assert_select 'a[href=?]', "/issues/#{before.id}", count: 0
+    assert_select 'p.report-info', text: /opened on or after 2026-03-01/
+  end
+
+  test 'excel export with an open range is named without dates' do
+    make_issue(project_id: 1, tracker_id: 1)
+
+    get :triennial, params: { project_id: 1, format: 'xlsx' }
+    assert_response :success
+    assert_match(/filename="triennial_audit\.xlsx"/, response.headers['Content-Disposition'])
+
+    get :triennial, params: { project_id: 1, end_date: '2026-09-30', format: 'xlsx' }
+    assert_match(/filename="triennial_audit_through_20260930\.xlsx"/, response.headers['Content-Disposition'])
+  end
+
   test 'shows per-source errors above the rest of the report' do
     Setting.plugin_nysenate_audit_utils = {
       'triennial_audit_sources' => [

@@ -69,7 +69,7 @@ class TriennialReportSystemTest < AuditUtilsSystemTestCase
 
     visit triennial_url
 
-    rows = downloaded_xlsx_rows('triennial_audit_*.xlsx') { click_link 'Export Excel' }
+    rows = downloaded_xlsx_rows('triennial_audit*.xlsx') { click_link 'Export Excel' }
     header = rows.find { |r| r.first == 'Request Code' }
     assert header, 'expected a header row'
     row = rows.find { |r| r[header.index('Ticket #')].to_s == issue.id.to_s }

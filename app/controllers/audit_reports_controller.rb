@@ -236,9 +236,9 @@ class AuditReportsController < ApplicationController
   # above the table instead of replacing the whole report.
   def triennial
     service_class = NysenateAuditUtils::Reporting::TriennialAuditReportService
-    window = service_class.default_window
-    from_date = parse_date_param(params[:start_date]) || window[:from]
-    to_date = parse_date_param(params[:end_date]) || window[:to]
+    # Either Open Date bound may be left blank (the default) to leave that end open.
+    from_date = parse_date_param(params[:start_date])
+    to_date = parse_date_param(params[:end_date])
     validate_date_range!(from_date, to_date)
 
     @source_filter = params[:source].presence
@@ -284,7 +284,7 @@ class AuditReportsController < ApplicationController
         )
         send_data xlsx_data,
                   type: Mime[:xlsx].to_s,
-                  filename: "triennial_audit_#{@from_date.strftime('%Y%m%d')}_#{@to_date.strftime('%Y%m%d')}.xlsx",
+                  filename: triennial_export_filename,
                   disposition: 'attachment'
       end
     end
@@ -656,10 +656,24 @@ class AuditReportsController < ApplicationController
     return unless field
 
     latest = field.possible_values.grep(/\A\d{4}\z/).map(&:to_i).max
-    return if latest && latest >= @to_date.year
+    # An open-ended range runs through today.
+    year = (@to_date || Date.current).year
+    return if latest && latest >= year
 
     latest_note = latest ? " (its latest is #{latest})" : ''
-    { field: field, message: "The #{field.name} field has no year option that covers #{@to_date.year}#{latest_note}." }
+    { field: field, message: "The #{field.name} field has no year option that covers #{year}#{latest_note}." }
+  end
+
+  # Names the Open Date bounds that are set: triennial_audit_FROM_TO,
+  # _from_FROM, _through_TO, or plain triennial_audit when both are open.
+  def triennial_export_filename
+    from = @from_date&.strftime('%Y%m%d')
+    to = @to_date&.strftime('%Y%m%d')
+    suffix = if from && to then "_#{from}_#{to}"
+             elsif from then "_from_#{from}"
+             elsif to then "_through_#{to}"
+             end
+    "triennial_audit#{suffix}.xlsx"
   end
 
   # Disable Bullet for the duration of a report action, but only in development
@@ -713,9 +727,10 @@ class AuditReportsController < ApplicationController
     [window[:from], window[:to]]
   end
 
+  # Either date may be nil (an open-ended range); only the given ones are checked.
   def validate_date_range!(from_date, to_date)
     # Ensure from_date is before to_date
-    if from_date > to_date
+    if from_date && to_date && from_date > to_date
       raise ArgumentError, "Start date must be before end date"
     end
 
@@ -723,10 +738,10 @@ class AuditReportsController < ApplicationController
     today = Date.current
     tomorrow = today + 1.day
 
-    if from_date.to_date > tomorrow
+    if from_date && from_date.to_date > tomorrow
       raise ArgumentError, "Start date cannot be more than 1 day in the future"
     end
-    if to_date.to_date > tomorrow
+    if to_date && to_date.to_date > tomorrow
       raise ArgumentError, "End date cannot be more than 1 day in the future"
     end
 

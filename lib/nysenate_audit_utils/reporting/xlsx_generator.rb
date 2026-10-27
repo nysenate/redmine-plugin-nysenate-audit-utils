@@ -332,15 +332,14 @@ module NysenateAuditUtils
 
         build_package do |wb, styles|
           wb.add_worksheet(name: 'Triennial Audit') do |sheet|
-            if from_date && to_date
-              write_metadata_rows(sheet, styles,
-                name: 'Triennial Audit',
-                description: TRIENNIAL_DESCRIPTION,
-                start_time: from_date.to_date.strftime('%Y-%m-%d'),
-                end_time: to_date.to_date.strftime('%Y-%m-%d'),
-                extras: filters ? { 'Filters' => filters } : {}
-              )
-            end
+            # An open (nil) bound reads as "Any".
+            write_metadata_rows(sheet, styles,
+              name: 'Triennial Audit',
+              description: TRIENNIAL_DESCRIPTION,
+              start_time: from_date&.to_date&.strftime('%Y-%m-%d') || 'Any',
+              end_time: to_date&.to_date&.strftime('%Y-%m-%d') || 'Any',
+              extras: filters ? { 'Filters' => filters } : {}
+            )
 
             if groups.empty?
               write_no_entries(sheet, styles, TRIENNIAL_NO_ENTRIES)

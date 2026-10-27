@@ -178,12 +178,22 @@ module NysenateAuditUtils
         assert service.success?
       end
 
-      test 'default window is the trailing three years ending today' do
-        travel_to Time.zone.parse('2026-09-29 12:00') do
-          service = TriennialAuditReportService.new
-          assert_equal Date.new(2023, 9, 30), service.from_date.to_date
-          assert_equal Date.new(2026, 9, 29), service.to_date.to_date
-        end
+      test 'blank dates leave the window open' do
+        service = TriennialAuditReportService.new
+        assert_nil service.from_date
+        assert_nil service.to_date
+      end
+
+      test 'an open bound includes every ticket on that side' do
+        old = make_issue(created_on: Time.zone.parse('2015-06-01 10:00'))
+        mid = make_issue
+        recent = make_issue(created_on: Time.zone.parse('2026-03-01 10:00'))
+
+        ids = [old.id, mid.id, recent.id]
+        found = ->(**window) { generate(**window).last.pluck(:issue_id) & ids }
+        assert_equal ids.sort, found.call(from: nil, to: nil).sort
+        assert_equal [old.id, mid.id].sort, found.call(from: nil).sort
+        assert_equal [mid.id, recent.id].sort, found.call(to: nil).sort
       end
 
       test 'group_by_code sorts by code then ticket, with unresolved codes last' do
