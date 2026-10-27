@@ -460,16 +460,16 @@ module NysenateAuditUtils::AccountTracking
       # Should only return issues closed before or at cutoff time
       assert_equal 2, result.length
 
-      user_ids = result.map { |r| r[:user_id] }.sort
+      user_ids = result.pluck(:user_id).sort
       assert_equal ['emp001', 'emp002'], user_ids
 
       # Verify the correct issues are included
-      assert_includes result.map { |r| r[:issue_id] }, old_issue1.id
-      assert_includes result.map { |r| r[:issue_id] }, old_issue2.id
+      assert_includes result.pluck(:issue_id), old_issue1.id
+      assert_includes result.pluck(:issue_id), old_issue2.id
 
       # Verify recent issues are excluded
-      assert_not_includes result.map { |r| r[:issue_id] }, recent_issue1.id
-      assert_not_includes result.map { |r| r[:issue_id] }, recent_issue2.id
+      assert_not_includes result.pluck(:issue_id), recent_issue1.id
+      assert_not_includes result.pluck(:issue_id), recent_issue2.id
     end
 
     test 'get_account_statuses_by_system includes issue closed exactly at cutoff time' do
@@ -498,8 +498,8 @@ module NysenateAuditUtils::AccountTracking
 
       # Should include all closed issues (both old and recent)
       assert_equal 2, result.length
-      assert_includes result.map { |r| r[:user_id] }, 'emp001'
-      assert_includes result.map { |r| r[:user_id] }, 'emp002'
+      assert_includes result.pluck(:user_id), 'emp001'
+      assert_includes result.pluck(:user_id), 'emp002'
     end
 
     test 'get_account_statuses_by_system selects most recent issue before cutoff' do

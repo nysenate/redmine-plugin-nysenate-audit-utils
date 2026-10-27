@@ -33,8 +33,8 @@ module NysenateAuditUtils
       # @param issue [Issue]
       # @return [Hash{String => String}]
       def value_map(issue)
-        issue.custom_field_values.each_with_object({}) do |cfv, map|
-          map[cfv.custom_field.name] = formatted(cfv)
+        issue.custom_field_values.to_h do |cfv|
+          [cfv.custom_field.name, formatted(cfv)]
         end
       end
 

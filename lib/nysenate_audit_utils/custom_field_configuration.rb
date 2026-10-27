@@ -102,7 +102,7 @@ module NysenateAuditUtils
       # @return [Integer, nil] The custom field ID or nil if not configured
       def get_field_id(setting_key)
         field_id = Setting.plugin_nysenate_audit_utils[setting_key]
-        field_id.present? ? field_id.to_i : nil
+        field_id.presence&.to_i
       end
 
       # Get a custom field by setting key

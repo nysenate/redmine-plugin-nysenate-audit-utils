@@ -40,8 +40,8 @@ class AccountHolderAccessReportServiceTest < ActiveSupport::TestCase
 
     assert service.success?
     assert_equal 2, result.size
-    assert_includes result.map { |r| r[:account_type] }, 'Oracle / SFMS'
-    assert_includes result.map { |r| r[:account_type] }, 'AIX'
+    assert_includes result.pluck(:account_type), 'Oracle / SFMS'
+    assert_includes result.pluck(:account_type), 'AIX'
   end
 
   test 'generate includes inactive accounts with their status (latest action Delete)' do
@@ -77,8 +77,8 @@ class AccountHolderAccessReportServiceTest < ActiveSupport::TestCase
     result = service.generate
 
     assert_equal 2, result.size
-    assert_equal ['11111', '11111'], result.map { |r| r[:user_id] }
-    assert_equal ['AIX', 'Oracle / SFMS'], result.map { |r| r[:account_type] }.sort
+    assert_equal ['11111', '11111'], result.pluck(:user_id)
+    assert_equal ['AIX', 'Oracle / SFMS'], result.pluck(:account_type).sort
   end
 
   test 'generate orders rows by account holder name' do
@@ -89,7 +89,7 @@ class AccountHolderAccessReportServiceTest < ActiveSupport::TestCase
     service = NysenateAuditUtils::Reporting::AccountHolderAccessReportService.new(project: @project)
     result = service.generate
 
-    assert_equal ['Alice First', 'Mike Middle', 'Zach Last'], result.map { |r| r[:user_name] }
+    assert_equal ['Alice First', 'Mike Middle', 'Zach Last'], result.pluck(:user_name)
   end
 
   test 'generate includes the request code of the latest add ticket' do

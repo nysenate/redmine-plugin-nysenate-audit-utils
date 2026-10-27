@@ -293,9 +293,9 @@ class XlsxGeneratorTest < ActiveSupport::TestCase
 
   def test_employee_access_xlsx_structure_and_content
     xlsx = GEN.generate_employee_access_xlsx([
-                                              ACCOUNT_HOLDER_ACCESS_ROW,
-                                              ACCOUNT_HOLDER_ACCESS_ROW.merge(account_type: 'AIX')
-                                            ])
+                                               ACCOUNT_HOLDER_ACCESS_ROW,
+                                               ACCOUNT_HOLDER_ACCESS_ROW.merge(account_type: 'AIX')
+                                             ])
     assert_valid_xlsx(xlsx)
     assert_equal ['Employee Access'], sheet_names(xlsx)
     xml = sheet_xml(xlsx)

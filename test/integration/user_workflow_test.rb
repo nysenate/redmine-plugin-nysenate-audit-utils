@@ -138,7 +138,7 @@ class UserWorkflowTest < Redmine::IntegrationTest
     json = response.parsed_body
     assert json['users'].present?, "Expected users array, got: #{json.inspect}"
     assert_equal 'Vendor', json['type']
-    assert json['users'].any? { |s| s['name'] == 'Test Vendor Corp' }, "Expected to find 'Test Vendor Corp', got: #{json['users'].map { |s| s['name'] }.inspect}"
+    assert json['users'].any? { |s| s['name'] == 'Test Vendor Corp' }, "Expected to find 'Test Vendor Corp', got: #{json['users'].pluck('name').inspect}"
   end
 
   # Test 3: Mixed Data Scenarios

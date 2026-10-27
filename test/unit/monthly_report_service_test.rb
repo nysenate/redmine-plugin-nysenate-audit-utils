@@ -292,8 +292,8 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
 
     # Should include both issues since as_of_time defaults to current
     assert_equal 2, result.size
-    assert_includes result.map { |r| r[:user_id] }, '12345'
-    assert_includes result.map { |r| r[:user_id] }, '67890'
+    assert_includes result.pluck(:user_id), '12345'
+    assert_includes result.pluck(:user_id), '67890'
   end
 
   test 'generate selects most recent Add/Delete issue before cutoff time' do
@@ -352,9 +352,9 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
 
     # Should only return active accounts
     assert_equal 2, result.size
-    assert_includes result.map { |r| r[:user_id] }, '11111'
-    assert_includes result.map { |r| r[:user_id] }, '22222'
-    assert_not_includes result.map { |r| r[:user_id] }, '33333'
+    assert_includes result.pluck(:user_id), '11111'
+    assert_includes result.pluck(:user_id), '22222'
+    assert_not_includes result.pluck(:user_id), '33333'
     result.each { |r| assert_equal 'active', r[:status] }
   end
 
@@ -372,9 +372,9 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
 
     # Should only return inactive accounts
     assert_equal 2, result.size
-    assert_includes result.map { |r| r[:user_id] }, '22222'
-    assert_includes result.map { |r| r[:user_id] }, '33333'
-    assert_not_includes result.map { |r| r[:user_id] }, '11111'
+    assert_includes result.pluck(:user_id), '22222'
+    assert_includes result.pluck(:user_id), '33333'
+    assert_not_includes result.pluck(:user_id), '11111'
     result.each { |r| assert_equal 'inactive', r[:status] }
   end
 
@@ -391,8 +391,8 @@ class MonthlyReportServiceTest < ActiveSupport::TestCase
 
     # Should return both active and inactive accounts
     assert_equal 2, result.size
-    assert_includes result.map { |r| r[:user_id] }, '11111'
-    assert_includes result.map { |r| r[:user_id] }, '22222'
+    assert_includes result.pluck(:user_id), '11111'
+    assert_includes result.pluck(:user_id), '22222'
     assert_equal 'active', result.find { |r| r[:user_id] == '11111' }[:status]
     assert_equal 'inactive', result.find { |r| r[:user_id] == '22222' }[:status]
   end

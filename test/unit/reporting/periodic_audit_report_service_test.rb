@@ -116,7 +116,7 @@ module NysenateAuditUtils
 
         service = PeriodicAuditReportService.new(project: @project, system: :sfms,
                                                  from_date: 1.week.ago, to_date: Time.zone.now)
-        ids = service.generate.map { |r| r[:issue_id] }
+        ids = service.generate.pluck(:issue_id)
 
         assert service.success?
         assert_includes ids, sfms.id
@@ -130,7 +130,7 @@ module NysenateAuditUtils
 
         service = PeriodicAuditReportService.new(project: @project, system: :sfs,
                                                  from_date: 1.week.ago, to_date: Time.zone.now)
-        ids = service.generate.map { |r| r[:issue_id] }
+        ids = service.generate.pluck(:issue_id)
 
         assert_includes ids, in_window.id
         assert_not_includes ids, out_window.id
@@ -169,7 +169,7 @@ module NysenateAuditUtils
 
         service = PeriodicAuditReportService.new(project: @project, system: :sfms,
                                                  from_date: 1.week.ago, to_date: Time.zone.now)
-        ids = service.generate.map { |r| r[:issue_id] }
+        ids = service.generate.pluck(:issue_id)
 
         assert_includes ids, add.id
         assert_not_includes ids, reset.id

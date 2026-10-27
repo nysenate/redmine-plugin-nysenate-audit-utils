@@ -89,15 +89,8 @@ class TrackedUsersController < ApplicationController
   end
 
   def tracked_user_params
-    params.require(:tracked_user).permit(
-      :user_type,
-      :user_id,
-      :name,
-      :email,
-      :phone,
-      :uid,
-      :location,
-      :status
+    params.expect(
+      tracked_user: [:user_type, :user_id, :name, :email, :phone, :uid, :location, :status]
     )
   end
 end

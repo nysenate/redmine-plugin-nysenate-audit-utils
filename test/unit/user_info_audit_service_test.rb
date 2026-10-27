@@ -141,7 +141,7 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
 
     missing = result.unmatched.select { |e| e[:category] == 'missing_user_type_and_id' }
     assert_equal 2, missing.size
-    assert_equal [a.id, b.id].sort, missing.map { |e| e[:issue_id] }.sort
+    assert_equal [a.id, b.id].sort, missing.pluck(:issue_id).sort
   end
 
   test 'ignores tickets whose tracker lacks the account holder fields' do
@@ -219,7 +219,7 @@ class UserInfoAuditServiceTest < ActiveSupport::TestCase
 
     not_found = result.unmatched.select { |e| e[:category] == 'user_not_found' }
     assert_equal 2, not_found.size
-    assert_equal [a.id, b.id].sort, not_found.map { |e| e[:issue_id] }.sort
+    assert_equal [a.id, b.id].sort, not_found.pluck(:issue_id).sort
 
     row_a = not_found.find { |e| e[:issue_id] == a.id }
     assert_equal a.subject, row_a[:subject]

@@ -273,7 +273,6 @@ class AuditUtilsSettingsControllerTest < ActionController::TestCase
     post :test_ess_connection,
          params: { ess_base_url: 'https://other.example.com', ess_api_key: 'new-key' }
 
-
     assert_response :success
     assert_equal true, response.parsed_body['success']
     assert_equal 'https://ess.example.com', Setting.plugin_nysenate_audit_utils['ess_base_url']
@@ -304,7 +303,6 @@ class AuditUtilsSettingsControllerTest < ActionController::TestCase
 
     post :test_ess_connection,
          params: { ess_base_url: 'https://attacker.example.com' }
-
 
     assert_response :success
     assert_equal false, response.parsed_body['success']

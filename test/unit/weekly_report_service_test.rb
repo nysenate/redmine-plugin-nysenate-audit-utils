@@ -93,7 +93,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     report_data = service.generate
 
     assert service.success?
-    issue_ids = report_data.map { |r| r[:issue_id] }
+    issue_ids = report_data.pluck(:issue_id)
 
     assert_includes issue_ids, closed_issue.id, "Should include closed issue"
     assert_not_includes issue_ids, open_issue.id, "Should not include open issue"
@@ -116,7 +116,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     report_data = service.generate
 
     assert service.success?
-    issue_ids = report_data.map { |r| r[:issue_id] }
+    issue_ids = report_data.pluck(:issue_id)
 
     assert_includes issue_ids, closed_issue.id, "Default 'all' should include closed issue"
     assert_includes issue_ids, open_issue.id, "Default 'all' should include open issue updated in range"
@@ -138,7 +138,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     report_data = service.generate
 
     assert service.success?
-    issue_ids = report_data.map { |r| r[:issue_id] }
+    issue_ids = report_data.pluck(:issue_id)
 
     assert_includes issue_ids, created_in.id, "Should include issue created in range"
     assert_not_includes issue_ids, created_before.id, "Should not include issue created before range"
@@ -169,7 +169,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     report_data = service.generate
 
     assert service.success?
-    issue_ids = report_data.map { |r| r[:issue_id] }
+    issue_ids = report_data.pluck(:issue_id)
 
     assert_includes issue_ids, noted.id, "Should include issue with a note in range"
     assert_not_includes issue_ids, closed_only.id, "Should not include issue whose only activity is the close"
@@ -213,7 +213,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     report_data = service.generate
 
     assert service.success?
-    issue_ids = report_data.map { |r| r[:issue_id] }
+    issue_ids = report_data.pluck(:issue_id)
 
     assert_includes issue_ids, in_range.id, "Should include issue closed within range"
     assert_not_includes issue_ids, out_of_range.id, "Should not include issue closed outside range"
@@ -243,7 +243,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     report_data = service.generate
 
     assert service.success?
-    issue_ids = report_data.map { |r| r[:issue_id] }
+    issue_ids = report_data.pluck(:issue_id)
 
     assert_includes issue_ids, issue1.id
     assert_not_includes issue_ids, issue2.id
@@ -471,7 +471,7 @@ class WeeklyReportServiceTest < ActiveSupport::TestCase
     report_data = service.generate
 
     assert service.success?
-    issue_ids = report_data.map { |r| r[:issue_id] }
+    issue_ids = report_data.pluck(:issue_id)
 
     assert_includes issue_ids, issue_with_field.id
     assert_includes issue_ids, issue_with_value.id
