@@ -173,8 +173,9 @@ class TriennialReportTest < ActionController::TestCase
     assert_select 'td.code-col span.highlight', text: 'BUGA'
   end
   test 'exports the filtered report as xlsx' do
-    coded = make_issue(project_id: 1, tracker_id: 1)
-    make_issue(project_id: 2, tracker_id: 2)
+    # Dated inside the fixed export window (make_issue defaults to 10 days ago).
+    coded = make_issue(project_id: 1, tracker_id: 1, created_on: Date.new(2026, 6, 15))
+    make_issue(project_id: 2, tracker_id: 2, created_on: Date.new(2026, 6, 15))
 
     get :triennial, params: { project_id: 1, start_date: '2026-01-01', end_date: '2026-09-30', code: 'BUGA' },
                     format: :xlsx

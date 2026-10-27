@@ -124,7 +124,12 @@ class PeriodicReportTest < AuditUtilsSystemTestCase
     visit periodic_url(system: 'sfs')
 
     assert_no_selector '#sfs-range-block', visible: true
-    choose 'Custom range'
+    # The radio submits the form on change. Click the label rather than
+    # `choose`: Playwright's check() re-reads the radio after clicking and
+    # fails with "not attached to the DOM" if the navigation won the race.
+    find('label.mode-radio', text: 'Custom range').click
+    assert_current_path(/mode=range/)
+    assert_checked_field 'Custom range'
     assert_selector '#sfs-range-block', visible: true
     assert_no_selector '#sfs-endonly-block', visible: true
   end
